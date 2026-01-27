@@ -74,11 +74,11 @@ This project is currently under active development.
 
 ### Roadmap
 
-- [ ] Phase 1: Foundation (Auth, DB, Basic UI)
-- [ ] Phase 2: Orchestrator Core
-- [ ] Phase 3: Research Agent
-- [ ] Phase 4: Multi-Agent System
-- [ ] Phase 5: Memory & Context
+- [x] Phase 1: Foundation (Auth, DB, Basic UI)
+- [x] Phase 2: Orchestrator Core
+- [x] Phase 3: Research Agent
+- [x] Phase 4: Multi-Agent System
+- [/] Phase 5: Memory & Context
 - [ ] Phase 6: Advanced Agents
 - [ ] Phase 7: Project Management
 - [ ] Phase 8: Polish & Optimization
@@ -92,4 +92,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*Built with 💜 by Madhu*
+*Built with 💜 by Madhur Tyagi*
