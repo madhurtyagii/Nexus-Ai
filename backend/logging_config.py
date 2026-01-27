@@ -1,0 +1,104 @@
+"""
+Nexus AI - Logging Configuration
+Centralized logging setup with console and file handlers
+"""
+
+import logging
+import os
+from logging.handlers import RotatingFileHandler
+from datetime import datetime
+
+# Create logs directory if it doesn't exist
+LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+# Log file paths
+APP_LOG_FILE = os.path.join(LOGS_DIR, "app.log")
+WORKER_LOG_FILE = os.path.join(LOGS_DIR, "worker.log")
+
+
+def setup_logging(
+    name: str = "nexus",
+    level: int = logging.INFO,
+    log_file: str = None
+) -> logging.Logger:
+    """
+    Set up a logger with console and file handlers.
+    
+    Args:
+        name: Logger name
+        level: Logging level
+        log_file: Optional specific log file path
+        
+    Returns:
+        Configured logger
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    
+    # Clear existing handlers
+    logger.handlers = []
+    
+    # Log format
+    formatter = logging.Formatter(
+        "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+    
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(level)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+    
+    # File handler with rotation
+    file_path = log_file or APP_LOG_FILE
+    file_handler = RotatingFileHandler(
+        file_path,
+        maxBytes=10 * 1024 * 1024,  # 10 MB
+        backupCount=5,
+        encoding="utf-8"
+    )
+    file_handler.setLevel(level)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    
+    return logger
+
+
+def get_app_logger() -> logging.Logger:
+    """Get the main application logger."""
+    return setup_logging("nexus.app", log_file=APP_LOG_FILE)
+
+
+def get_worker_logger(worker_id: str = None) -> logging.Logger:
+    """Get a worker-specific logger."""
+    name = f"nexus.worker.{worker_id}" if worker_id else "nexus.worker"
+    return setup_logging(name, log_file=WORKER_LOG_FILE)
+
+
+def read_recent_logs(log_file: str = None, lines: int = 100) -> list:
+    """
+    Read the most recent log entries.
+    
+    Args:
+        log_file: Path to log file (default: app.log)
+        lines: Number of lines to read
+        
+    Returns:
+        List of log lines
+    """
+    file_path = log_file or APP_LOG_FILE
+    
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            all_lines = f.readlines()
+            return all_lines[-lines:]
+    except FileNotFoundError:
+        return []
+    except Exception as e:
+        return [f"Error reading logs: {e}"]
+
+
+# Global application logger
+app_logger = get_app_logger()

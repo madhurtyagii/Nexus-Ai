@@ -1,0 +1,324 @@
+/**
+ * AgentActivityPanel Styles
+ */
+
+.agent-activity-panel {
+    background: linear-gradient(145deg, rgba(26, 26, 46, 0.95), rgba(15, 15, 35, 0.98));
+    border-radius: 16px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.1));
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.panel-header h3 {
+    margin: 0;
+    color: #f0f0f0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.connection-status.connected {
+    color: #10b981;
+}
+
+.connection-status.disconnected {
+    color: #ef4444;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.connected .status-dot {
+    background: #10b981;
+}
+
+.disconnected .status-dot {
+    background: #ef4444;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.panel-content {
+    padding: 1.25rem;
+}
+
+/* Agents Grid */
+.agents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Agent Card */
+.agent-card {
+    background: rgba(30, 30, 50, 0.6);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    transition: all 0.3s ease;
+}
+
+.agent-card:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+.agent-card.agent-status-starting {
+    border-left: 4px solid #3b82f6;
+}
+
+.agent-card.agent-status-progress {
+    border-left: 4px solid #8b5cf6;
+}
+
+.agent-card.agent-status-completed {
+    border-left: 4px solid #10b981;
+}
+
+.agent-card.agent-status-error {
+    border-left: 4px solid #ef4444;
+}
+
+.agent-card.agent-status-pending {
+    border-left: 4px solid #6b7280;
+}
+
+.agent-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.agent-icon {
+    font-size: 1.5rem;
+}
+
+.agent-name {
+    flex: 1;
+    font-weight: 600;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+}
+
+.agent-status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.agent-status-badge.agent-status-starting {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+.agent-status-badge.agent-status-progress {
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
+}
+
+.agent-status-badge.agent-status-completed {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.agent-status-badge.agent-status-error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.agent-status-badge.agent-status-pending {
+    background: rgba(107, 114, 128, 0.2);
+    color: #9ca3af;
+}
+
+.agent-message {
+    font-size: 0.85rem;
+    color: #a0a0a0;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.agent-progress-bar {
+    height: 4px;
+    background: rgba(139, 92, 246, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.agent-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.agent-timestamp {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: right;
+}
+
+/* No Agents State */
+.no-agents {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+.no-agents .hint {
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    color: #4b5563;
+}
+
+/* Timeline */
+.timeline-container {
+    border-top: 1px solid rgba(139, 92, 246, 0.15);
+    padding-top: 1rem;
+}
+
+.timeline-title {
+    margin: 0 0 1rem 0;
+    color: #a0a0a0;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.timeline-item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(30, 30, 50, 0.4);
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+
+.timeline-icon {
+    font-size: 1rem;
+}
+
+.timeline-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    flex: 1;
+}
+
+.timeline-event-type {
+    color: #8b5cf6;
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
+.timeline-agent {
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+.timeline-message {
+    color: #9ca3af;
+    font-size: 0.8rem;
+}
+
+.timeline-time {
+    margin-left: auto;
+    color: #6b7280;
+    font-size: 0.75rem;
+}
+
+/* Task Status Badge */
+.task-status-badge {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 16px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.task-status-badge.status-queued {
+    background: rgba(107, 114, 128, 0.2);
+    color: #9ca3af;
+}
+
+.task-status-badge.status-in_progress {
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
+}
+
+.task-status-badge.status-completed {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.task-status-badge.status-failed {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+/* Scrollbar styling */
+.timeline::-webkit-scrollbar {
+    width: 6px;
+}
+
+.timeline::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.timeline::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.4);
+    border-radius: 3px;
+}
+
+.timeline::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.6);
+}
