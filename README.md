@@ -31,6 +31,7 @@ Nexus AI is an autonomous multi-agent system where **7 specialized AI agents** w
 - PostgreSQL
 - Redis
 - ChromaDB (Vector Store)
+- Sentence-Transformers (Embeddings)
 - Ollama / Groq (LLM)
 
 **Frontend:**
@@ -38,6 +39,17 @@ Nexus AI is an autonomous multi-agent system where **7 specialized AI agents** w
 - Vite
 - TailwindCSS
 - Socket.io (Real-time updates)
+
+## 🧠 Memory & Context System (NEW!)
+
+Nexus AI features an advanced memory system that enables:
+
+- **📚 Vector Storage** - ChromaDB for semantic memory storage
+- **🔍 RAG System** - Retrieval Augmented Generation for context-aware responses
+- **💬 Conversation Tracking** - Automatic tracking of all user/agent interactions
+- **⭐ Preference Learning** - Learn from feedback to personalize responses
+- **🔗 Context Continuity** - Reference previous tasks and maintain context
+- **📊 Memory Analytics** - Usage stats, popular topics, and quality scoring
 
 ## 📁 Project Structure
 
@@ -48,6 +60,13 @@ nexus-ai/
 │   ├── tools/            # Agent tools (web search, code exec, etc.)
 │   ├── orchestrator/     # Task planning & coordination
 │   ├── memory/           # Vector store & context management
+│   │   ├── vector_store.py      # ChromaDB wrapper
+│   │   ├── embeddings.py        # Embedding generation
+│   │   ├── rag.py               # RAG engine
+│   │   ├── conversation_tracker.py
+│   │   ├── preference_learner.py
+│   │   ├── context_manager.py
+│   │   └── memory_analytics.py
 │   ├── llm/              # LLM integrations (Ollama, Groq)
 │   ├── messaging/        # Inter-agent communication
 │   ├── routers/          # API endpoints
@@ -57,6 +76,7 @@ nexus-ai/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/   # React components
+│   │   │   └── memory/   # Memory UI components
 │   │   ├── pages/        # Route pages
 │   │   ├── hooks/        # Custom hooks
 │   │   ├── services/     # API services
@@ -78,13 +98,33 @@ This project is currently under active development.
 - [x] Phase 2: Orchestrator Core
 - [x] Phase 3: Research Agent
 - [x] Phase 4: Multi-Agent System
-- [/] Phase 5: Memory & Context
+- [x] Phase 5: Memory & Context ✨
 - [ ] Phase 6: Advanced Agents
 - [ ] Phase 7: Project Management
 - [ ] Phase 8: Polish & Optimization
 - [ ] Phase 9: Documentation
 - [ ] Phase 10: Deployment
 - [ ] Phase 11: Launch
+
+## 🚀 Quick Start
+
+```bash
+# Clone the repo
+git clone https://github.com/madhurtyagii/nexus-ai.git
+cd nexus-ai
+
+# Backend setup
+cd backend
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env with your settings
+python main.py
+
+# Frontend setup (new terminal)
+cd frontend
+npm install
+npm run dev
+```
 
 ## 📝 License
 
@@ -93,3 +133,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 ---
 
 *Built with 💜 by Madhur Tyagi*
+
