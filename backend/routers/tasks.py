@@ -42,6 +42,19 @@ async def create_task(
         project_id=task_data.project_id
     )
     
+    # Track user prompt in memory system
+    try:
+        from memory.conversation_tracker import get_conversation_tracker
+        tracker = get_conversation_tracker()
+        tracker.track_user_message(
+            user_id=current_user.id,
+            task_id=new_task.id,
+            message=task_data.user_prompt
+        )
+    except Exception as e:
+        # Memory tracking is optional, don't fail the request
+        pass
+    
     # Process in background (non-blocking)
     background_tasks.add_task(service.process_task, new_task.id)
     

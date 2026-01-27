@@ -33,6 +33,11 @@ class Task(Base):
     completed_at = Column(DateTime(timezone=True), nullable=True)
     output = Column(Text, nullable=True)
     
+    # Feedback columns (Phase 5)
+    user_rating = Column(Integer, nullable=True)  # 1-5 rating
+    user_feedback = Column(Text, nullable=True)  # Text feedback
+    feedback_timestamp = Column(DateTime(timezone=True), nullable=True)
+    
     # Relationships
     user = relationship("User", back_populates="tasks")
     project = relationship("Project", back_populates="tasks")

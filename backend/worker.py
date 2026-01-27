@@ -23,6 +23,13 @@ from messaging import (
     WebSocketEventType
 )
 
+# Memory tracking
+try:
+    from memory.conversation_tracker import get_conversation_tracker
+    MEMORY_ENABLED = True
+except ImportError:
+    MEMORY_ENABLED = False
+
 
 class Worker:
     """
@@ -216,6 +223,33 @@ class Worker:
             result = agent.execute(input_data)
             
             self.logger.info(f"✅ Agent {agent_name} completed with status: {result.get('status')}")
+            
+            # Track agent output in memory system
+            if MEMORY_ENABLED:
+                try:
+                    tracker = get_conversation_tracker()
+                    task_id = input_data.get("task_id")
+                    user_id = input_data.get("user_id")
+                    
+                    # Get output content
+                    output_content = result.get("output", "")
+                    if isinstance(output_content, dict):
+                        output_content = str(output_content)
+                    
+                    if task_id and output_content:
+                        tracker.track_agent_response(
+                            agent_name=agent_name,
+                            task_id=task_id,
+                            response=output_content[:5000],  # Limit size
+                            metadata={
+                                "success": result.get("status") == "success",
+                                "execution_time": result.get("execution_time_seconds", 0)
+                            },
+                            user_id=user_id
+                        )
+                        self.logger.debug(f"📝 Tracked {agent_name} output to memory")
+                except Exception as mem_err:
+                    self.logger.warning(f"⚠️ Failed to track agent output: {mem_err}")
             
             return result
             

@@ -160,9 +160,7 @@ class BaseAgent(ABC):
     
     def get_memory(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         """
-        Retrieve relevant memories.
-        
-        Placeholder for Phase 5 memory system.
+        Retrieve relevant memories using the vector store.
         
         Args:
             query: Search query
@@ -171,21 +169,66 @@ class BaseAgent(ABC):
         Returns:
             List of relevant memories
         """
-        # Placeholder - will implement in Phase 5
-        return []
+        try:
+            from memory.vector_store import get_vector_store, VectorStore
+            
+            vector_store = get_vector_store()
+            
+            # Search agent outputs for relevant past work
+            memories = vector_store.search_memory(
+                collection_name=VectorStore.AGENT_OUTPUTS,
+                query=query,
+                filters={"agent_name": self.name} if self.name else None,
+                limit=limit
+            )
+            
+            self.log_action("memory_retrieved", {"count": len(memories)})
+            return memories
+            
+        except ImportError:
+            self.log_action("memory_not_available", {})
+            return []
+        except Exception as e:
+            self.log_action("memory_error", {"error": str(e)})
+            return []
     
     def save_to_memory(self, content: str, metadata: Dict[str, Any] = None):
         """
-        Save content to memory.
-        
-        Placeholder for Phase 5 memory system.
+        Save content to memory using the vector store.
         
         Args:
             content: Content to save
-            metadata: Optional metadata
+            metadata: Optional metadata (user_id, task_id, etc.)
         """
-        # Placeholder - will implement in Phase 5
-        self.log_action("memory_save_attempt", {"content_length": len(content)})
+        try:
+            from memory.vector_store import get_vector_store, VectorStore
+            from memory.embeddings import get_embedding_manager
+            
+            vector_store = get_vector_store()
+            embedding_manager = get_embedding_manager()
+            
+            # Generate embedding
+            embedding = embedding_manager.generate_embedding(content)
+            
+            # Build metadata
+            mem_metadata = metadata or {}
+            mem_metadata["agent_name"] = self.name
+            
+            # Save to agent outputs collection
+            memory_id = vector_store.add_memory(
+                collection_name=VectorStore.AGENT_OUTPUTS,
+                content=content,
+                metadata=mem_metadata,
+                embedding=embedding
+            )
+            
+            self.log_action("memory_saved", {"memory_id": memory_id, "content_length": len(content)})
+            
+        except ImportError:
+            self.log_action("memory_not_available", {})
+        except Exception as e:
+            self.log_action("memory_save_error", {"error": str(e)})
+    
     
     def validate_input(
         self, 
