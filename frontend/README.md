@@ -26,6 +26,7 @@ src/
 ├── components/     # Reusable React components
 │   ├── chat/       # Chat interface components
 │   ├── agents/     # Agent-related components
+│   ├── memory/     # Memory UI components (Phase 5)
 │   ├── tasks/      # Task display components
 │   ├── layout/     # Layout components (Navbar, Sidebar)
 │   └── common/     # Common UI components

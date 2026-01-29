@@ -4,7 +4,7 @@ This is the FastAPI backend for Nexus AI - the multi-agent AI workspace.
 
 ## Prerequisites
 
-- Python 3.10+
+- Python 3.13
 - **Redis Server** (Critical for messaging & task queue)
   - Windows: [Download Memurai](https://www.memurai.com/get-memurai) or [Redis for Windows](https://github.com/microsoftarchive/redis/releases)
   - Linux/Mac: `sudo apt install redis-server` or `brew install redis`

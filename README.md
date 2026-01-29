@@ -5,7 +5,7 @@
 > Where specialized AI agents collaborate to solve complex tasks
 
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
-![Python](https://img.shields.io/badge/python-3.11+-blue)
+![Python](https://img.shields.io/badge/python-3.13-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green)
 ![React](https://img.shields.io/badge/React-18+-61DAFB)
 
