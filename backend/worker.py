@@ -158,6 +158,26 @@ class Worker:
             self.logger.info(f"✅ Subtask {subtask_id} completed")
             self.tasks_processed += 1
             
+            # Track agent response in memory system
+            if MEMORY_ENABLED:
+                try:
+                    tracker = get_conversation_tracker()
+                    # Get user_id from parent task
+                    task = db.query(Task).filter(Task.id == subtask.task_id).first()
+                    response_content = self._extract_agent_output_for_memory(output)
+                    tracker.track_agent_response(
+                        agent_name=subtask.assigned_agent,
+                        task_id=subtask.task_id,
+                        response=response_content,
+                        metadata={
+                            "success": True,
+                            "execution_time": (subtask.completed_at - subtask.created_at).total_seconds() if subtask.completed_at else 0
+                        },
+                        user_id=task.user_id if task else None
+                    )
+                except Exception as e:
+                    self.logger.debug(f"Memory tracking skipped: {e}")
+            
             # Emit WebSocket event for completion
             emit_task_event_sync(
                 WebSocketEventType.AGENT_COMPLETED,
@@ -294,6 +314,39 @@ Be concise but thorough."""
             "timestamp": datetime.utcnow().isoformat(),
             "note": "Executed using fallback (agent not fully implemented)"
         }
+    
+    def _extract_agent_output_for_memory(self, output: Dict[str, Any]) -> str:
+        """
+        Extract output content from agent result for memory storage.
+        
+        Args:
+            output: Agent output dictionary
+            
+        Returns:
+            String content suitable for memory storage
+        """
+        if not output:
+            return ""
+        
+        # Get the main output content
+        content = output.get("output", "")
+        
+        if isinstance(content, dict):
+            # Try to extract meaningful text from dict
+            if "content" in content:
+                content = content["content"]
+            elif "text" in content:
+                content = content["text"]
+            elif "body" in content:
+                content = content.get("subject", "") + "\n\n" + content.get("body", "")
+            else:
+                content = str(content)
+        
+        if not isinstance(content, str):
+            content = str(content)
+        
+        # Limit size for memory storage
+        return content[:5000] if len(content) > 5000 else content
     
     def _check_task_completion(self, db, task_id: int):
         """Check if all subtasks are complete and update parent task."""

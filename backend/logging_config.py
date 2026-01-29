@@ -77,6 +77,20 @@ def get_worker_logger(worker_id: str = None) -> logging.Logger:
     return setup_logging(name, log_file=WORKER_LOG_FILE)
 
 
+def get_logger(name: str = None) -> logging.Logger:
+    """
+    Get a logger for any module.
+    
+    Args:
+        name: Module name (usually __name__)
+        
+    Returns:
+        Configured logger
+    """
+    logger_name = f"nexus.{name}" if name else "nexus"
+    return setup_logging(logger_name, log_file=APP_LOG_FILE)
+
+
 def read_recent_logs(log_file: str = None, lines: int = 100) -> list:
     """
     Read the most recent log entries.
