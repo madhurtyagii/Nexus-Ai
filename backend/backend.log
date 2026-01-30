@@ -1,0 +1,892 @@
+Γ£à WebSearchTool initialized with Tavily API
+Γ£à Registered tool: web_search
+Γ£à Registered tool: web_scraper
+Γ£à Registered tool: code_executor
+Γ£à Registered tool: data_analysis
+Γ£à Registered agent: ResearchAgent
+Γ£à Registered agent: CodeAgent
+Γ£à Registered agent: ContentAgent
+Γ£à Registered agent: DataAgent
+Γ£à Registered tool: ValidationTool
+Γ£à Registered tool: QualityCheckerTool
+Γ£à Registered agent: QAAgent
+Γ£à Registered tool: ProjectPlannerTool
+Γ£à Registered tool: TaskSchedulerTool
+Γ£à Registered agent: ManagerAgent
+INFO:     Started server process [15500]
+INFO:     Waiting for application startup.
+≡ƒÜÇ Starting Nexus AI...
+Γ£à Database tables created/verified
+Γ£à Redis connection successful
+≡ƒÜÇ WebSocket manager started
+Γ£à WebSocket manager started
+Γ£à Nexus AI is ready!
+≡ƒôÜ API Documentation: http://localhost:8000/docs
+≡ƒöî WebSocket: ws://localhost:8000/ws
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:50750 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50752 - "POST /projects/35/execute HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50778 - "POST /auth/signup HTTP/1.1" 201 Created
+INFO:     127.0.0.1:50780 - "POST /auth/login HTTP/1.1" 200 OK
+≡ƒô¥ Creating project: Queue Execution Test for user 7
+Γ£à Project 36 created instantly: Queue Execution Test
+Project 36 created successfully: Queue Execution Test
+INFO:     127.0.0.1:50782 - "POST /projects/ HTTP/1.1" 201 Created
+INFO:     127.0.0.1:50784 - "GET /projects/36 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50786 - "POST /projects/36/execute HTTP/1.1" 200 OK
+==================================================
+GLOBAL EXCEPTION HANDLER TRIGGERED
+Request: POST http://localhost:8000/projects/36/execute
+Exception Type: ModuleNotFoundError
+Exception: No module named 'websocket_manager'
+Traceback (most recent call last):
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 198, in __call__
+    raise app_exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 102, in app
+    await response(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\responses.py", line 167, in __call__
+    await self.background()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 36, in __call__
+    await task()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 23, in __call__
+    await run_in_threadpool(self.func, *self.args, **self.kwargs)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\routers\projects.py", line 545, in _execute_project_workflow
+    from orchestrator.workflow_engine import WorkflowEngine
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\orchestrator\workflow_engine.py", line 17, in <module>
+    from websocket_manager import emit_task_event_sync, emit_agent_progress_sync, WebSocketEventType
+ModuleNotFoundError: No module named 'websocket_manager'
+==================================================
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 198, in __call__
+    raise app_exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 102, in app
+    await response(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\responses.py", line 167, in __call__
+    await self.background()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 36, in __call__
+    await task()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 23, in __call__
+    await run_in_threadpool(self.func, *self.args, **self.kwargs)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\routers\projects.py", line 545, in _execute_project_workflow
+    from orchestrator.workflow_engine import WorkflowEngine
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\orchestrator\workflow_engine.py", line 17, in <module>
+    from websocket_manager import emit_task_event_sync, emit_agent_progress_sync, WebSocketEventType
+ModuleNotFoundError: No module named 'websocket_manager'
+INFO:     127.0.0.1:50790 - "GET /projects/36/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50797 - "OPTIONS /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50797 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50797 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50797 - "OPTIONS /projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50798 - "OPTIONS /projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50797 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50797 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50797 - "OPTIONS /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50798 - "OPTIONS /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50797 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50798 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50814 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50814 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50814 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50815 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50814 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50814 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50814 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50815 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50814 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50814 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50814 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50814 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50814 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50815 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50814 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50815 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50818 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50818 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50818 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50817 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50818 - "POST /projects/35/execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+==================================================
+GLOBAL EXCEPTION HANDLER TRIGGERED
+Request: POST http://localhost:8000/projects/35/execute
+Exception Type: ModuleNotFoundError
+Exception: No module named 'websocket_manager'
+Traceback (most recent call last):
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 198, in __call__
+    raise app_exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 102, in app
+    await response(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\responses.py", line 167, in __call__
+    await self.background()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 36, in __call__
+    await task()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 23, in __call__
+    await run_in_threadpool(self.func, *self.args, **self.kwargs)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\routers\projects.py", line 545, in _execute_project_workflow
+    from orchestrator.workflow_engine import WorkflowEngine
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\orchestrator\workflow_engine.py", line 17, in <module>
+    from websocket_manager import emit_task_event_sync, emit_agent_progress_sync, WebSocketEventType
+ModuleNotFoundError: No module named 'websocket_manager'
+==================================================
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 198, in __call__
+    raise app_exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 102, in app
+    await response(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\responses.py", line 167, in __call__
+    await self.background()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 36, in __call__
+    await task()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 23, in __call__
+    await run_in_threadpool(self.func, *self.args, **self.kwargs)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\routers\projects.py", line 545, in _execute_project_workflow
+    from orchestrator.workflow_engine import WorkflowEngine
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\orchestrator\workflow_engine.py", line 17, in <module>
+    from websocket_manager import emit_task_event_sync, emit_agent_progress_sync, WebSocketEventType
+ModuleNotFoundError: No module named 'websocket_manager'
+INFO:     127.0.0.1:50817 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50819 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50817 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50820 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50817 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50820 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50817 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50820 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50820 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50817 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50817 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51043 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51043 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51043 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51044 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51043 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51047 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51047 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51047 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51047 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51047 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51047 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51035 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51057 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51035 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51057 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51084 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51086 - "POST /projects/35/execute HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51120 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51121 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51120 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51121 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51120 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51121 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51120 - "OPTIONS /projects/35/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51121 - "OPTIONS /projects/35/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51120 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51121 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51120 - "OPTIONS /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51121 - "OPTIONS /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51121 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51120 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51121 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51120 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51121 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51120 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51120 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51121 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51135 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51135 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51135 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51135 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51135 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51135 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51135 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "OPTIONS /projects/35/execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51135 - "POST /projects/35/execute HTTP/1.1" 200 OK
+==================================================
+GLOBAL EXCEPTION HANDLER TRIGGERED
+Request: POST http://localhost:8000/projects/35/execute
+Exception Type: ModuleNotFoundError
+Exception: No module named 'websocket_manager'
+Traceback (most recent call last):
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 198, in __call__
+    raise app_exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 102, in app
+    await response(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\responses.py", line 167, in __call__
+    await self.background()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 36, in __call__
+    await task()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 23, in __call__
+    await run_in_threadpool(self.func, *self.args, **self.kwargs)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\routers\projects.py", line 545, in _execute_project_workflow
+    from orchestrator.workflow_engine import WorkflowEngine
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\orchestrator\workflow_engine.py", line 17, in <module>
+    from websocket_manager import emit_task_event_sync, emit_agent_progress_sync, WebSocketEventType
+ModuleNotFoundError: No module named 'websocket_manager'
+==================================================
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\applications.py", line 1135, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 198, in __call__
+    raise app_exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\fastapi\routing.py", line 102, in app
+    await response(scope, receive, send)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\responses.py", line 167, in __call__
+    await self.background()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 36, in __call__
+    await task()
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\background.py", line 23, in __call__
+    await run_in_threadpool(self.func, *self.args, **self.kwargs)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2502, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 986, in run
+    result = context.run(func, *args)
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\routers\projects.py", line 545, in _execute_project_workflow
+    from orchestrator.workflow_engine import WorkflowEngine
+  File "C:\Users\madhu\OneDrive\Desktop\Projects\Nexus Ai\backend\orchestrator\workflow_engine.py", line 17, in <module>
+    from websocket_manager import emit_task_event_sync, emit_agent_progress_sync, WebSocketEventType
+ModuleNotFoundError: No module named 'websocket_manager'
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "OPTIONS /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51144 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51144 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51144 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51144 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51144 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51144 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51144 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51150 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51144 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59339 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59339 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59339 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59339 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59339 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59339 - "GET /projects/35/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/35/progress HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "OPTIONS /projects/34/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "OPTIONS /projects/34/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/34/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/34/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "OPTIONS /projects/34 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "OPTIONS /projects/34 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/34 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51136 - "GET /projects/34 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "OPTIONS /projects/30/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "OPTIONS /projects/30/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59335 - "GET /projects/30/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51136 - "GET /projects/30/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "OPTIONS /projects/30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/30 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59335 - "GET /projects/30 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51136 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59335 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51136 - "GET /projects/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59347 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59347 - "GET /auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59347 - "OPTIONS /agents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59348 - "OPTIONS /tasks/?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59347 - "GET /agents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59348 - "GET /tasks/?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59347 - "GET /agents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59348 - "GET /tasks/?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59348 - "GET /tasks/?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59348 - "GET /tasks/?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59348 - "GET /agents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59350 - "GET /tasks/?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59351 - "GET /agents/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59352 - "GET /tasks/?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59350 - "GET /tasks/?limit=10 HTTP/1.1" 200 OK

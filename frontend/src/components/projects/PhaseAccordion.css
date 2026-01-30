@@ -1,0 +1,225 @@
+.phase-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.phase-accordion-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-tertiary, #777);
+}
+
+.accordion-item {
+    background: var(--bg-secondary, #1e1e2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.accordion-item:hover {
+    border-color: var(--primary, #667eea);
+}
+
+.accordion-item.in_progress {
+    border-color: var(--primary, #667eea);
+    box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.2);
+}
+
+.accordion-item.completed {
+    border-color: #34d399;
+}
+
+/* Header */
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    background: transparent;
+    transition: background 0.2s;
+}
+
+.accordion-header:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.phase-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+    background: var(--bg-tertiary, #2a2a3a);
+    color: var(--text-tertiary, #777);
+}
+
+.phase-badge.completed {
+    background: #34d399;
+    color: white;
+}
+
+.phase-badge.in_progress {
+    background: var(--primary, #667eea);
+    color: white;
+}
+
+.phase-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary, #fff);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.task-count {
+    font-size: 0.8rem;
+    color: var(--text-tertiary, #777);
+}
+
+.chevron {
+    font-size: 0.65rem;
+    color: var(--text-tertiary, #777);
+    transition: transform 0.3s ease;
+}
+
+.chevron.up {
+    transform: rotate(180deg);
+}
+
+/* Content */
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.accordion-content.show {
+    max-height: 1000px;
+    padding: 0 1.25rem 1rem;
+}
+
+.tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.no-tasks {
+    text-align: center;
+    color: var(--text-tertiary, #777);
+    padding: 1rem;
+}
+
+/* Task Row */
+.task-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary, #2a2a3a);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.task-row:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateX(4px);
+}
+
+.task-status-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    background: var(--bg-secondary, #1e1e2e);
+    color: var(--text-tertiary, #777);
+    flex-shrink: 0;
+}
+
+.task-status-icon.completed {
+    background: rgba(52, 211, 153, 0.2);
+    color: #34d399;
+}
+
+.task-status-icon.in_progress {
+    background: rgba(102, 126, 234, 0.2);
+    color: var(--primary, #667eea);
+}
+
+.task-status-icon.failed {
+    background: rgba(248, 113, 113, 0.2);
+    color: #f87171;
+}
+
+.task-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.task-id {
+    font-size: 0.7rem;
+    font-family: monospace;
+    color: var(--text-tertiary, #777);
+}
+
+.task-description {
+    font-size: 0.85rem;
+    color: var(--text-primary, #fff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.agent-badge {
+    padding: 0.15rem 0.5rem;
+    background: rgba(147, 197, 253, 0.15);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: #93c5fd;
+}
+
+.estimated-time {
+    font-size: 0.7rem;
+    color: var(--text-tertiary, #777);
+}
+
+/* Phase Summary */
+.phase-summary {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color, #333);
+    font-size: 0.8rem;
+    color: var(--text-secondary, #a0a0a0);
+}

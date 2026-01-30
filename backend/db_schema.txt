@@ -1,0 +1,19 @@
+🔍 Inspecting database schema...
+✅ Table 'projects' found.
+
+Columns in DB:
+  - id (INTEGER) NOT NULL [Default: nextval('projects_id_seq'::regclass)]
+  - user_id (INTEGER) NOT NULL [Default: None]
+  - name (VARCHAR(255)) NOT NULL [Default: None]
+  - description (TEXT) NULL [Default: None]
+  - created_at (TIMESTAMP) NULL [Default: now()]
+  - updated_at (TIMESTAMP) NULL [Default: now()]
+
+🧪 Testing clean insert...
+❌ Insert failed: (psycopg2.errors.UndefinedColumn) column "status" of relation "projects" does not exist
+LINE 1: INSERT INTO projects (user_id, name, description, status, cr...
+                                                          ^
+
+[SQL: INSERT INTO projects (user_id, name, description, status, created_by_agent, total_tasks, completed_tasks, total_phases, current_phase, estimated_minutes, actual_minutes, risk_level, complexity_score, started_at, completed_at, output, summary) VALUES (%(user_id)s, %(name)s, %(description)s, %(status)s, %(created_by_agent)s, %(total_tasks)s, %(completed_tasks)s, %(total_phases)s, %(current_phase)s, %(estimated_minutes)s, %(actual_minutes)s, %(risk_level)s, %(complexity_score)s, %(started_at)s, %(completed_at)s, %(output)s, %(summary)s) RETURNING projects.id, projects.created_at, projects.updated_at]
+[parameters: {'user_id': 1, 'name': 'Schema Test', 'description': None, 'status': 'planning', 'created_by_agent': 'ManagerAgent', 'total_tasks': 0, 'completed_tasks': 0, 'total_phases': 0, 'current_phase': 0, 'estimated_minutes': None, 'actual_minutes': None, 'risk_level': None, 'complexity_score': None, 'started_at': None, 'completed_at': None, 'output': None, 'summary': None}]
+(Background on this error at: https://sqlalche.me/e/20/f405)

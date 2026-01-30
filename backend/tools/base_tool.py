@@ -4,7 +4,7 @@ Abstract base class for all tools
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Type, Optional
 from datetime import datetime
 
 
@@ -109,3 +109,47 @@ class BaseTool(ABC):
             "description": self.description,
             "parameters": self.parameters
         }
+
+
+class ToolRegistry:
+    """
+    Registry for managing available tools.
+    """
+    
+    _tools: Dict[str, Type[BaseTool]] = {}
+    
+    @classmethod
+    def register(cls, tool_class: Type[BaseTool]):
+        """
+        Register a tool class.
+        
+        Can be used as a decorator.
+        """
+        # Create instance to get name
+        try:
+            # We assume tools can be instantiated without args for name retrieval
+            # or we stick to class attributes if available.
+            # For now, let's just register the class.
+            tool_name = tool_class.__name__
+            # If tool has a 'name' attribute, use it?
+            # Creating instance might be heavy. Let's rely on class name or modify tools.
+            pass
+        except:
+            pass
+            
+        cls._tools[tool_class.__name__] = tool_class
+        print(f"✅ Registered tool: {tool_class.__name__}")
+        return tool_class
+    
+    @classmethod
+    def get_tool(cls, tool_name: str) -> Optional[Type[BaseTool]]:
+        """Get a tool class by name."""
+        return cls._tools.get(tool_name)
+    
+    @classmethod
+    def list_tools(cls) -> List[str]:
+        """List all registered tools."""
+        return list(cls._tools.keys())
+
+# Global registry
+tool_registry = ToolRegistry()

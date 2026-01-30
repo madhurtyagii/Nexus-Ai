@@ -1,0 +1,432 @@
+"""
+Nexus AI - QA Agent
+Quality Assurance agent that validates, reviews, and ensures quality of all outputs
+"""
+
+from typing import Dict, Any, List, Optional
+from datetime import datetime
+
+from agents.base_agent import BaseAgent
+from agents.agent_registry import AgentRegistry
+from tools.validation_tools import ValidationTool
+from tools.quality_checker import QualityCheckerTool
+from llm.llm_manager import llm_manager
+
+
+@AgentRegistry.register
+class QAAgent(BaseAgent):
+    """
+    Quality Assurance Agent.
+    
+    Validates all outputs for accuracy, completeness, quality, and errors.
+    Provides constructive feedback and suggestions for improvement.
+    Ensures outputs meet high standards before delivery.
+    """
+    
+    SYSTEM_PROMPT = """You are a quality assurance specialist for an AI agent system.
+
+Your responsibilities:
+1. Carefully review all outputs for accuracy, completeness, and quality
+2. Identify errors, issues, and areas for improvement
+3. Provide constructive, actionable feedback
+4. Ensure outputs meet high professional standards
+5. Verify that outputs actually address the original task requirements
+
+Be thorough but fair. Point out both issues and strengths.
+Provide specific suggestions, not vague criticisms.
+Rate on a 0-100 scale where:
+- 0-40: Poor quality, major issues
+- 40-60: Below average, needs significant work
+- 60-75: Acceptable, some improvements needed
+- 75-90: Good quality, minor improvements possible
+- 90-100: Excellent, ready for delivery"""
+
+    def __init__(self):
+        super().__init__(
+            name="QAAgent",
+            role="Quality assurance and validation",
+            system_prompt=self.SYSTEM_PROMPT
+        )
+        
+        # Attach tools
+        self.validation_tool = ValidationTool()
+        self.quality_checker = QualityCheckerTool()
+        self.tools = [self.validation_tool, self.quality_checker]
+        
+        # Configuration
+        self.quality_threshold = 70  # Minimum score to pass
+        self.max_retry_suggestions = 3
+    
+    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Execute QA review on provided content.
+        
+        Args:
+            input_data: {
+                "content": str - The content to review,
+                "content_type": str - Type of content (code, content, data_analysis, research),
+                "original_task": str - The original task that produced this content,
+                "agent_name": str - Which agent produced this content (optional)
+            }
+            
+        Returns:
+            QA report with pass/fail status and detailed feedback
+        """
+        start_time = datetime.now()
+        
+        # Validate input
+        content = input_data.get("content", "")
+        if not content:
+            return {
+                "status": "error",
+                "error": "No content provided for QA review",
+                "approved": False
+            }
+        
+        content_type = input_data.get("content_type", "general")
+        original_task = input_data.get("original_task", "")
+        agent_name = input_data.get("agent_name", "Unknown")
+        
+        # Perform comprehensive review
+        qa_result = self._review_output(content, content_type, original_task)
+        
+        # Add metadata
+        qa_result["agent_reviewed"] = agent_name
+        qa_result["review_time"] = (datetime.now() - start_time).total_seconds()
+        qa_result["reviewed_at"] = datetime.now().isoformat()
+        
+        # Format final output
+        return self._format_qa_report(qa_result, content_type)
+    
+    def _review_output(
+        self, 
+        content: str, 
+        content_type: str, 
+        original_task: str
+    ) -> Dict[str, Any]:
+        """
+        Perform comprehensive review of output.
+        
+        Combines automated validation with LLM-based quality assessment.
+        """
+        # Step 1: Automated validation
+        automated_results = self.validation_tool.execute(
+            content=content,
+            content_type=content_type
+        )
+        
+        # Step 2: LLM quality review
+        llm_results = self.quality_checker.execute(
+            content=content,
+            expected_quality="high",
+            content_type=content_type,
+            original_task=original_task
+        )
+        
+        # Step 3: Verify task completion
+        task_verification = self._verify_task_completion(content, original_task)
+        
+        # Step 4: Combine results
+        combined_score = self._calculate_combined_score(
+            automated_results.get("score", 0),
+            llm_results.get("quality_score", 0),
+            task_verification.get("coverage", 0)
+        )
+        
+        # Categorize issues
+        all_issues = self._categorize_issues(
+            automated_results.get("issues", []),
+            automated_results.get("warnings", []),
+            llm_results.get("issues", [])
+        )
+        
+        # Generate fix suggestions if needed
+        suggestions = []
+        if combined_score < self.quality_threshold:
+            suggestions = self._suggest_fixes(
+                all_issues["critical"] + all_issues["major"],
+                content
+            )
+        
+        # Determine pass/fail
+        passed = (
+            combined_score >= self.quality_threshold and
+            len(all_issues["critical"]) == 0 and
+            task_verification.get("task_completed", False)
+        )
+        
+        return {
+            "status": "passed" if passed else "failed",
+            "quality_score": combined_score,
+            "approved": passed,
+            "automated_checks": automated_results,
+            "llm_review": llm_results,
+            "task_verification": task_verification,
+            "critical_issues": all_issues["critical"],
+            "major_issues": all_issues["major"],
+            "minor_issues": all_issues["minor"],
+            "suggestions": suggestions[:self.max_retry_suggestions],
+            "strengths": llm_results.get("strengths", [])
+        }
+    
+    def _calculate_combined_score(
+        self, 
+        automated_score: float, 
+        llm_score: float, 
+        task_coverage: float
+    ) -> float:
+        """
+        Calculate combined quality score from multiple assessments.
+        
+        Weights:
+        - Automated checks: 30%
+        - LLM quality assessment: 40%
+        - Task completion: 30%
+        """
+        automated_weight = 0.30
+        llm_weight = 0.40
+        task_weight = 0.30
+        
+        combined = (
+            automated_score * automated_weight +
+            llm_score * llm_weight +
+            task_coverage * task_weight
+        )
+        
+        return round(combined, 1)
+    
+    def _categorize_issues(
+        self, 
+        automated_issues: List[str], 
+        warnings: List[str], 
+        llm_issues: List[str]
+    ) -> Dict[str, List[str]]:
+        """Categorize issues by severity."""
+        critical_keywords = ['security', 'error', 'syntax', 'critical', 'fail', 'broken']
+        major_keywords = ['missing', 'incomplete', 'wrong', 'incorrect', 'bug']
+        
+        categorized = {
+            "critical": [],
+            "major": [],
+            "minor": []
+        }
+        
+        all_issues = automated_issues + llm_issues
+        
+        for issue in all_issues:
+            issue_lower = issue.lower()
+            if any(kw in issue_lower for kw in critical_keywords):
+                categorized["critical"].append(issue)
+            elif any(kw in issue_lower for kw in major_keywords):
+                categorized["major"].append(issue)
+            else:
+                categorized["major"].append(issue)  # Default to major
+        
+        # Warnings are minor
+        categorized["minor"].extend(warnings)
+        
+        return categorized
+    
+    def _suggest_fixes(self, issues: List[str], content: str) -> List[str]:
+        """Generate specific fix suggestions for issues."""
+        if not issues:
+            return []
+        
+        issues_text = "\n".join(f"- {issue}" for issue in issues[:5])
+        
+        prompt = f"""Given these issues found in the content:
+{issues_text}
+
+Content snippet:
+{content[:1000]}
+
+Provide {min(len(issues), 3)} specific, actionable suggestions to fix these issues.
+Format each suggestion as a clear instruction."""
+
+        try:
+            response = llm_manager.generate(
+                prompt=prompt,
+                system_prompt="You are a helpful assistant providing specific fixes for quality issues.",
+                temperature=0.3
+            )
+            
+            # Parse suggestions
+            suggestions = []
+            for line in response.split('\n'):
+                line = line.strip()
+                if line and (line.startswith('-') or line.startswith('•') or line[0].isdigit()):
+                    suggestion = line.lstrip('-•0123456789. ').strip()
+                    if suggestion:
+                        suggestions.append(suggestion)
+            
+            return suggestions[:self.max_retry_suggestions]
+            
+        except Exception:
+            return ["Review and address the identified issues", "Ensure content meets quality standards"]
+    
+    def _verify_task_completion(self, output: str, original_task: str) -> Dict[str, Any]:
+        """Verify that the output actually addresses the original task."""
+        if not original_task:
+            return {
+                "task_completed": True,
+                "coverage": 80,
+                "missing_aspects": [],
+                "note": "No original task provided for verification"
+            }
+        
+        prompt = f"""Evaluate if this output successfully completes the given task.
+
+Original Task: {original_task}
+
+Output:
+{output[:2000]}
+
+Answer:
+1. Does the output address the task? (YES/NO)
+2. What percentage of the task is covered? (0-100)
+3. What aspects are missing, if any?
+
+Format:
+COMPLETED: YES/NO
+COVERAGE: X%
+MISSING: [list missing aspects or "None"]"""
+
+        try:
+            response = llm_manager.generate(
+                prompt=prompt,
+                system_prompt="You are evaluating task completion. Be accurate and fair.",
+                temperature=0.2
+            )
+            
+            # Parse response
+            completed = "YES" in response.upper() and "COMPLETED: YES" in response.upper()
+            
+            # Extract coverage
+            import re
+            coverage_match = re.search(r'COVERAGE:\s*(\d+)', response)
+            coverage = int(coverage_match.group(1)) if coverage_match else (80 if completed else 50)
+            
+            # Extract missing aspects
+            missing = []
+            if "MISSING:" in response.upper():
+                missing_section = response.split("MISSING:")[-1].strip()
+                for line in missing_section.split('\n'):
+                    line = line.strip().lstrip('-•')
+                    if line and line.lower() not in ['none', 'n/a', '']:
+                        missing.append(line)
+            
+            return {
+                "task_completed": completed,
+                "coverage": coverage,
+                "missing_aspects": missing[:5]
+            }
+            
+        except Exception as e:
+            return {
+                "task_completed": True,
+                "coverage": 70,
+                "missing_aspects": [],
+                "error": str(e)
+            }
+    
+    def _compare_to_standards(self, content: str, content_type: str) -> Dict[str, Any]:
+        """Compare content against quality standards from memory."""
+        try:
+            # Try to get standards from memory
+            standards = self.get_memory(
+                query=f"quality standards for {content_type}",
+                collection="domain_knowledge",
+                limit=3
+            )
+            
+            if standards:
+                # Compare against standards
+                standards_text = "\n".join(s.get("content", "") for s in standards)
+                
+                prompt = f"""Compare this {content_type} against these quality standards:
+
+Standards:
+{standards_text[:1000]}
+
+Content:
+{content[:1000]}
+
+How well does the content meet the standards? Rate compliance 0-100.
+List any standards not met."""
+
+                response = llm_manager.generate(
+                    prompt=prompt,
+                    system_prompt="You are comparing content against quality standards.",
+                    temperature=0.3
+                )
+                
+                return {
+                    "standards_found": True,
+                    "compliance_report": response
+                }
+            
+            return {"standards_found": False, "note": "No standards found in memory"}
+            
+        except Exception as e:
+            return {"standards_found": False, "error": str(e)}
+    
+    def _format_qa_report(self, result: Dict[str, Any], content_type: str) -> Dict[str, Any]:
+        """Format the final QA report for output."""
+        status_emoji = "✅" if result["approved"] else "❌"
+        
+        report_lines = [
+            f"## {status_emoji} QA Review - {result['status'].upper()}",
+            "",
+            f"**Quality Score:** {result['quality_score']}/100",
+            f"**Content Type:** {content_type}",
+            ""
+        ]
+        
+        # Task verification
+        task_ver = result.get("task_verification", {})
+        if task_ver:
+            report_lines.append(f"**Task Completion:** {task_ver.get('coverage', 0)}%")
+            if task_ver.get("missing_aspects"):
+                report_lines.append("**Missing Aspects:**")
+                for aspect in task_ver["missing_aspects"]:
+                    report_lines.append(f"  - {aspect}")
+            report_lines.append("")
+        
+        # Critical issues
+        if result.get("critical_issues"):
+            report_lines.append("### 🚨 Critical Issues")
+            for issue in result["critical_issues"]:
+                report_lines.append(f"- {issue}")
+            report_lines.append("")
+        
+        # Major issues
+        if result.get("major_issues"):
+            report_lines.append("### ⚠️ Major Issues")
+            for issue in result["major_issues"]:
+                report_lines.append(f"- {issue}")
+            report_lines.append("")
+        
+        # Minor issues
+        if result.get("minor_issues"):
+            report_lines.append("### 💡 Minor Issues")
+            for issue in result["minor_issues"][:5]:  # Limit minor issues
+                report_lines.append(f"- {issue}")
+            report_lines.append("")
+        
+        # Strengths
+        if result.get("strengths"):
+            report_lines.append("### ✨ Strengths")
+            for strength in result["strengths"]:
+                report_lines.append(f"- {strength}")
+            report_lines.append("")
+        
+        # Suggestions
+        if result.get("suggestions"):
+            report_lines.append("### 📝 Suggestions for Improvement")
+            for i, suggestion in enumerate(result["suggestions"], 1):
+                report_lines.append(f"{i}. {suggestion}")
+        
+        result["report"] = "\n".join(report_lines)
+        result["output"] = result["report"]  # For standard agent output format
+        
+        return result

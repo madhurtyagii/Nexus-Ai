@@ -1,0 +1,247 @@
+.project-timeline {
+    background: var(--bg-secondary, #1e1e2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-title {
+    margin: 0 0 1.5rem;
+    font-size: 1.1rem;
+    color: var(--text-primary, #fff);
+}
+
+.timeline-container {
+    position: relative;
+}
+
+/* Phase Styling */
+.timeline-phase {
+    position: relative;
+    padding-left: 3rem;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-phase:last-child {
+    padding-bottom: 0;
+}
+
+/* Connector Line */
+.timeline-connector {
+    position: absolute;
+    left: 1rem;
+    top: -1.5rem;
+    width: 2px;
+    height: 1.5rem;
+    background: var(--bg-tertiary, #2a2a3a);
+}
+
+.timeline-connector.active {
+    background: linear-gradient(180deg, #34d399, var(--primary, #667eea));
+}
+
+/* Phase Node */
+.phase-node {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.phase-indicator {
+    position: absolute;
+    left: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    background: var(--bg-tertiary, #2a2a3a);
+    border: 2px solid var(--border-color, #444);
+    color: var(--text-tertiary, #777);
+    transition: all 0.3s ease;
+}
+
+.phase-indicator.completed {
+    background: #34d399;
+    border-color: #34d399;
+    color: white;
+}
+
+.phase-indicator.in_progress {
+    background: var(--primary, #667eea);
+    border-color: var(--primary, #667eea);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.phase-indicator.pending {
+    background: var(--bg-tertiary, #2a2a3a);
+    border-color: var(--border-color, #444);
+    color: var(--text-tertiary, #777);
+}
+
+.phase-info h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-primary, #fff);
+}
+
+.task-count {
+    font-size: 0.8rem;
+    color: var(--text-tertiary, #777);
+}
+
+/* Tasks */
+.phase-tasks {
+    border-left: 2px solid var(--bg-tertiary, #2a2a3a);
+    margin-left: 1rem;
+    padding-left: 1.5rem;
+}
+
+.timeline-phase.completed .phase-tasks {
+    border-left-color: #34d399;
+}
+
+.timeline-phase.in_progress .phase-tasks {
+    border-left-color: var(--primary, #667eea);
+}
+
+.timeline-task {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-tertiary, #2a2a3a);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+}
+
+.timeline-task:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-task:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.task-indicator {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    border-radius: 50%;
+    background: var(--bg-secondary, #1e1e2e);
+    color: var(--text-tertiary, #777);
+}
+
+.timeline-task.completed .task-indicator {
+    background: rgba(52, 211, 153, 0.2);
+    color: #34d399;
+}
+
+.timeline-task.in_progress .task-indicator {
+    background: rgba(102, 126, 234, 0.2);
+    color: var(--primary, #667eea);
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.timeline-task.failed .task-indicator {
+    background: rgba(248, 113, 113, 0.2);
+    color: #f87171;
+}
+
+.task-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.task-name {
+    font-size: 0.85rem;
+    color: var(--text-primary, #fff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task-agent {
+    font-size: 0.7rem;
+    color: #93c5fd;
+}
+
+.task-time {
+    font-size: 0.75rem;
+    color: var(--text-tertiary, #777);
+    white-space: nowrap;
+}
+
+/* Legend */
+.timeline-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color, #333);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-tertiary, #777);
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.legend-dot.completed {
+    background: #34d399;
+}
+
+.legend-dot.in_progress {
+    background: var(--primary, #667eea);
+}
+
+.legend-dot.pending {
+    background: var(--bg-tertiary, #2a2a3a);
+    border: 1px solid var(--border-color, #444);
+}

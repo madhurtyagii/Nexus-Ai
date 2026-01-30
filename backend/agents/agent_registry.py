@@ -71,7 +71,21 @@ class AgentRegistry:
         return cls._agents.get(agent_name)
     
     @classmethod
-    def get_agent(
+    def get_agent(cls, agent_name: str):
+        """
+        Get an agent class by name (simple lookup).
+        Returns the class, not an instance.
+        
+        Args:
+            agent_name: Name of the agent
+            
+        Returns:
+            Agent class or None if not found
+        """
+        return cls._agents.get(agent_name)
+    
+    @classmethod
+    def get_agent_full(
         cls, 
         agent_name: str, 
         llm_manager: LLMManager,
@@ -79,7 +93,7 @@ class AgentRegistry:
         tools: List[Any] = None
     ):
         """
-        Create and return an agent instance.
+        Create and return an agent instance with all dependencies.
         
         Args:
             agent_name: Name of the agent

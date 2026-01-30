@@ -3,6 +3,22 @@ Nexus AI - Main Application Entry Point
 FastAPI application with all routes and middleware
 """
 
+# Fix Windows console encoding to support Unicode/emoji output
+import sys
+import os
+if sys.platform == 'win32':
+    # Force UTF-8 encoding for stdout/stderr on Windows
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except AttributeError:
+        # Python < 3.7 fallback
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    # Also set environment variable for subprocesses
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -86,6 +102,61 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+# Logging Middleware
+from fastapi import Request
+import time
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    log_line = f"\n{datetime.now().isoformat()} 📥 {request.method} {request.url.path}"
+    with open("requests.log", "a", encoding="utf-8") as f:
+        f.write(log_line)
+    
+    try:
+        response = await call_next(request)
+        process_time = (time.time() - start_time) * 1000
+        log_line = f"\n{datetime.now().isoformat()} 📤 {request.method} {request.url.path} - {response.status_code} ({process_time:.2f}ms)"
+        with open("requests.log", "a", encoding="utf-8") as f:
+            f.write(log_line)
+        return response
+    except Exception as e:
+        log_line = f"\n{datetime.now().isoformat()} ❌ Uncaught Exception: {str(e)}"
+        with open("requests.log", "a", encoding="utf-8") as f:
+            f.write(log_line)
+        print(f"ERROR Uncaught Exception: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+
+# Global exception handler to catch ALL exceptions
+from starlette.responses import JSONResponse
+from starlette.requests import Request as StarletteRequest
+from fastapi import Request as FastAPIRequest
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    """Catch all exceptions and print detailed traceback"""
+    import traceback
+    import sys
+    print("=" * 50, file=sys.stderr)
+    print("GLOBAL EXCEPTION HANDLER TRIGGERED", file=sys.stderr)
+    print(f"Request: {request.method} {request.url}", file=sys.stderr)
+    print(f"Exception Type: {type(exc).__name__}", file=sys.stderr)
+    print(f"Exception: {exc}", file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
+    
+    # Force flush to ensure output is visible
+    sys.stderr.flush()
+    
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal Server Error: {str(exc)}"}
+    )
+
+
 # Include routers
 app.include_router(auth_router)
 app.include_router(tasks_router)
@@ -101,7 +172,7 @@ async def root():
     """Root endpoint - API welcome message."""
     return {
         "message": "Welcome to Nexus AI API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "docs": "/docs"
     }
 
@@ -131,7 +202,7 @@ async def health_check():
 def get_user_id_from_token(token: str) -> Optional[int]:
     """Extract user ID from JWT token."""
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         return payload.get("sub")
     except:
         return None
