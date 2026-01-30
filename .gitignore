@@ -5,6 +5,12 @@ __pycache__/
 venv/
 .env
 
+# Logs
+*.log
+backend/logs/
+backend/requests.log
+backend/backend.log
+
 # JavaScript/Node
 node_modules/
 dist/
@@ -17,7 +23,6 @@ dist/
 # Backend
 backend/data/chromadb/
 backend/*.db
-backend/logs/
 
 # Frontend
 frontend/dist/
