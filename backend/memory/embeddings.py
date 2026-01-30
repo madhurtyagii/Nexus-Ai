@@ -1,4 +1,4 @@
-"""
+4"""
 Nexus AI - Embedding Manager
 Generates and caches text embeddings using sentence-transformers
 """
