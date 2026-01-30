@@ -2,135 +2,128 @@
 
 ## Autonomous Multi-Agent AI Workspace
 
-> Where specialized AI agents collaborate to solve complex tasks
+> Where specialized AI agents collaborate to solve complex ideas
 
-![Status](https://img.shields.io/badge/status-in%20development-yellow)
-![Python](https://img.shields.io/badge/python-3.13-blue)
+![Status](https://img.shields.io/badge/status-live-green)
+![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green)
 ![React](https://img.shields.io/badge/React-18+-61DAFB)
+![Redis](https://img.shields.io/badge/Redis-Queue-red)
 
 ---
 
 ## 🎯 Vision
 
-Nexus AI is an autonomous multi-agent system where **7 specialized AI agents** work together to complete complex tasks:
+Nexus AI is an autonomous multi-agent system where **7 specialized AI agents** work together to plan, execute, and verify complex tasks:
 
 - 🔍 **Research Agent** - Web searching and information synthesis
-- 💻 **Code Agent** - Code generation and execution
-- ✍️ **Content Agent** - Writing and documentation
+- 💻 **Code Agent** - Code generation, debugging, and review
+- ✍️ **Content Agent** - Writing documentation and copy
 - 📊 **Data Agent** - Data analysis and visualization
-- ✅ **QA Agent** - Quality assurance and validation
-- 🧠 **Memory Agent** - Context and preference learning
-- 📋 **Manager Agent** - Task planning and orchestration
+- ✅ **QA Agent** - Quality assurance and validation (Phase 6)
+- 📋 **Manager Agent** - Project planning, task breakdown, and coordination (Phase 6)
+- 🧠 **Memory Agent** - Context retention and preference learning
 
-## 🛠️ Tech Stack
+---
 
-**Backend:**
-- Python 3.11+
-- FastAPI
-- PostgreSQL
-- Redis
-- ChromaDB (Vector Store)
-- Sentence-Transformers (Embeddings)
-- Ollama / Groq (LLM)
+## 🔥 Key Features
 
-**Frontend:**
-- React 18
-- Vite
-- TailwindCSS
-- Socket.io (Real-time updates)
+### 1. Advanced Workflow Orchestration
+- **Project Planning**: The Manager Agent breaks down vague goals into detailed implementation plans.
+- **Dependency Management**: Tasks are executed in parallel or sequentially based on dependencies.
+- **Queue-Based Execution**: Robust, persistent background execution using Redis.
 
-## 🧠 Memory & Context System (NEW!)
+### 2. Multi-Agent Collaboration
+- Agents communicate, share context, and hand off tasks.
+- **QA Feedback Loop**: Every output is reviewed by the QA Agent; if it fails, the worker retries with feedback.
 
-Nexus AI features an advanced memory system that enables:
+### 3. Memory & Context
+- **RAG System**: Retrieval Augmented Generation for deep context awareness.
+- **Long-term Memory**: ChromaDB vector store remembers past interactions.
 
-- **📚 Vector Storage** - ChromaDB for semantic memory storage
-- **🔍 RAG System** - Retrieval Augmented Generation for context-aware responses
-- **💬 Conversation Tracking** - Automatic tracking of all user/agent interactions
-- **⭐ Preference Learning** - Learn from feedback to personalize responses
-- **🔗 Context Continuity** - Reference previous tasks and maintain context
-- **📊 Memory Analytics** - Usage stats, popular topics, and quality scoring
+### 4. Modern UI/UX
+- Real-time progress tracking with dynamic progress bars.
+- Timeline and Accordion views for project phases.
+- "Project Wizard" for easy creation.
+
+---
 
 ## 📁 Project Structure
 
 ```
 nexus-ai/
 ├── backend/
-│   ├── agents/           # AI Agent implementations
-│   ├── tools/            # Agent tools (web search, code exec, etc.)
-│   ├── orchestrator/     # Task planning & coordination
-│   ├── memory/           # Vector store & context management
-│   │   ├── vector_store.py      # ChromaDB wrapper
-│   │   ├── embeddings.py        # Embedding generation
-│   │   ├── rag.py               # RAG engine
-│   │   ├── conversation_tracker.py
-│   │   ├── preference_learner.py
-│   │   ├── context_manager.py
-│   │   └── memory_analytics.py
-│   ├── llm/              # LLM integrations (Ollama, Groq)
+│   ├── agents/           # Agent implementations (Manager, QA, Code, etc.)
+│   ├── tools/            # Capability tools (WebSearch, FileWrite, etc.)
+│   ├── orchestrator/     # WorkflowEngine & Task Queue logic
+│   ├── memory/           # Vector store & RAG system
+│   ├── llm/              # LLM client wrappers (Groq/Ollama)
 │   ├── messaging/        # Inter-agent communication
-│   ├── routers/          # API endpoints
-│   ├── models/           # Database models
-│   ├── schemas/          # Pydantic schemas
-│   └── main.py           # FastAPI app entry point
+│   ├── routers/          # FastAPI endpoints (Projects, Tasks, Auth)
+│   ├── models/           # SQLAlchemy database models
+│   ├── schemas/          # Pydantic data schemas
+│   ├── worker.py         # Redis queue consumer (Background Worker)
+│   ├── main.py           # Application entry point
+│   └── config.py         # Environment configuration
 ├── frontend/
 │   ├── src/
-│   │   ├── components/   # React components
-│   │   │   └── memory/   # Memory UI components
-│   │   ├── pages/        # Route pages
-│   │   ├── hooks/        # Custom hooks
-│   │   ├── services/     # API services
-│   │   ├── context/      # React context
-│   │   └── utils/        # Utilities
-│   └── ...
+│   │   ├── components/   # React components (ProjectWizard, Timeline, etc.)
+│   │   ├── pages/        # Application pages (Projects, Detail, Login)
+│   │   ├── services/     # API client
+│   │   └── context/      # Auth & Theme context
 ├── docs/                 # Documentation
-├── docker-compose.yml    # Docker orchestration
-└── README.md
+└── docker-compose.yml    # Deployment config
 ```
 
-## 🚧 Development Status
-
-This project is currently under active development.
-
-### Roadmap
-
-- [x] Phase 1: Foundation (Auth, DB, Basic UI)
-- [x] Phase 2: Orchestrator Core
-- [x] Phase 3: Research Agent
-- [x] Phase 4: Multi-Agent System
-- [x] Phase 5: Memory & Context ✨
-- [ ] Phase 6: Advanced Agents
-- [ ] Phase 7: Project Management
-- [ ] Phase 8: Polish & Optimization
-- [ ] Phase 9: Documentation
-- [ ] Phase 10: Deployment
-- [ ] Phase 11: Launch
+---
 
 ## 🚀 Quick Start
 
+### Prerequisites
+- Python 3.11+
+- Node.js 18+
+- Redis Server (Required for Task Queue)
+
+### 1. Backend Setup
 ```bash
-# Clone the repo
-git clone https://github.com/madhurtyagii/nexus-ai.git
-cd nexus-ai
-
-# Backend setup
 cd backend
+python -m venv venv
+# Activate venv (Windows: venv\Scripts\activate, Mac/Linux: source venv/bin/activate)
 pip install -r requirements.txt
-cp .env.example .env
-# Edit .env with your settings
-python main.py
+cp .env.example .env  # Configure your keys in .env
+python main.py        # Starts API on localhost:8000
+```
 
-# Frontend setup (new terminal)
+### 2. Worker Setup (New Terminal)
+The worker is essential for processing the task queue.
+```bash
+cd backend
+# Activate venv
+python worker.py
+```
+
+### 3. Frontend Setup (New Terminal)
+```bash
 cd frontend
 npm install
-npm run dev
+npm run dev           # Starts UI on localhost:5173
 ```
+
+---
+
+## 🚧 Development Status
+
+**Completed Phases:**
+- ✅ Phase 1-5: Foundation & Core Agents
+- ✅ Phase 6: Project Management, QA, & Workflows (Current)
+
+**Next Steps:**
+- [ ] Phase 7: Deployment & Optimization
+
+---
 
 ## 📝 License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
----
-
 *Built with 💜 by Madhur Tyagi*
-
