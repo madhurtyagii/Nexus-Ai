@@ -35,12 +35,14 @@ class ToolRegistry:
         from tools.web_scraper import WebScraperTool
         from tools.code_executor import CodeExecutorTool
         from tools.data_analysis import DataAnalysisTool
+        from tools.file_processor import FileProcessorTool
         
         # Register default tools
         self.register_tool(WebSearchTool())
         self.register_tool(WebScraperTool())
         self.register_tool(CodeExecutorTool())
         self.register_tool(DataAnalysisTool())
+        self.register_tool(FileProcessorTool())
     
     def register_tool(self, tool: BaseTool):
         """

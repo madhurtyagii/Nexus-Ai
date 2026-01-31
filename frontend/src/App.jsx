@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import TaskDetail from './pages/TaskDetail';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
+import Help from './pages/Help';
 
 // Placeholder pages for routes we'll build later
 function PlaceholderPage({ title }) {
@@ -99,6 +100,14 @@ function App() {
                 element={
                     <ProtectedRoute>
                         <PlaceholderPage title="Settings" />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/help"
+                element={
+                    <ProtectedRoute>
+                        <Help />
                     </ProtectedRoute>
                 }
             />

@@ -79,6 +79,16 @@ When returning code, use markdown code blocks with the language specified."""
                 input_data.get("prompt") or 
                 input_data.get("original_prompt", "")
             )
+            code = input_data.get("code", "")
+            file_id = input_data.get("file_id")
+
+            # If file_id is provided, resolve it
+            if file_id and not code:
+                file_result = self._read_file_content(file_id)
+                if file_result.get("success"):
+                    code = file_result.get("content") or str(file_result.get("data", ""))
+                    input_data["code"] = code # Update input_data for downstream methods
+                    self.log_action("file_loaded_as_code", {"file_id": file_id})
             
             if not task:
                 return self.format_output(None, status="error", error="No coding task provided")

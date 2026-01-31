@@ -140,15 +140,55 @@ class Worker:
             )
             
             # Execute agent logic
+            input_data = subtask.input_data or {}
+            
+            # START FIX: Inject content for QAAgent if missing
+            if subtask.assigned_agent == "QAAgent" and "content" not in input_data:
+                self.logger.info(f"🔧 QAAgent missing content, attempting to fetch from previous subtask...")
+                # Find most recent completed sibling subtask
+                prev_subtask = db.query(Subtask).filter(
+                    Subtask.task_id == subtask.task_id,
+                    Subtask.id < subtask_id,
+                    Subtask.status == TaskStatus.COMPLETED.value
+                ).order_by(Subtask.id.desc()).first()
+                
+                if prev_subtask and prev_subtask.output_data:
+                    self.logger.info(f"✅ Found previous subtask {prev_subtask.id} ({prev_subtask.assigned_agent})")
+                    output_content = prev_subtask.output_data.get("output", "")
+                    if isinstance(output_content, dict):
+                         if "code" in output_content: output_content = output_content["code"]
+                         elif "content" in output_content: output_content = output_content["content"]
+                         else: output_content = str(output_content)
+                    
+                    input_data = dict(input_data) # Create copy to modify
+                    input_data["content"] = str(output_content)
+                    input_data["content_type"] = "code" if prev_subtask.assigned_agent == "CodeAgent" else "general"
+                    self.logger.info(f"💉 Injected content (len={len(input_data['content'])}) into QAAgent input")
+                else:
+                    self.logger.warning("⚠️ No previous completed subtask found to inject content from")
+            # END FIX
+
             output = self.execute_agent(
                 subtask.assigned_agent,
-                subtask.input_data or {},
+                input_data,
                 db
             )
             
             # Update subtask with output
             subtask.output_data = output
-            subtask.status = TaskStatus.COMPLETED.value
+            
+            # Check for failure in agent output
+            is_failure = False
+            if isinstance(output, dict) and output.get("status") == "error":
+                is_failure = True
+            
+            if is_failure:
+                subtask.status = TaskStatus.FAILED.value
+                subtask.error_message = output.get("output", "Agent execution failed")
+                self.logger.warning(f"❌ Agent {subtask.assigned_agent} returned error: {subtask.error_message}")
+            else:
+                subtask.status = TaskStatus.COMPLETED.value
+            
             subtask.completed_at = datetime.utcnow()
             db.commit()
             

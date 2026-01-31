@@ -23,13 +23,13 @@ class AgentFactory:
     
     # Map agent names to their required tools
     AGENT_TOOLS = {
-        "ResearchAgent": ["web_search", "web_scraper"],
-        "CodeAgent": ["code_executor", "file_manager"],
-        "ContentAgent": [],  # Uses LLM only
-        "DataAgent": ["data_analyzer"],
-        "QAAgent": [],  # Uses LLM only
+        "ResearchAgent": ["web_search", "web_scraper", "FileProcessor"],
+        "CodeAgent": ["code_executor", "file_manager", "FileProcessor"],
+        "ContentAgent": ["FileProcessor"],
+        "DataAgent": ["data_analyzer", "FileProcessor"],
+        "QAAgent": ["FileProcessor"],
         "MemoryAgent": ["memory_store"],
-        "ManagerAgent": [],  # Uses LLM only
+        "ManagerAgent": ["FileProcessor"],
     }
     
     def __init__(self, db_session: Session = None, llm: LLMManager = None):
@@ -76,7 +76,7 @@ class AgentFactory:
                 print(f"⚠️ Tool '{tool_name}' not available: {e}")
         
         # Create agent instance
-        agent = AgentRegistry.get_agent(
+        agent = AgentRegistry.get_agent_full(
             agent_name=agent_name,
             llm_manager=self.llm,
             db_session=self.db,

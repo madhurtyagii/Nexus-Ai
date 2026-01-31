@@ -43,6 +43,7 @@ class Task(Base):
     project = relationship("Project", back_populates="tasks")
     subtasks = relationship("Subtask", back_populates="task", cascade="all, delete-orphan")
     agent_messages = relationship("AgentMessage", back_populates="task", cascade="all, delete-orphan")
+    files = relationship("File", back_populates="task")
     
     def __repr__(self):
         return f"<Task(id={self.id}, status='{self.status}', user_id={self.user_id})>"

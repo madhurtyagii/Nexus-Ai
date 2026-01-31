@@ -71,17 +71,13 @@ class AgentRegistry:
         return cls._agents.get(agent_name)
     
     @classmethod
-    def get_agent(cls, agent_name: str):
+    def get_agent(cls, agent_name: str, **kwargs):
         """
-        Get an agent class by name (simple lookup).
-        Returns the class, not an instance.
-        
-        Args:
-            agent_name: Name of the agent
-            
-        Returns:
-            Agent class or None if not found
+        Get an agent. If kwargs are provided, returns an instance.
+        Otherwise returns the class.
         """
+        if kwargs:
+            return cls.get_agent_full(agent_name, **kwargs)
         return cls._agents.get(agent_name)
     
     @classmethod

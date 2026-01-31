@@ -153,10 +153,28 @@ class QAFeedbackLoop:
     def _get_agent(self, agent_name: str):
         """Get an agent instance by name."""
         try:
-            agent_class = AgentRegistry.get_agent(agent_name)
-            if agent_class:
-                return agent_class()
-            return None
+            # We need to get a fully initialized agent with dependencies
+            # Since this runs in a loop, we might need access to current context
+            # For now, we'll try to get it via registry with default managers
+            # Ideally, this should use AgentFactory, but we don't have easy access here
+            # So we use the registry's direct instantiation
+            from database import SessionLocal
+            from llm.llm_manager import llm_manager
+            
+            db = SessionLocal()
+            try:
+                return AgentRegistry.get_agent_full(
+                    agent_name=agent_name,
+                    llm_manager=llm_manager,
+                    db_session=db
+                )
+            except Exception as e:
+                print(f"Failed to instantiate {agent_name}: {e}")
+                return None
+            finally:
+                # Note: We can't close DB here if the agent needs it open
+                # But typically agents use their own session or we pass one
+                pass
         except Exception:
             return None
     
@@ -271,12 +289,17 @@ Provide an improved version that addresses all the feedback. Keep the same forma
         })
 
 
-def add_qa_checkpoints(workflow: Dict[str, Any]) -> Dict[str, Any]:
+def add_qa_checkpoints_v2(workflow: Dict[str, Any]) -> Dict[str, Any]:
     """
     Add QA checkpoints to a workflow.
     
     Adds QA review after each phase and at the end.
     """
+    print("!!! DEBUG: add_qa_checkpoints_v2 RUNNING (Renamed Version) !!!")
+    if workflow.get("qa_checkpoints_added"):
+        print("!!! DEBUG: Skipping QA - already added !!!")
+        return workflow
+
     phases = workflow.get("phases", [])
     
     for phase in phases:
@@ -284,9 +307,20 @@ def add_qa_checkpoints(workflow: Dict[str, Any]) -> Dict[str, Any]:
         
         # Add QA task at end of each phase
         if tasks:
+            # Correctly identify last task to build valid dependency
             last_task_id = tasks[-1].get("task_id", "")
+            
+            # Use standard numbering for QA tasks instead of .qa suffix which confuses sorting
+            # If last task is 1.2, make QA task 1.3
+            try:
+                phase_num = int(phase.get("phase_number", 1))
+                next_task_num = len(tasks) + 1
+                qa_task_id = f"{phase_num}.{next_task_num}"
+            except:
+                qa_task_id = f"{phase.get('phase_number')}.qa"
+
             qa_task = {
-                "task_id": f"{phase.get('phase_number')}.qa",
+                "task_id": qa_task_id,
                 "description": f"QA review of Phase {phase.get('phase_number')} outputs",
                 "assigned_agent": "QAAgent",
                 "estimated_time": "5 minutes",
@@ -297,16 +331,19 @@ def add_qa_checkpoints(workflow: Dict[str, Any]) -> Dict[str, Any]:
     
     # Add final QA phase
     if phases:
+        final_phase_num = len(phases) + 1
         final_qa_phase = {
-            "phase_number": len(phases) + 1,
+            "phase_number": final_phase_num,
             "phase_name": "Final Quality Assurance",
+            "execution_type": "sequential", # FORCE sequential
             "tasks": [{
-                "task_id": f"{len(phases) + 1}.1",
+                "task_id": f"{final_phase_num}.1",
                 "description": "Final comprehensive QA review of all outputs",
                 "assigned_agent": "QAAgent",
                 "estimated_time": "10 minutes",
                 "estimated_minutes": 10,
-                "dependencies": [f"{len(phases)}.qa"] if phases else []
+                # Dependency should be the last task of the last phase
+                "dependencies": [] 
             }]
         }
         phases.append(final_qa_phase)

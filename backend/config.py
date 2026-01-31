@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # Frontend URL (for CORS)
     frontend_url: str = "http://localhost:5173"
     
+    # Storage Configuration
+    upload_dir: str = "./storage/uploads"
+    max_file_size: int = 10485760  # 10MB
+    allowed_extensions: str = "csv,txt,pdf,png,jpg,jpeg,xlsx,json"
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

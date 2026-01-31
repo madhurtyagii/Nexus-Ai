@@ -24,6 +24,7 @@ class User(Base):
     # Relationships
     tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")
     projects = relationship("Project", back_populates="user", cascade="all, delete-orphan")
+    files = relationship("File", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"

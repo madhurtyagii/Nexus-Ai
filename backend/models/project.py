@@ -57,6 +57,11 @@ class Project(Base):
     started_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     
+    # Metadata & Organization
+    is_archived = Column(Integer, default=0) # 0=active, 1=archived
+    is_pinned = Column(Integer, default=0) # 0=normal, 1=pinned
+    tags = Column(JSON, nullable=True, default=[])
+
     # Final output/summary
     output = Column(Text, nullable=True)
     summary = Column(Text, nullable=True)
@@ -64,6 +69,7 @@ class Project(Base):
     # Relationships
     user = relationship("User", back_populates="projects")
     tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
+    files = relationship("File", back_populates="project")
     
     def __repr__(self):
         return f"<Project(id={self.id}, name='{self.name}', status='{self.status}')>"
@@ -91,6 +97,9 @@ class Project(Base):
             "current_phase": self.current_phase,
             "estimated_minutes": self.estimated_minutes,
             "risk_level": self.risk_level,
+            "is_archived": bool(self.is_archived),
+            "is_pinned": bool(self.is_pinned),
+            "tags": self.tags or [],
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None

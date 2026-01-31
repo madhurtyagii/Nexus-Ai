@@ -1,27 +1,39 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import toast from 'react-hot-toast';
+import api, { projectsAPI, workflowTemplatesAPI } from '../services/api';
 import './Projects.css';
 
 function Projects() {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showArchived, setShowArchived] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetchProjects();
-    }, [filter]);
+        const delayDebounceFn = setTimeout(() => {
+            fetchProjects();
+        }, searchTerm ? 500 : 0);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [filter, searchTerm, showArchived]);
 
     const fetchProjects = async () => {
         setLoading(true);
         try {
-            const params = filter !== 'all' ? { status_filter: filter } : {};
-            const response = await api.get('/projects', { params });
+            const params = {
+                status: filter !== 'all' ? filter : undefined,
+                q: searchTerm || undefined,
+                is_archived: showArchived
+            };
+            const response = await projectsAPI.getProjects(params);
             setProjects(response.data);
         } catch (error) {
             console.error('Error fetching projects:', error);
+            toast.error('Failed to load projects');
         } finally {
             setLoading(false);
         }
@@ -61,13 +73,71 @@ function Projects() {
                     <h1>📋 Projects</h1>
                     <p>Manage complex multi-phase AI projects</p>
                 </div>
-                <button
-                    className="create-project-btn"
-                    onClick={() => setShowCreateModal(true)}
-                >
-                    <span>+</span> New Project
-                </button>
+                <div className="header-actions">
+                    <div className="search-box">
+                        <input
+                            type="text"
+                            placeholder="Search projects..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <span className="search-icon">🔍</span>
+                    </div>
+                    <button
+                        className={`archive-toggle-btn ${showArchived ? 'active' : ''}`}
+                        onClick={() => setShowArchived(!showArchived)}
+                        title={showArchived ? "Back to active projects" : "View archived projects"}
+                    >
+                        {showArchived ? '📁 Active' : '📜 Archived'}
+                    </button>
+                    <button
+                        className="create-project-btn"
+                        onClick={() => setShowCreateModal(true)}
+                    >
+                        <span>+</span> New Project
+                    </button>
+                </div>
             </div>
+
+            {/* Dashboard Stats */}
+            {!loading && projects.length > 0 && !showArchived && (
+                <div className="stats-dashboard">
+                    <div className="stat-card">
+                        <span className="stat-icon">📁</span>
+                        <div className="stat-info">
+                            <span className="stat-label">Total Projects</span>
+                            <span className="stat-count">{projects.length}</span>
+                        </div>
+                    </div>
+                    <div className="stat-card">
+                        <span className="stat-icon pulse">🚀</span>
+                        <div className="stat-info">
+                            <span className="stat-label">Active</span>
+                            <span className="stat-count">
+                                {projects.filter(p => p.status === 'in_progress').length}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="stat-card">
+                        <span className="stat-icon">⏳</span>
+                        <div className="stat-info">
+                            <span className="stat-label">Planning</span>
+                            <span className="stat-count">
+                                {projects.filter(p => p.status === 'planning').length}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="stat-card">
+                        <span className="stat-icon">✅</span>
+                        <div className="stat-info">
+                            <span className="stat-label">Completed</span>
+                            <span className="stat-count">
+                                {projects.filter(p => p.status === 'completed').length}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Filters */}
             <div className="projects-filters">
@@ -91,8 +161,8 @@ function Projects() {
             ) : projects.length === 0 ? (
                 <div className="no-projects">
                     <div className="no-projects-icon">📁</div>
-                    <h3>No projects yet</h3>
-                    <p>Create your first AI-powered project to get started</p>
+                    <h3>No projects found</h3>
+                    <p>{searchTerm ? "Try a different search term" : "Create your first AI-powered project to get started"}</p>
                     <button
                         className="create-first-btn"
                         onClick={() => setShowCreateModal(true)}
@@ -105,32 +175,60 @@ function Projects() {
                     {projects.map((project) => (
                         <div
                             key={project.id}
-                            className="project-card"
+                            className={`project-card ${project.is_archived ? 'archived' : ''} ${project.is_pinned ? 'pinned' : ''}`}
                             onClick={() => navigate(`/projects/${project.id}`)}
                         >
                             <div className="project-card-header">
-                                <h3>{project.name}</h3>
-                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <div className="project-title-area">
+                                    <button
+                                        className={`pin-btn ${project.is_pinned ? 'active' : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            projectsAPI.pinProject(project.id, !project.is_pinned)
+                                                .then(() => {
+                                                    fetchProjects();
+                                                    toast.success(project.is_pinned ? 'Project unpinned' : 'Project pinned');
+                                                });
+                                        }}
+                                        title={project.is_pinned ? "Unpin project" : "Pin project"}
+                                    >
+                                        📌
+                                    </button>
+                                    <h3>{project.name}</h3>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                                     <span className={`status-badge ${getStatusColor(project.status)}`}>
                                         {project.status?.replace('_', ' ')}
                                     </span>
                                     <button
+                                        className="card-action-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            projectsAPI.archiveProject(project.id, !project.is_archived)
+                                                .then(() => {
+                                                    fetchProjects();
+                                                    toast.success(project.is_archived ? 'Project unarchived' : 'Project archived');
+                                                });
+                                        }}
+                                        title={project.is_archived ? "Unarchive" : "Archive"}
+                                    >
+                                        {project.is_archived ? '📤' : '📥'}
+                                    </button>
+                                    <button
+                                        className="card-action-btn delete"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             if (window.confirm('Are you sure you want to delete this project?')) {
-                                                api.delete(`/projects/${project.id}`)
-                                                    .then(() => fetchProjects())
-                                                    .catch(error => console.error('Error deleting project:', error));
+                                                projectsAPI.delete(project.id)
+                                                    .then(() => {
+                                                        fetchProjects();
+                                                        toast.success('Project deleted');
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error deleting project:', error);
+                                                        toast.error('Failed to delete project');
+                                                    });
                                             }
-                                        }}
-                                        style={{
-                                            background: 'none',
-                                            border: 'none',
-                                            color: '#ef4444',
-                                            cursor: 'pointer',
-                                            padding: '4px',
-                                            fontSize: '1.2rem',
-                                            lineHeight: 1
                                         }}
                                         title="Delete Project"
                                     >
@@ -199,8 +297,31 @@ function CreateProjectModal({ onClose, onCreated }) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [complexity, setComplexity] = useState('auto');
+    const [creationMethod, setCreationMethod] = useState('template'); // 'template' or 'ai'
+    const [templates, setTemplates] = useState([]);
+    const [selectedTemplateId, setSelectedTemplateId] = useState(null);
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchTemplates();
+    }, []);
+
+    const fetchTemplates = async () => {
+        setLoadingTemplates(true);
+        try {
+            const response = await workflowTemplatesAPI.list();
+            setTemplates(response.data);
+            if (response.data.length > 0) {
+                setSelectedTemplateId(response.data[0].id);
+            }
+        } catch (err) {
+            console.error('Error fetching templates:', err);
+        } finally {
+            setLoadingTemplates(false);
+        }
+    };
 
     const handleCreate = async (e) => {
         e.preventDefault();
@@ -210,12 +331,20 @@ function CreateProjectModal({ onClose, onCreated }) {
         setError(null);
 
         try {
-            const response = await api.post('/projects/', {
+            const payload = {
                 name: name.trim(),
-                description: description.trim() || null,
-                complexity
-            });
+            };
+
+            if (creationMethod === 'ai') {
+                payload.description = description.trim() || null;
+                payload.complexity = complexity;
+            } else {
+                payload.template_id = selectedTemplateId;
+            }
+
+            const response = await api.post('/projects/', payload);
             onCreated(response.data);
+            toast.success('Project created successfully');
         } catch (err) {
             setError(err.response?.data?.detail || 'Failed to create project');
         } finally {
@@ -232,6 +361,23 @@ function CreateProjectModal({ onClose, onCreated }) {
                 </div>
 
                 <form onSubmit={handleCreate}>
+                    <div className="form-tabs">
+                        <button
+                            type="button"
+                            className={`tab-btn ${creationMethod === 'template' ? 'active' : ''}`}
+                            onClick={() => setCreationMethod('template')}
+                        >
+                            📋 Use Template
+                        </button>
+                        <button
+                            type="button"
+                            className={`tab-btn ${creationMethod === 'ai' ? 'active' : ''}`}
+                            onClick={() => setCreationMethod('ai')}
+                        >
+                            🤖 AI Planning
+                        </button>
+                    </div>
+
                     <div className="form-group">
                         <label htmlFor="name">Project Name</label>
                         <input
@@ -244,41 +390,70 @@ function CreateProjectModal({ onClose, onCreated }) {
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="description">Description</label>
-                        <textarea
-                            id="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Describe what you want to build. The AI will automatically plan the project..."
-                            rows={4}
-                        />
-                        <span className="form-hint">
-                            Be descriptive! The ManagerAgent will create a detailed plan based on this.
-                        </span>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Complexity</label>
-                        <div className="complexity-options">
-                            {[
-                                { value: 'auto', label: '🤖 Auto-detect', desc: 'Let AI determine' },
-                                { value: 'low', label: '🟢 Simple', desc: 'Quick tasks' },
-                                { value: 'medium', label: '🟡 Medium', desc: 'Multi-step project' },
-                                { value: 'high', label: '🔴 Complex', desc: 'Full workflow' }
-                            ].map((opt) => (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    className={`complexity-btn ${complexity === opt.value ? 'active' : ''}`}
-                                    onClick={() => setComplexity(opt.value)}
-                                >
-                                    <span className="complexity-label">{opt.label}</span>
-                                    <span className="complexity-desc">{opt.desc}</span>
-                                </button>
-                            ))}
+                    {creationMethod === 'template' && (
+                        <div className="form-group">
+                            <label>Select Template</label>
+                            {loadingTemplates ? (
+                                <p className="loading-text">Loading templates...</p>
+                            ) : (
+                                <div className="templates-grid">
+                                    {templates.map((template) => (
+                                        <div
+                                            key={template.id}
+                                            className={`template-card-mini ${selectedTemplateId === template.id ? 'active' : ''}`}
+                                            onClick={() => setSelectedTemplateId(template.id)}
+                                        >
+                                            <div className="template-icon">{template.icon || '📁'}</div>
+                                            <div className="template-info">
+                                                <div className="template-name">{template.name}</div>
+                                                <div className="template-category">{template.category}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    </div>
+                    )}
+
+                    {creationMethod === 'ai' && (
+                        <div className="form-group">
+                            <label htmlFor="description">Description (for AI Planning)</label>
+                            <textarea
+                                id="description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Describe what you want to build. The AI will automatically plan the project..."
+                                rows={4}
+                            />
+                            <span className="form-hint">
+                                Be descriptive! The ManagerAgent will create a detailed plan based on this.
+                            </span>
+                        </div>
+                    )}
+
+                    {creationMethod === 'ai' && (
+                        <div className="form-group">
+                            <label>Complexity</label>
+                            <div className="complexity-options">
+                                {[
+                                    { value: 'auto', label: '🤖 Auto-detect', desc: 'Let AI determine' },
+                                    { value: 'low', label: '🟢 Simple', desc: 'Quick tasks' },
+                                    { value: 'medium', label: '🟡 Medium', desc: 'Multi-step project' },
+                                    { value: 'high', label: '🔴 Complex', desc: 'Full workflow' }
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        className={`complexity-btn ${complexity === opt.value ? 'active' : ''}`}
+                                        onClick={() => setComplexity(opt.value)}
+                                    >
+                                        <span className="complexity-label">{opt.label}</span>
+                                        <span className="complexity-desc">{opt.desc}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {error && <div className="error-message">{error}</div>}
 
@@ -289,15 +464,15 @@ function CreateProjectModal({ onClose, onCreated }) {
                         <button
                             type="submit"
                             className="btn-primary"
-                            disabled={creating || !name.trim()}
+                            disabled={creating || !name.trim() || (creationMethod === 'template' && !selectedTemplateId)}
                         >
                             {creating ? (
                                 <>
                                     <span className="mini-spinner"></span>
-                                    Planning...
+                                    {creationMethod === 'ai' ? 'Planning...' : 'Creating...'}
                                 </>
                             ) : (
-                                'Create & Plan'
+                                creationMethod === 'ai' ? 'Create & Plan' : 'Create Project'
                             )}
                         </button>
                     </div>

@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
-import { ProjectTimeline, PhaseAccordion } from '../components/projects';
+import toast from 'react-hot-toast';
+import api, { projectsAPI, exportsAPI } from '../services/api';
+import { ProjectTimeline, PhaseAccordion, ActivityFeed } from '../components/projects';
+import FileUpload from '../components/files/FileUpload';
+import FileManager from '../components/files/FileManager';
 import './ProjectDetail.css';
 
 function ProjectDetail() {
@@ -12,6 +15,9 @@ function ProjectDetail() {
     const [loading, setLoading] = useState(true);
     const [executing, setExecuting] = useState(false);
     const [viewMode, setViewMode] = useState('accordion'); // 'accordion' or 'timeline'
+    const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0);
+    const [showExportOptions, setShowExportOptions] = useState(false);
+    const [exporting, setExporting] = useState(false);
 
     const [error, setError] = useState(null);
 
@@ -60,11 +66,37 @@ function ProjectDetail() {
             });
             // Refresh project
             await fetchProject();
+            toast.success('Execution started');
         } catch (error) {
             console.error('Error executing project:', error);
-            alert(error.response?.data?.detail || 'Failed to start execution');
+            toast.error(error.response?.data?.detail || 'Failed to start execution');
         } finally {
             setExecuting(false);
+        }
+    };
+
+    const handleExport = async (format) => {
+        setExporting(true);
+        setShowExportOptions(false);
+        try {
+            const response = await exportsAPI.exportProject(id, format);
+            const blob = new Blob([response.data], {
+                type: response.headers['content-type']
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            const extension = format === 'markdown' ? 'md' : format;
+            link.setAttribute('download', `${project?.name.replace(/\s+/g, '_')}_export.${extension}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Export failed:', error);
+            toast.error('Failed to export project');
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -72,9 +104,67 @@ function ProjectDetail() {
         try {
             const response = await api.post(`/projects/${id}/replan`);
             setProject(response.data.project);
+            toast.success('Project plan regenerated');
         } catch (error) {
             console.error('Error replanning:', error);
-            alert(error.response?.data?.detail || 'Failed to replan');
+            toast.error(error.response?.data?.detail || 'Failed to replan');
+        }
+    };
+
+    const handleDuplicate = async () => {
+        try {
+            const response = await projectsAPI.duplicateProject(id);
+            toast.success('Project duplicated');
+            navigate(`/projects/${response.data.id}`);
+        } catch (error) {
+            console.error('Error duplicating:', error);
+            toast.error('Failed to duplicate project');
+        }
+    };
+
+    const handleArchive = async () => {
+        try {
+            const response = await projectsAPI.archiveProject(id, !project.is_archived);
+            setProject(response.data);
+            toast.success(response.data.is_archived ? 'Project archived' : 'Project unarchived');
+        } catch (error) {
+            console.error('Error archiving:', error);
+            toast.error('Failed to update archive status');
+        }
+    };
+
+    const handlePin = async () => {
+        try {
+            const response = await projectsAPI.pinProject(id, !project.is_pinned);
+            setProject(response.data);
+            toast.success(response.data.is_pinned ? 'Project pinned' : 'Project unpinned');
+        } catch (error) {
+            console.error('Error pinning:', error);
+            toast.error('Failed to update pin status');
+        }
+    };
+
+    const handleAddTag = async (tagName) => {
+        if (!tagName.trim()) return;
+        const newTags = [...(project.tags || []), tagName.trim()];
+        try {
+            const response = await projectsAPI.updateProjectTags(id, newTags);
+            setProject(response.data);
+            toast.success('Tag added');
+        } catch (error) {
+            console.error('Error adding tag:', error);
+            toast.error('Failed to add tag');
+        }
+    };
+
+    const handleRemoveTag = async (tagToRemove) => {
+        const newTags = (project.tags || []).filter(t => t !== tagToRemove);
+        try {
+            const response = await projectsAPI.updateProjectTags(id, newTags);
+            setProject(response.data);
+            toast.success('Tag removed');
+        } catch (error) {
+            console.error('Error removing tag:', error);
         }
     };
 
@@ -106,13 +196,49 @@ function ProjectDetail() {
                     ← Back
                 </button>
                 <div className="header-content">
-                    <h1>{project.name}</h1>
+                    <div className="title-area">
+                        <button
+                            className={`pin-btn ${project.is_pinned ? 'active' : ''}`}
+                            onClick={handlePin}
+                            title={project.is_pinned ? "Unpin project" : "Pin project"}
+                        >
+                            📌
+                        </button>
+                        <h1>{project.name}</h1>
+                    </div>
                     <span className={`status-badge status-${project.status}`}>
                         {project.status?.replace('_', ' ')}
                     </span>
+                    {project.is_archived && <span className="archived-badge">Archived</span>}
                 </div>
                 <div className="header-actions">
-                    {project.status === 'planning' && (
+                    <button className="btn-secondary" onClick={handleDuplicate} title="Duplicate Project">
+                        👯 Duplicate
+                    </button>
+                    <button
+                        className={`btn-secondary ${project.is_archived ? 'active' : ''}`}
+                        onClick={handleArchive}
+                    >
+                        {project.is_archived ? '📤 Unarchive' : '📥 Archive'}
+                    </button>
+                    <div className="export-dropdown-container">
+                        <button
+                            className="btn-secondary btn-export"
+                            onClick={() => setShowExportOptions(!showExportOptions)}
+                            disabled={exporting}
+                        >
+                            {exporting ? '⏳' : '📤'} Export
+                        </button>
+                        {showExportOptions && (
+                            <div className="export-menu">
+                                <button onClick={() => handleExport('pdf')}>📄 PDF Report</button>
+                                <button onClick={() => handleExport('docx')}>📝 Word Document</button>
+                                <button onClick={() => handleExport('markdown')}>⬇️ Markdown</button>
+                                <button onClick={() => handleExport('json')}>⚙️ Raw JSON</button>
+                            </div>
+                        )}
+                    </div>
+                    {['planning', 'failed', 'completed'].includes(project.status) && (
                         <>
                             <button className="btn-secondary" onClick={handleReplan}>
                                 🔄 Replan
@@ -158,6 +284,30 @@ function ProjectDetail() {
                 <div className="info-card">
                     <h3>📋 Overview</h3>
                     <p className="description">{project.description || 'No description'}</p>
+
+                    <div className="tags-section">
+                        <div className="tags-list">
+                            {(project.tags || []).map((tag, i) => (
+                                <span key={i} className="tag-badge">
+                                    {tag}
+                                    <button onClick={() => handleRemoveTag(tag)}>×</button>
+                                </span>
+                            ))}
+                            <div className="add-tag-form">
+                                <input
+                                    type="text"
+                                    placeholder="Add tag..."
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleAddTag(e.target.value);
+                                            e.target.value = '';
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="info-stats">
                         <div className="stat">
                             <span className="stat-value">{project.total_phases || 0}</span>
@@ -186,6 +336,28 @@ function ProjectDetail() {
                         </div>
                     </div>
                 )}
+            </div>
+
+            {/* File Management */}
+            <div className="project-files-section">
+                <div className="section-header">
+                    <h2>📁 Files</h2>
+                    <FileUpload
+                        projectId={id}
+                        onUploadSuccess={() => setFileRefreshTrigger(prev => prev + 1)}
+                    />
+                </div>
+                <FileManager projectId={id} refreshTrigger={fileRefreshTrigger} />
+            </div>
+
+            {/* Activity Feed */}
+            <div className="project-activity-section">
+                <div className="section-header">
+                    <h2>🕒 Recent Activity</h2>
+                </div>
+                <div className="activity-card">
+                    <ActivityFeed project={project} tasks={project.tasks || []} />
+                </div>
             </div>
 
             {/* Project Plan */}

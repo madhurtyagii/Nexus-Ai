@@ -41,17 +41,29 @@ Rate on a 0-100 scale where:
 - 75-90: Good quality, minor improvements possible
 - 90-100: Excellent, ready for delivery"""
 
-    def __init__(self):
+    def __init__(
+        self,
+        llm_manager=None,
+        db_session=None,
+        tools: List[Any] = None
+    ):
         super().__init__(
             name="QAAgent",
             role="Quality assurance and validation",
-            system_prompt=self.SYSTEM_PROMPT
+            system_prompt=self.SYSTEM_PROMPT,
+            llm_manager=llm_manager,
+            db_session=db_session,
+            tools=tools or []
         )
         
         # Attach tools
         self.validation_tool = ValidationTool()
-        self.quality_checker = QualityCheckerTool()
-        self.tools = [self.validation_tool, self.quality_checker]
+        self.quality_checker = QualityCheckerTool() 
+        # Add internal tools to the list if not already present
+        if tools:
+            self.tools.extend([self.validation_tool, self.quality_checker])
+        else:
+            self.tools = [self.validation_tool, self.quality_checker]
         
         # Configuration
         self.quality_threshold = 70  # Minimum score to pass

@@ -60,11 +60,47 @@ export const agentsAPI = {
 
 // Projects API
 export const projectsAPI = {
-    create: (data) => api.post('/projects/', data),
-    list: (params) => api.get('/projects/', { params }),
-    get: (id) => api.get(`/projects/${id}`),
-    update: (id, data) => api.put(`/projects/${id}`, data),
+    getProjects: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.status) queryParams.append('status_filter', params.status);
+        if (params.q) queryParams.append('q', params.q);
+        if (params.tags) queryParams.append('tags', params.tags);
+        if (params.is_archived) queryParams.append('is_archived', params.is_archived);
+
+        return api.get(`/projects/?${queryParams.toString()}`);
+    },
+    getProject: (id) => api.get(`/projects/${id}`),
+    createProject: (data) => api.post('/projects/', data),
+    updateProject: (id, data) => api.patch(`/projects/${id}`, data),
+    archiveProject: (id, archive = true) => api.patch(`/projects/${id}/archive?archive=${archive}`),
+    pinProject: (id, pin = true) => api.patch(`/projects/${id}/pin?pin=${pin}`),
+    updateProjectTags: (id, tags) => api.patch(`/projects/${id}/tags`, tags),
+    duplicateProject: (id) => api.post(`/projects/${id}/duplicate`),
+    executeProject: (id, data) => api.post(`/projects/${id}/execute`, data),
     delete: (id) => api.delete(`/projects/${id}`),
+};
+
+// Files API
+export const filesAPI = {
+    upload: (formData, params) => api.post('/files/upload', formData, {
+        params,
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    list: (params) => api.get('/files/', { params }),
+    getMetadata: (id) => api.get(`/files/${id}`),
+    download: (id) => api.get(`/files/${id}/download`, { responseType: 'blob' }),
+    delete: (id) => api.delete(`/files/${id}`),
+};
+
+// Workflow Templates API
+export const workflowTemplatesAPI = {
+    list: (params) => api.get('/workflow-templates/', { params }),
+    get: (id) => api.get(`/workflow-templates/${id}`),
+};
+
+// Exports API
+export const exportsAPI = {
+    exportProject: (id, format) => api.get(`/exports/project/${id}?format=${format}`, { responseType: 'blob' }),
 };
 
 export default api;

@@ -41,6 +41,9 @@ from routers.projects import router as projects_router
 from routers.admin import router as admin_router
 from routers.memory import router as memory_router
 from routers.feedback import router as feedback_router
+from routers.files import router as files_router
+from routers.workflow_templates import router as workflow_templates_router
+from routers.exports import router as exports_router
 
 # Import messaging
 from messaging import ws_manager
@@ -165,6 +168,9 @@ app.include_router(projects_router)
 app.include_router(admin_router)
 app.include_router(memory_router)
 app.include_router(feedback_router)
+app.include_router(files_router)
+app.include_router(workflow_templates_router)
+app.include_router(exports_router)
 
 
 @app.get("/", tags=["Root"])

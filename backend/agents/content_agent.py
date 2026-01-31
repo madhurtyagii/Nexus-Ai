@@ -83,6 +83,16 @@ Always:
             )
             content_type = input_data.get("content_type", "").lower()
             tone = input_data.get("tone", "professional")
+            file_id = input_data.get("file_id")
+            context = input_data.get("context", "")
+
+            # If file_id is provided, resolve it
+            if file_id and not context:
+                file_result = self._read_file_content(file_id)
+                if file_result.get("success"):
+                    context = file_result.get("content") or str(file_result.get("data", ""))
+                    input_data["context"] = context
+                    self.log_action("file_loaded_as_context", {"file_id": file_id})
             
             if not topic:
                 return self.format_output(None, status="error", error="No topic provided")

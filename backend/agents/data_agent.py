@@ -74,6 +74,16 @@ Always:
                 input_data.get("original_prompt", "")
             )
             data = input_data.get("data")
+            file_id = input_data.get("file_id")
+            
+            # If file_id is provided, resolve it
+            if file_id and not data:
+                file_result = self._read_file_content(file_id)
+                if file_result.get("success"):
+                    data = file_result.get("data") or file_result.get("content")
+                    self.log_action("file_loaded", {"file_id": file_id})
+                else:
+                    self.log_action("file_load_error", {"file_id": file_id, "error": file_result.get("error")})
             
             if not task:
                 return self.format_output(None, status="error", error="No analysis task provided")

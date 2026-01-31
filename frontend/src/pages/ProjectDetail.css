@@ -59,6 +59,42 @@
     color: var(--text-primary, #fff);
 }
 
+.title-area {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.title-area .pin-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.25rem;
+    opacity: 0.3;
+    transition: all 0.2s;
+    padding: 0;
+    margin-top: -4px;
+}
+
+.title-area .pin-btn:hover,
+.title-area .pin-btn.active {
+    opacity: 1;
+}
+
+.title-area .pin-btn.active {
+    transform: rotate(-15deg);
+}
+
+.archived-badge {
+    padding: 0.2rem 0.6rem;
+    background: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
 .status-badge {
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -195,7 +231,64 @@
 .description {
     color: var(--text-secondary, #a0a0a0);
     line-height: 1.6;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.tags-section {
+    margin-bottom: 2rem;
+}
+
+.tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.tag-badge {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    background: rgba(102, 126, 234, 0.15);
+    color: #93c5fd;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.tag-badge button {
+    background: none;
+    border: none;
+    color: #93c5fd;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 0 2px 0;
+    opacity: 0.6;
+}
+
+.tag-badge button:hover {
+    opacity: 1;
+    color: #f87171;
+}
+
+.add-tag-form input {
+    background: none;
+    border: 1px dashed var(--border-color, #333);
+    border-radius: 6px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.8rem;
+    color: var(--text-primary, #fff);
+    width: 100px;
+    transition: all 0.2s;
+}
+
+.add-tag-form input:focus {
+    outline: none;
+    border-color: var(--primary, #667eea);
+    width: 150px;
+    border-style: solid;
 }
 
 .info-stats {
@@ -402,4 +495,97 @@
     color: var(--text-secondary, #a0a0a0);
     font-size: 0.9rem;
     line-height: 1.6;
+}
+
+.project-files-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+.project-activity-section {
+    margin-top: 2rem;
+}
+
+.activity-card {
+    background: var(--bg-secondary, #1e1e2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+/* Export Dropdown */
+.export-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.export-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: var(--bg-primary, #121218);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    min-width: 180px;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    animation: dropdownIn 0.2s ease;
+}
+
+@keyframes dropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.export-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary, #a0a0a0);
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.export-menu button:hover {
+    background: var(--bg-secondary, #1e1e2e);
+    color: var(--text-primary, #fff);
+}
+
+.btn-export {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.project-files-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.project-files-section h2 {
+    margin-bottom: 0;
 }

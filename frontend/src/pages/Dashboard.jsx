@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { agentsAPI, tasksAPI } from '../services/api';
+import { agentsAPI, tasksAPI, projectsAPI } from '../services/api';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
 import toast from 'react-hot-toast';
@@ -11,15 +11,20 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [agents, setAgents] = useState([]);
     const [recentTasks, setRecentTasks] = useState([]);
+    const [pinnedProjects, setPinnedProjects] = useState([]);
     const [prompt, setPrompt] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         loadAgents();
         loadRecentTasks();
+        loadPinnedProjects();
 
         // Auto-refresh tasks every 5 seconds
-        const interval = setInterval(loadRecentTasks, 5000);
+        const interval = setInterval(() => {
+            loadRecentTasks();
+            loadPinnedProjects();
+        }, 5000);
         return () => clearInterval(interval);
     }, []);
 
@@ -34,10 +39,19 @@ export default function Dashboard() {
 
     const loadRecentTasks = async () => {
         try {
-            const response = await tasksAPI.list({ limit: 10 });
+            const response = await tasksAPI.list({ limit: 5 });
             setRecentTasks(response.data);
         } catch (error) {
             console.error('Failed to load tasks:', error);
+        }
+    };
+
+    const loadPinnedProjects = async () => {
+        try {
+            const response = await projectsAPI.getProjects({ is_pinned: true });
+            setPinnedProjects(response.data);
+        } catch (error) {
+            console.error('Failed to load pinned projects:', error);
         }
     };
 
@@ -119,27 +133,58 @@ export default function Dashboard() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Available Agents */}
+                        {/* Pinned Projects */}
                         <div className="card">
-                            <h2 className="text-xl font-semibold text-white mb-4">Available Agents</h2>
-                            <div className="space-y-3">
-                                {agents.map((agent) => (
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-semibold text-white">📌 Pinned Projects</h2>
+                                <button
+                                    onClick={() => navigate('/projects')}
+                                    className="text-sm text-primary-400 hover:text-primary-300"
+                                >
+                                    View All
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3">
+                                {pinnedProjects.map((project) => (
                                     <div
-                                        key={agent.id}
-                                        className="flex items-center gap-4 p-3 rounded-lg bg-dark-700/50 hover:bg-dark-700 transition-colors"
+                                        key={project.id}
+                                        onClick={() => navigate(`/projects/${project.id}`)}
+                                        className="p-4 rounded-xl bg-dark-700/50 border border-dark-600 hover:border-primary-500/50 transition-all cursor-pointer group relative overflow-hidden"
                                     >
-                                        <div className="text-2xl">
-                                            {agentEmojis[agent.name] || '🤖'}
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors">
+                                                {project.name}
+                                            </h3>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400 border border-primary-500/20`}>
+                                                {project.status.replace('_', ' ')}
+                                            </span>
                                         </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-medium text-white">{agent.name}</h3>
-                                            <p className="text-sm text-dark-400">{agent.role}</p>
+                                        <p className="text-xs text-dark-400 line-clamp-1 mb-3">
+                                            {project.description || 'No description'}
+                                        </p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex-1 h-1 bg-dark-600 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-primary-500 to-purple-500"
+                                                    style={{ width: `${project.progress}%` }}
+                                                />
+                                            </div>
+                                            <span className="text-[10px] text-dark-400 font-medium">
+                                                {project.progress}%
+                                            </span>
                                         </div>
-                                        <div className={`w-2 h-2 rounded-full ${agent.is_active ? 'bg-green-400' : 'bg-dark-500'}`} />
                                     </div>
                                 ))}
-                                {agents.length === 0 && (
-                                    <p className="text-dark-400 text-center py-4">Loading agents...</p>
+                                {pinnedProjects.length === 0 && (
+                                    <div className="text-center py-6 border-2 border-dashed border-dark-700 rounded-xl">
+                                        <p className="text-dark-500 text-sm">No pinned projects yet</p>
+                                        <button
+                                            onClick={() => navigate('/projects')}
+                                            className="mt-2 text-xs text-primary-400 hover:underline"
+                                        >
+                                            Go to Projects
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>

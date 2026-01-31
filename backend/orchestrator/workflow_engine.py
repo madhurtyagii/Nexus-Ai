@@ -14,7 +14,7 @@ from database import SessionLocal
 from models.task import Task, Subtask, TaskStatus
 from agents.agent_registry import AgentRegistry
 from llm.llm_manager import llm_manager
-from websocket_manager import emit_task_event_sync, emit_agent_progress_sync, WebSocketEventType
+from messaging import emit_task_event_sync, emit_agent_progress_sync, WebSocketEventType
 
 
 class WorkflowEngine:
@@ -118,13 +118,16 @@ class WorkflowEngine:
                         results["phase_results"][-1] = phase_result
                 
                 # Emit progress
+                # Calculate simple progress based on phase completion for now
+                progress_pct = (results["phases_completed"] / len(phases)) * 100
+                
                 emit_task_event_sync(
                     task_id=task_id,
                     event_type=WebSocketEventType.TASK_PROGRESS,
                     data={
                         "workflow_id": workflow_id,
                         "phase": phase.get("phase_name"),
-                        "progress": (results["phases_completed"] / len(phases)) * 100
+                        "progress": progress_pct
                     }
                 )
             
@@ -229,8 +232,11 @@ class WorkflowEngine:
                 if not deps_satisfied:
                     results.append({
                         "task_id": task.get("task_id"),
+                        "description": task.get("description", ""),
+                        "agent": task.get("assigned_agent", "Unknown"),
                         "status": "skipped",
-                        "error": "Dependencies not satisfied"
+                        "error": "Dependencies not satisfied",
+                        "output": None
                     })
                     continue
                 
@@ -277,10 +283,14 @@ class WorkflowEngine:
             if not deps_satisfied:
                 results.append({
                     "task_id": task.get("task_id"),
+                    "description": task.get("description", ""),
+                    "agent": task.get("assigned_agent", "Unknown"),
                     "status": "skipped",
-                    "error": "Dependencies not satisfied"
+                    "error": "Dependencies not satisfied",
+                    "output": None
                 })
-                continue
+                # Stop on failure (sequential execution)
+                break
             
             # Execute task
             result = self._execute_task_with_agent(
@@ -325,6 +335,8 @@ class WorkflowEngine:
                 # For simplicity in this implementation, we create a new one
                 
                 input_data = {
+                    "task": task.get("description", ""),
+                    "prompt": task.get("description", ""),
                     "user_prompt": task.get("description", ""),
                     "task_description": task.get("description", ""),
                     "dependency_outputs": dependency_outputs,
@@ -332,6 +344,26 @@ class WorkflowEngine:
                     "workflow_task_id": task_id
                 }
                 
+                print(f"!!! DEBUG: input_data keys created: {list(input_data.keys())} !!!")
+                print(f"!!! DEBUG: dependency_outputs present: {bool(dependency_outputs)} !!!")
+                
+                # Special handling for QAAgent content injection
+                if agent_name == "QAAgent" and dependency_outputs:
+                    # Join all dependency outputs as content
+                    content_parts = []
+                    for dep_id, dep_out in dependency_outputs.items():
+                        if isinstance(dep_out, dict):
+                             # Try to extract actual content/code if structured
+                             if "code" in dep_out:
+                                 dep_out = dep_out.get("code")
+                             elif "output" in dep_out:
+                                 dep_out = dep_out.get("output")
+                             else:
+                                 dep_out = str(dep_out)
+                        content_parts.append(str(dep_out))
+                    input_data["content"] = "\n\n".join(content_parts)
+                    input_data["content_type"] = "general"
+
                 subtask = Subtask(
                     task_id=parent_task_id,
                     assigned_agent=agent_name,
@@ -459,7 +491,23 @@ class WorkflowEngine:
                 if task_result.get("status") == "completed":
                     output = task_result.get("output", "")
                     if isinstance(output, dict):
-                        output = output.get("output", str(output))
+                        # Handle CodeAgent structured output
+                        if "code" in output and "language" in output:
+                            lang = output.get("language", "")
+                            code = output.get("code", "")
+                            explanation = output.get("explanation", "")
+                            output = f"### Code ({lang})\n\n```{lang}\n{code}\n```\n\n**Explanation:** {explanation}"
+                        
+                        # Handle ContentAgent structured output
+                        elif "content" in output:
+                            output = output.get("content", "")
+                        elif "body" in output:
+                            output = output.get("body", "")
+                        
+                        # Fallback for other dicts
+                        else:
+                            output = output.get("output", str(output))
+                    
                     combined.append(str(output))
         
         return "\n".join(combined)

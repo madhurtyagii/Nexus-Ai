@@ -6,6 +6,7 @@ const navItems = [
     { path: '/agents', label: 'Agents', icon: '🤖' },
     { path: '/projects', label: 'Projects', icon: '📁' },
     { path: '/settings', label: 'Settings', icon: '⚙️' },
+    { path: '/help', label: 'Help', icon: '❓' },
 ];
 
 export default function Sidebar() {

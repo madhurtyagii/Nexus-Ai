@@ -4,6 +4,7 @@ Abstract base class for all AI agents
 """
 
 import time
+import os
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 from datetime import datetime
@@ -302,3 +303,39 @@ class BaseAgent(ABC):
             "duration_seconds": round(time.time() - self._start_time, 2),
             "tokens_used": self._tokens_used
         })
+
+    def _get_file_path(self, file_id: int) -> Optional[str]:
+        """Resolve file_id to physical path using the database."""
+        if not self.db:
+            return None
+        
+        from models.file import File
+        db_file = self.db.query(File).filter(File.id == file_id).first()
+        if db_file and os.path.exists(db_file.file_path):
+            return db_file.file_path
+        return None
+
+    def _read_file_content(self, file_id: int) -> Dict[str, Any]:
+        """Read file content using FileProcessorTool."""
+        file_path = self._get_file_path(file_id)
+        if not file_path:
+            return {"success": False, "error": "File not found"}
+        
+        tool = self._tool_map.get("FileProcessor")
+        if not tool:
+            # Fallback to simple text read if tool is missing
+            try:
+                with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+                    return {"success": True, "content": f.read()}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+        
+        # Determine action based on extension
+        ext = os.path.splitext(file_path)[1].lower().replace(".", "")
+        action = "read_text"
+        if ext == "csv": action = "read_csv"
+        elif ext == "pdf": action = "read_pdf"
+        elif ext in ["xlsx", "xls"]: action = "read_excel"
+        elif ext == "json": action = "read_json"
+        
+        return tool.execute(action=action, file_path=file_path)

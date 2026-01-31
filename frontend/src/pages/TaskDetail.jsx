@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Navbar from '../components/layout/Navbar';
 import { AgentActivityPanelPolling } from '../components/agents/AgentActivityPanel';
+import FileUpload from '../components/files/FileUpload';
+import FileManager from '../components/files/FileManager';
 
 /**
  * TaskDetail Page
@@ -16,6 +18,7 @@ export default function TaskDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isPolling, setIsPolling] = useState(false);
+    const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0);
 
     // Fetch task details
     const fetchTask = async () => {
@@ -283,6 +286,18 @@ export default function TaskDetail() {
                         />
                     </div>
                 )}
+
+                {/* File Management */}
+                <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-white">📁 Files</h2>
+                        <FileUpload
+                            taskId={taskId}
+                            onUploadSuccess={() => setFileRefreshTrigger(prev => prev + 1)}
+                        />
+                    </div>
+                    <FileManager taskId={taskId} refreshTrigger={fileRefreshTrigger} />
+                </div>
 
                 {/* Output */}
                 {task?.output && (

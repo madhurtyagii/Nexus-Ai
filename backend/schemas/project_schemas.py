@@ -23,6 +23,7 @@ class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, description="Project name")
     description: Optional[str] = Field(None, description="Project description")
     complexity: Optional[str] = Field(None, description="Complexity level: auto, low, medium, high")
+    template_id: Optional[int] = Field(None, description="Optional workflow template ID")
     
     class Config:
         json_schema_extra = {
@@ -39,6 +40,9 @@ class ProjectUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=255)
     description: Optional[str] = None
     status: Optional[ProjectStatus] = None
+    is_archived: Optional[bool] = None
+    is_pinned: Optional[bool] = None
+    tags: Optional[List[str]] = None
 
 
 class TaskSummary(BaseModel):
@@ -73,6 +77,9 @@ class ProjectResponse(BaseModel):
     current_phase: int
     estimated_minutes: Optional[int]
     risk_level: Optional[str]
+    is_archived: bool = False
+    is_pinned: bool = False
+    tags: List[str] = []
     created_at: datetime
     started_at: Optional[datetime]
     completed_at: Optional[datetime]
