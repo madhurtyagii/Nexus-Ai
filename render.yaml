@@ -68,3 +68,4 @@ services:
     name: nexus-ai-redis
     region: singapore
     plan: free
+    ipAllowList: [] # Allows all Render services to connect internally
