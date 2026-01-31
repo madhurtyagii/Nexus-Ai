@@ -1,4 +1,6 @@
+from __future__ import annotations
 """Nexus AI - Task Models.
+
 
 This module defines the Task and Subtask models, which track the execution 
 of user requests and their decomposition into specialized agent actions.
