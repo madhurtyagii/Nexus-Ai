@@ -1,16 +1,17 @@
 services:
-  # Backend API Service
+  # Unitary Web Service (Runs both API and Worker)
   - type: web
-    name: nexus-ai-backend
+    name: nexus-ai-app
     env: python
     region: singapore
+    plan: free
     buildCommand: |
       cd backend
       pip install -r requirements.txt
+      chmod +x start.sh
     startCommand: |
       cd backend
-      python migrate.py
-      gunicorn main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+      ./start.sh
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
@@ -18,10 +19,7 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: nexus-ai-redis
-          property: connectionString
+        sync: false # Get a free URL from Upstash.com
       - key: SECRET_KEY
         generateValue: true
       - key: ENV
@@ -36,36 +34,3 @@ services:
         value: 10485760
       - key: ALLOWED_EXTENSIONS
         value: csv,txt,pdf,png,jpg,jpeg,xlsx,json
-
-  # Background Worker Service (Agent Orchestration)
-  - type: worker
-    name: nexus-ai-worker
-    env: python
-    region: singapore
-    buildCommand: |
-      cd backend
-      pip install -r requirements.txt
-    startCommand: |
-      cd backend
-      python worker.py
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: nexus-ai-redis
-          property: connectionString
-      - key: GROQ_API_KEY
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
-
-  # Render Redis (Free for 90 days)
-  - type: redis
-    name: nexus-ai-redis
-    region: singapore
-    plan: free
-    ipAllowList: [] # Allows all Render services to connect internally
