@@ -33,9 +33,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Optional
-import jwt
 
 from database import engine, Base, get_db
+
 from config import get_settings
 from redis_client import ping_redis
 
