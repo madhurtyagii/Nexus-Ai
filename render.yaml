@@ -3,7 +3,7 @@ services:
   - type: web
     name: nexus-ai-backend
     env: python
-    region: oregon  # Change to your preferred region (oregon, frankfurt, singapore)
+    region: singapore
     buildCommand: |
       cd backend
       pip install -r requirements.txt
@@ -16,7 +16,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: DATABASE_URL
-        sync: false  # PASTE YOUR SUPABASE URL HERE IN RENDER DASHBOARD
+        sync: false
       - key: REDIS_URL
         fromService:
           type: redis
@@ -41,7 +41,7 @@ services:
   - type: worker
     name: nexus-ai-worker
     env: python
-    region: oregon
+    region: singapore
     buildCommand: |
       cd backend
       pip install -r requirements.txt
@@ -52,7 +52,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: DATABASE_URL
-        sync: false  # PASTE YOUR SUPABASE URL HERE
+        sync: false
       - key: REDIS_URL
         fromService:
           type: redis
@@ -63,9 +63,8 @@ services:
       - key: OPENAI_API_KEY
         sync: false
 
-# Removed Render Postgres to use Supabase (Forever Free)
-# Keep Render Redis for now (fastest for task queue)
-
   # Render Redis (Free for 90 days)
-  - name: nexus-ai-redis
+  - type: redis
+    name: nexus-ai-redis
+    region: singapore
     plan: free
