@@ -11,8 +11,13 @@ from models.task import TaskStatus
 
 class TaskCreate(BaseModel):
     """Schema for creating a new task"""
-    user_prompt: str = Field(..., min_length=1, max_length=10000)
-    project_id: Optional[int] = None
+    user_prompt: str = Field(
+        ..., 
+        min_length=1, 
+        max_length=10000,
+        example="Create a Python script that analyzes the sentiment of the latest tweets about SpaceX."
+    )
+    project_id: Optional[int] = Field(None, example=1)
 
 
 class TaskUpdate(BaseModel):
@@ -39,15 +44,15 @@ class SubtaskResponse(BaseModel):
 
 class TaskResponse(BaseModel):
     """Schema for task response"""
-    id: int
-    user_id: int
-    project_id: Optional[int] = None
-    user_prompt: str
-    status: str
-    complexity_score: Optional[float] = None
+    id: int = Field(..., example=1)
+    user_id: int = Field(..., example=123)
+    project_id: Optional[int] = Field(None, example=1)
+    user_prompt: str = Field(..., example="Analyze sentiment of SpaceX tweets")
+    status: str = Field(..., example="completed")
+    complexity_score: Optional[float] = Field(None, example=0.85)
     created_at: datetime
     completed_at: Optional[datetime] = None
-    output: Optional[str] = None
+    output: Optional[str] = Field(None, example="The sentiment analysis shows a 75% positive rating...")
     
     class Config:
         from_attributes = True

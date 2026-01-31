@@ -1,6 +1,17 @@
 import React from 'react';
 import './ActivityFeed.css';
 
+/**
+ * ActivityFeed Component
+ * 
+ * Combines project lifecycle events (creation, start, completion) and 
+ * task events into a unified chronological timeline.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {Object} props.project - The project object.
+ * @param {Array} [props.tasks] - Associated tasks for the project.
+ */
 const ActivityFeed = ({ project, tasks = [] }) => {
     // Combine various events into a single timeline
     const events = [];

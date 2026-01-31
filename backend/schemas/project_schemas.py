@@ -66,23 +66,23 @@ class PhaseSummary(BaseModel):
 
 class ProjectResponse(BaseModel):
     """Schema for project response."""
-    id: int
-    name: str
-    description: Optional[str]
-    status: str
-    progress: float
-    total_tasks: int
-    completed_tasks: int
-    total_phases: int
-    current_phase: int
-    estimated_minutes: Optional[int]
-    risk_level: Optional[str]
-    is_archived: bool = False
-    is_pinned: bool = False
-    tags: List[str] = []
+    id: int = Field(..., example=1)
+    name: str = Field(..., example="E-commerce Launch")
+    description: Optional[str] = Field(None, example="Project to launch a new store")
+    status: str = Field(..., example="in_progress")
+    progress: float = Field(..., example=45.5)
+    total_tasks: int = Field(..., example=12)
+    completed_tasks: int = Field(..., example=5)
+    total_phases: int = Field(..., example=3)
+    current_phase: int = Field(..., example=2)
+    estimated_minutes: Optional[int] = Field(None, example=120)
+    risk_level: Optional[str] = Field(None, example="low")
+    is_archived: bool = Field(False, example=False)
+    is_pinned: bool = Field(False, example=True)
+    tags: List[str] = Field(default=[], example=["web", "shopify"])
     created_at: datetime
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
@@ -99,16 +99,16 @@ class ProjectDetail(ProjectResponse):
 
 class ProjectProgress(BaseModel):
     """Real-time project progress."""
-    project_id: int
-    status: str
-    progress_percentage: float
-    total_tasks: int
-    completed_tasks: int
-    in_progress_tasks: int
-    failed_tasks: int
-    current_phase: int
-    active_agents: List[str] = []
-    estimated_remaining_minutes: Optional[int]
+    project_id: int = Field(..., example=1)
+    status: str = Field(..., example="in_progress")
+    progress_percentage: float = Field(..., example=66.7)
+    total_tasks: int = Field(..., example=15)
+    completed_tasks: int = Field(..., example=10)
+    in_progress_tasks: int = Field(..., example=2)
+    failed_tasks: int = Field(..., example=0)
+    current_phase: int = Field(..., example=2)
+    active_agents: List[str] = Field(default=[], example=["ResearcherAgent", "CodeAgent"])
+    estimated_remaining_minutes: Optional[int] = Field(None, example=45)
 
 
 class ProjectExecuteRequest(BaseModel):

@@ -1,6 +1,7 @@
-"""
-Nexus AI - Data Agent
-AI agent specialized in data analysis and insights generation
+"""Nexus AI - Data Agent.
+
+This module implements the DataAgent, which specializes in data analysis, 
+statistical insights, and generating visualizations from various data sources.
 """
 
 import json
@@ -13,14 +14,21 @@ from agents.agent_registry import AgentRegistry
 
 @AgentRegistry.register
 class DataAgent(BaseAgent):
-    """
-    Data Agent - Specialized in data analysis and insights.
+    """Agent specialized in data analysis and visualization.
     
-    Capabilities:
-    - Analyze datasets
-    - Generate statistical insights
-    - Create data summaries
-    - Answer questions about data
+    The DataAgent processes structured data (CSV, Excel, JSON) to extract 
+    meaningful insights, calculate statistics, and suggest or generate 
+    visualizations that help users understand their data.
+    
+    Attributes:
+        name: Agent identifier ("DataAgent").
+        role: Description of the agent's purpose.
+        system_prompt: Core instructions for rigorous data analysis.
+        
+    Example:
+        >>> agent = DataAgent(llm_manager, db_session)
+        >>> result = agent.execute({"data": my_spreadsheet_data, "task": "Find top 10 customers"})
+        >>> print(result["output"]["insights"])
     """
     
     DEFAULT_ROLE = "Data analysis and insights"
@@ -55,14 +63,16 @@ Always:
         )
     
     def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Execute data analysis task.
+        """Performs data analysis or visualization based on provided datasets.
         
         Args:
-            input_data: Contains data and analysis request
-            
+            input_data: A dictionary containing:
+                - task/prompt/original_prompt (str): Analysis objective.
+                - data (list/dict, optional): The raw data to be analyzed.
+                - file_id (int, optional): ID of a file containing the data.
+                
         Returns:
-            Analysis results with insights
+            dict: Analysis results, insights, and visualization metadata.
         """
         self.start_execution()
         

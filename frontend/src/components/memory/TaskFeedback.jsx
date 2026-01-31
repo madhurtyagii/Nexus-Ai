@@ -2,66 +2,78 @@ import { useState } from 'react';
 
 const API_BASE = 'http://localhost:8000';
 
+/**
+ * TaskFeedback Component
+ * 
+ * A feedback form for rating task results, allowing users to provide 
+ * binary (thumbs up/down) feedback on specific aspects like accuracy and speed.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {number|string} props.taskId - The ID of the task being rated.
+ * @param {string} props.token - JWT authentication token.
+ * @param {Function} [props.onFeedbackSubmitted] - Optional callback after submission.
+ */
 export default function TaskFeedback({ taskId, token, onFeedbackSubmitted }) {
-    const [rating, setRating] = useState(0);
-    const [hoverRating, setHoverRating] = useState(0);
-    const [feedback, setFeedback] = useState('');
-    const [aspects, setAspects] = useState({
-        accuracy: null,
-        speed: null,
-        detail: null,
-        creativity: null
-    });
-    const [loading, setLoading] = useState(false);
-    const [submitted, setSubmitted] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [feedback, setFeedback] = useState('');
+  const [aspects, setAspects] = useState({
+    accuracy: null,
+    speed: null,
+    detail: null,
+    creativity: null
+  });
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-    const handleSubmit = async () => {
-        if (rating === 0) return;
+  const handleSubmit = async () => {
+    if (rating === 0) return;
 
-        setLoading(true);
+    setLoading(true);
 
-        try {
-            const response = await fetch(`${API_BASE}/tasks/${taskId}/feedback`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    rating,
-                    feedback: feedback || null,
-                    aspects: Object.fromEntries(
-                        Object.entries(aspects).filter(([_, v]) => v !== null)
-                    )
-                })
-            });
+    try {
+      const response = await fetch(`${API_BASE}/tasks/${taskId}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          rating,
+          feedback: feedback || null,
+          aspects: Object.fromEntries(
+            Object.entries(aspects).filter(([_, v]) => v !== null)
+          )
+        })
+      });
 
-            if (response.ok) {
-                setSubmitted(true);
-                onFeedbackSubmitted?.();
-            }
-        } catch (error) {
-            console.error('Failed to submit feedback:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+      if (response.ok) {
+        setSubmitted(true);
+        onFeedbackSubmitted?.();
+      }
+    } catch (error) {
+      console.error('Failed to submit feedback:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const toggleAspect = (aspect) => {
-        setAspects(prev => ({
-            ...prev,
-            [aspect]: prev[aspect] === null ? true : prev[aspect] === true ? false : null
-        }));
-    };
+  const toggleAspect = (aspect) => {
+    setAspects(prev => ({
+      ...prev,
+      [aspect]: prev[aspect] === null ? true : prev[aspect] === true ? false : null
+    }));
+  };
 
-    if (submitted) {
-        return (
-            <div className="feedback-success">
-                <div className="success-icon">✨</div>
-                <h4>Thank you for your feedback!</h4>
-                <p>This helps us learn your preferences</p>
+  if (submitted) {
+    return (
+      <div className="feedback-success">
+        <div className="success-icon">✨</div>
+        <h4>Thank you for your feedback!</h4>
+        <p>This helps us learn your preferences</p>
 
-                <style jsx>{`
+        <style jsx>{`
           .feedback-success {
             text-align: center;
             padding: 24px;
@@ -82,74 +94,74 @@ export default function TaskFeedback({ taskId, token, onFeedbackSubmitted }) {
             opacity: 0.8;
           }
         `}</style>
-            </div>
-        );
-    }
+      </div>
+    );
+  }
 
-    return (
-        <div className="task-feedback">
-            <h4>📝 Rate this result</h4>
+  return (
+    <div className="task-feedback">
+      <h4>📝 Rate this result</h4>
 
-            <div className="rating-section">
-                <div className="star-rating">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                            key={star}
-                            className={`star-btn ${(hoverRating || rating) >= star ? 'active' : ''}`}
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
-                            onClick={() => setRating(star)}
-                        >
-                            ★
-                        </button>
-                    ))}
-                </div>
-                <span className="rating-text">
-                    {rating === 1 && 'Poor'}
-                    {rating === 2 && 'Fair'}
-                    {rating === 3 && 'Good'}
-                    {rating === 4 && 'Very Good'}
-                    {rating === 5 && 'Excellent'}
-                </span>
-            </div>
-
-            <div className="aspects-section">
-                <p className="aspects-label">What did you think about:</p>
-                <div className="aspects-grid">
-                    {Object.entries(aspects).map(([aspect, value]) => (
-                        <button
-                            key={aspect}
-                            className={`aspect-btn ${value === true ? 'liked' : value === false ? 'disliked' : ''}`}
-                            onClick={() => toggleAspect(aspect)}
-                        >
-                            <span className="aspect-icon">
-                                {value === true ? '👍' : value === false ? '👎' : '•'}
-                            </span>
-                            <span className="aspect-name">{aspect}</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="feedback-section">
-                <textarea
-                    className="feedback-input"
-                    placeholder="Any additional feedback? (optional)"
-                    value={feedback}
-                    onChange={(e) => setFeedback(e.target.value)}
-                    rows={3}
-                />
-            </div>
-
+      <div className="rating-section">
+        <div className="star-rating">
+          {[1, 2, 3, 4, 5].map((star) => (
             <button
-                className="submit-btn"
-                onClick={handleSubmit}
-                disabled={rating === 0 || loading}
+              key={star}
+              className={`star-btn ${(hoverRating || rating) >= star ? 'active' : ''}`}
+              onMouseEnter={() => setHoverRating(star)}
+              onMouseLeave={() => setHoverRating(0)}
+              onClick={() => setRating(star)}
             >
-                {loading ? 'Submitting...' : 'Submit Feedback'}
+              ★
             </button>
+          ))}
+        </div>
+        <span className="rating-text">
+          {rating === 1 && 'Poor'}
+          {rating === 2 && 'Fair'}
+          {rating === 3 && 'Good'}
+          {rating === 4 && 'Very Good'}
+          {rating === 5 && 'Excellent'}
+        </span>
+      </div>
 
-            <style jsx>{`
+      <div className="aspects-section">
+        <p className="aspects-label">What did you think about:</p>
+        <div className="aspects-grid">
+          {Object.entries(aspects).map(([aspect, value]) => (
+            <button
+              key={aspect}
+              className={`aspect-btn ${value === true ? 'liked' : value === false ? 'disliked' : ''}`}
+              onClick={() => toggleAspect(aspect)}
+            >
+              <span className="aspect-icon">
+                {value === true ? '👍' : value === false ? '👎' : '•'}
+              </span>
+              <span className="aspect-name">{aspect}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="feedback-section">
+        <textarea
+          className="feedback-input"
+          placeholder="Any additional feedback? (optional)"
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          rows={3}
+        />
+      </div>
+
+      <button
+        className="submit-btn"
+        onClick={handleSubmit}
+        disabled={rating === 0 || loading}
+      >
+        {loading ? 'Submitting...' : 'Submit Feedback'}
+      </button>
+
+      <style jsx>{`
         .task-feedback {
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -268,6 +280,6 @@ export default function TaskFeedback({ taskId, token, onFeedbackSubmitted }) {
           cursor: not-allowed;
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

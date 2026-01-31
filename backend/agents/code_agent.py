@@ -1,6 +1,8 @@
-"""
-Nexus AI - Code Agent
-AI agent specialized in code generation, debugging, and optimization
+"""Nexus AI - Code Agent.
+
+This module implements the CodeAgent, which focuses on automated programming 
+tasks including code generation, debugging, review, and explanation 
+across multiple languages.
 """
 
 import json
@@ -14,15 +16,23 @@ from agents.agent_registry import AgentRegistry
 
 @AgentRegistry.register
 class CodeAgent(BaseAgent):
-    """
-    Code Agent - Specialized in code generation and debugging.
+    """Agent specialized in code generation and debugging.
     
-    Capabilities:
-    - Generate code in multiple languages
-    - Debug and fix code errors
-    - Review code for issues
-    - Explain code functionality
-    - Optimize code performance
+    The CodeAgent provides expert-level programming assistance, including 
+    writing implementation code, fixing bugs from provided snippets, 
+    performing security and performance reviews, and explaining complex 
+    logic structures.
+    
+    Attributes:
+        name: Agent identifier ("CodeAgent").
+        role: Description of the agent's purpose.
+        system_prompt: Detailed instructions on coding standards.
+        SUPPORTED_LANGUAGES: List of languages with specialized support.
+        
+    Example:
+        >>> agent = CodeAgent(llm_manager, db_session)
+        >>> result = agent.execute({"task": "Write a Python function for Fibonacci"})
+        >>> print(result["output"]["code"])
     """
     
     DEFAULT_ROLE = "Code generation and debugging"
@@ -61,14 +71,20 @@ When returning code, use markdown code blocks with the language specified."""
         )
     
     def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Execute code-related task.
+        """Main execution entry point for all code-related tasks.
+        
+        Detects the intent (generate, debug, review, explain) from the 
+        input data and routes to the appropriate internal method.
         
         Args:
-            input_data: Must contain "task", "prompt", or "original_prompt"
-            
+            input_data: A dictionary containing:
+                - task/prompt (str): The primary coding requirement.
+                - code (str, optional): Snippet to be analyzed or fixed.
+                - file_id (int, optional): ID of a file to read as context.
+                
         Returns:
-            Code result with generated/fixed code
+            dict: Results of the coding operation, including code, 
+                language, and explanations.
         """
         self.start_execution()
         
@@ -115,8 +131,13 @@ When returning code, use markdown code blocks with the language specified."""
             return self.format_output(None, status="error", error=str(e))
     
     def _generate_code(self, task: str) -> Dict[str, Any]:
-        """
-        Generate code based on task description.
+        """Generates implementation code based on a task description.
+        
+        Args:
+            task: Comprehensive description of the code to be written.
+            
+        Returns:
+            dict: Generated code, detected language, and an explanation.
         """
         self.log_action("generating_code", {"task": task[:100]})
         

@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     max_file_size: int = 10485760  # 10MB
     allowed_extensions: str = "csv,txt,pdf,png,jpg,jpeg,xlsx,json"
     
+    # Logging & Monitoring
+    log_format: str = "text"  # "text" or "json"
+    enable_metrics: bool = True
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

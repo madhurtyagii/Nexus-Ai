@@ -1,6 +1,15 @@
-"""
-Nexus AI - Main Application Entry Point
-FastAPI application with all routes and middleware
+"""Nexus AI - Main Application Entry Point.
+
+This module initializes the FastAPI application, configures middleware (CORS, 
+Rate Limiting, Security Headers, etc.), and includes all router modules. 
+It also handles the application lifespan events and WebSocket connections.
+
+Features:
+    - FastAPI app initialization
+    - Global middleware configuration
+    - Lifespan management (DB, Redis)
+    - WebSocket orchestration
+    - Global exception handling
 """
 
 # Fix Windows console encoding to support Unicode/emoji output
@@ -48,15 +57,25 @@ from routers.exports import router as exports_router
 # Import messaging
 from messaging import ws_manager
 
+# Import security middlewares
+from backend.middleware.rate_limit import RateLimitMiddleware
+from backend.middleware.security_headers import SecurityHeadersMiddleware
+from backend.middleware.request_id import RequestIDMiddleware
+
 
 settings = get_settings()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Application lifespan handler.
-    Runs on startup and shutdown.
+    """Handles the application startup and shutdown events.
+    
+    This context manager is responsible for initializing database tables,
+    verifying Redis connectivity, and starting/stopping support services
+    like the WebSocket manager.
+    
+    Args:
+        app: The FastAPI application instance.
     """
     # Startup
     print("🚀 Starting Nexus AI...")
@@ -88,11 +107,40 @@ async def lifespan(app: FastAPI):
 # Create FastAPI application
 app = FastAPI(
     title="Nexus AI API",
-    description="Autonomous Multi-Agent AI Workspace API",
-    version="2.0.0",
+    description="""
+### Autonomous Multi-Agent AI Workspace API
+
+Nexus AI is a world-class platform for orchestrating autonomous AI agents. 
+This API provides robust endpoints for:
+- **Task Orchestration**: Natural language task submission and background processing.
+- **Project Management**: Multi-phase project planning and execution.
+- **Semantic Memory**: Long-term context storage and retrieval using vector embeddings.
+- **Workflow Automation**: Template-driven agent workflows.
+- **Agent Monitoring**: Real-time status updates via WebSockets.
+
+Developed with a focus on performance, security, and developer experience.
+""",
+    version="2.1.0",
     lifespan=lifespan,
+    contact={
+        "name": "Madhur Tyagi",
+        "email": "madhur.tyagi@nexus-ai.com",
+        "url": "https://github.com/madhurtyagii",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
     docs_url="/docs",
     redoc_url="/redoc",
+    openapi_tags=[
+        {"name": "Auth", "description": "Authentication and user session management."},
+        {"name": "Tasks", "description": "AI task submission, tracking, and results."},
+        {"name": "Projects", "description": "Complex multi-phase project orchestration."},
+        {"name": "Agents", "description": "Agent capabilities, status, and activity."},
+        {"name": "Memory", "description": "Conversation history and semantic context retrieval."},
+        {"name": "Files", "description": "Secure file uploads and management."},
+    ]
 )
 
 # Configure CORS - Allow all origins in development
@@ -105,59 +153,33 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+# Security & Rate Limiting Middlewares
+app.add_middleware(RequestIDMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware, limit=100, window=60)
+
 # Logging Middleware
 from fastapi import Request
 import time
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    start_time = time.time()
-    log_line = f"\n{datetime.now().isoformat()} 📥 {request.method} {request.url.path}"
-    with open("requests.log", "a", encoding="utf-8") as f:
-        f.write(log_line)
+    """Middleware for logging HTTP requests and their processing time.
     
-    try:
-        response = await call_next(request)
-        process_time = (time.time() - start_time) * 1000
-        log_line = f"\n{datetime.now().isoformat()} 📤 {request.method} {request.url.path} - {response.status_code} ({process_time:.2f}ms)"
-        with open("requests.log", "a", encoding="utf-8") as f:
-            f.write(log_line)
-        return response
-    except Exception as e:
-        log_line = f"\n{datetime.now().isoformat()} ❌ Uncaught Exception: {str(e)}"
-        with open("requests.log", "a", encoding="utf-8") as f:
-            f.write(log_line)
-        print(f"ERROR Uncaught Exception: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        raise
+    Logs the request method, path, status code, and duration to a local-file.
+    
+    Args:
+        request: The incoming HTTP request.
+        call_next: The next middleware or route handler in the chain.
+        
+    Returns:
+        The HTTP response from the downstream handler.
+    """
 
 
-# Global exception handler to catch ALL exceptions
-from starlette.responses import JSONResponse
-from starlette.requests import Request as StarletteRequest
-from fastapi import Request as FastAPIRequest
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    """Catch all exceptions and print detailed traceback"""
-    import traceback
-    import sys
-    print("=" * 50, file=sys.stderr)
-    print("GLOBAL EXCEPTION HANDLER TRIGGERED", file=sys.stderr)
-    print(f"Request: {request.method} {request.url}", file=sys.stderr)
-    print(f"Exception Type: {type(exc).__name__}", file=sys.stderr)
-    print(f"Exception: {exc}", file=sys.stderr)
-    traceback.print_exc(file=sys.stderr)
-    print("=" * 50, file=sys.stderr)
-    
-    # Force flush to ensure output is visible
-    sys.stderr.flush()
-    
-    return JSONResponse(
-        status_code=500,
-        content={"detail": f"Internal Server Error: {str(exc)}"}
-    )
+# Global exception handlers
+from backend.middleware.error_handler import setup_exception_handlers
+setup_exception_handlers(app)
 
 
 # Include routers
@@ -175,25 +197,36 @@ app.include_router(exports_router)
 
 @app.get("/", tags=["Root"])
 async def root():
-    """Root endpoint - API welcome message."""
-    return {
-        "message": "Welcome to Nexus AI API",
-        "version": "2.0.0",
-        "docs": "/docs"
-    }
+    """Root endpoint providing a simple welcome message and API version.
+    
+    Returns:
+        dict: A welcome message, version, and documentation link.
+    """
 
 
 @app.get("/health", tags=["Health"])
 async def health_check():
+    """Health check endpoint to verify server and dependency status.
+    
+    Retrieves system metrics like CPU/Memory usage and checks connectivity
+    to services like Redis and the Database.
+    
+    Returns:
+        dict: Health status, system metrics, and service states.
     """
-    Health check endpoint.
-    Returns server status and timestamp.
-    """
+    import psutil
+    
     redis_status = "connected" if ping_redis() else "disconnected"
+    cpu_usage = psutil.cpu_percent()
+    memory_usage = psutil.virtual_memory().percent
     
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
+        "system": {
+            "cpu_usage": f"{cpu_usage}%",
+            "memory_usage": f"{memory_usage}%"
+        },
         "services": {
             "database": "connected",
             "redis": redis_status,
@@ -204,14 +237,28 @@ async def health_check():
         }
     }
 
+@app.get("/metrics", tags=["Monitoring"])
+async def get_metrics():
+    """Simple metrics endpoint."""
+    if not settings.enable_metrics:
+        raise HTTPException(status_code=404, detail="Metrics disabled")
+    
+    return {
+        "uptime": "TODO: track uptime",
+        "requests_total": "TODO: track request count",
+        "active_tasks": "TODO: track active tasks"
+    }
+
 
 def get_user_id_from_token(token: str) -> Optional[int]:
-    """Extract user ID from JWT token."""
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        return payload.get("sub")
-    except:
-        return None
+    """Decodes a JWT token to extract the user ID.
+    
+    Args:
+        token: The encoded JWT string.
+        
+    Returns:
+        Optional[int]: The user ID if valid, else None.
+    """
 
 
 @app.websocket("/ws")
@@ -219,15 +266,18 @@ async def websocket_endpoint(
     websocket: WebSocket,
     token: Optional[str] = Query(None)
 ):
-    """
-    WebSocket endpoint for real-time updates.
+    """Main WebSocket endpoint for real-time application updates.
     
-    Connect with: ws://localhost:8000/ws?token=<jwt_token>
+    Handles persistent connections from clients, performing session authentication
+    via JWT and delegating message handling to the project's WebSocket manager.
     
-    Client messages:
-    - {"action": "subscribe_task", "task_id": 123}
-    - {"action": "unsubscribe_task", "task_id": 123}
-    - {"action": "ping"}
+    Args:
+        websocket: The raw WebSocket connection object.
+        token: Optional JWT token provided in the query string.
+        
+    Note:
+        Closes connection with code 4001 if no token is provided, 
+        or 4002 if the token is invalid.
     """
     # Authenticate
     if not token:

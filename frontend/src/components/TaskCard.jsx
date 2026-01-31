@@ -3,7 +3,15 @@ import { useNavigate } from 'react-router-dom';
 
 /**
  * TaskCard Component
- * Displays a single task with status badge and click handler
+ * 
+ * Displays a summary of a task, including its prompt, status badge, 
+ * and creation date. Supports both custom click handlers and 
+ * default navigation to task details.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {Object} props.task - The task object to display.
+ * @param {Function} [props.onClick] - Optional override for the click handler.
  */
 export default function TaskCard({ task, onClick }) {
     const navigate = useNavigate();

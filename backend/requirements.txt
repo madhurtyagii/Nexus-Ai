@@ -48,6 +48,7 @@ aiofiles>=23.2.1
 
 # Utilities
 python-dotenv>=1.0.0
+psutil>=5.9.8
 
 # Testing (dev)
 pytest>=7.4.4

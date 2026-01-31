@@ -1,6 +1,8 @@
-"""
-Nexus AI - Memory Router
-API endpoints for memory management
+"""Nexus AI - Memory Router.
+
+This module provides API endpoints for interacting with the semantic 
+memory system, including conversation history, preferences, and 
+analytics.
 """
 
 from typing import List, Optional
@@ -35,7 +37,11 @@ class ClearMemoryRequest(BaseModel):
 
 # Endpoints
 
-@router.get("/conversations")
+@router.get(
+    "/conversations",
+    summary="Get conversation history",
+    description="Retrieves a paginated list of past user interactions tracked by the memory system."
+)
 async def get_conversations(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -64,7 +70,11 @@ async def get_conversations(
     }
 
 
-@router.get("/preferences")
+@router.get(
+    "/preferences",
+    summary="Get user preferences",
+    description="Retrieves learned user preferences (tone, detail, etc.) derived from past interactions."
+)
 async def get_preferences(
     current_user: User = Depends(get_current_user)
 ):
@@ -83,7 +93,11 @@ async def get_preferences(
     }
 
 
-@router.get("/related")
+@router.get(
+    "/related",
+    summary="Find related tasks",
+    description="Searches the semantic memory for tasks similar to a given prompt or ID."
+)
 async def get_related_tasks(
     prompt: Optional[str] = Query(None, description="Search prompt"),
     task_id: Optional[int] = Query(None, description="Task ID to find related tasks for"),

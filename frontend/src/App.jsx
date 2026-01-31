@@ -1,13 +1,19 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
-import TaskDetail from './pages/TaskDetail';
-import Projects from './pages/Projects';
-import ProjectDetail from './pages/ProjectDetail';
-import Help from './pages/Help';
+
+// Lazy load route components
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const TaskDetail = lazy(() => import('./pages/TaskDetail'));
+const Projects = lazy(() => import('./pages/Projects'));
+const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
+const Help = lazy(() => import('./pages/Help'));
+const FileManager = lazy(() => import('./pages/FileManager'));
+const Templates = lazy(() => import('./pages/Templates'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 // Placeholder pages for routes we'll build later
 function PlaceholderPage({ title }) {
@@ -35,89 +41,105 @@ function App() {
     }
 
     return (
-        <Routes>
-            {/* Public Routes */}
-            <Route
-                path="/login"
-                element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />}
-            />
-            <Route
-                path="/signup"
-                element={isAuthenticated ? <Navigate to="/dashboard" /> : <Signup />}
-            />
+        <Suspense fallback={
+            <div className="min-h-screen bg-dark-900 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center animate-spin">
+                    <span className="text-white font-bold text-2xl">N</span>
+                </div>
+            </div>
+        }>
+            <Routes>
+                {/* Public Routes */}
+                <Route
+                    path="/login"
+                    element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />}
+                />
+                <Route
+                    path="/signup"
+                    element={isAuthenticated ? <Navigate to="/dashboard" /> : <Signup />}
+                />
 
-            {/* Protected Routes */}
-            <Route
-                path="/dashboard"
-                element={
-                    <ProtectedRoute>
-                        <Dashboard />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/tasks/:taskId"
-                element={
-                    <ProtectedRoute>
-                        <TaskDetail />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/tasks"
-                element={
-                    <ProtectedRoute>
-                        <PlaceholderPage title="Tasks" />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/agents"
-                element={
-                    <ProtectedRoute>
-                        <PlaceholderPage title="Agents" />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/projects"
-                element={
-                    <ProtectedRoute>
-                        <Projects />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/projects/:id"
-                element={
-                    <ProtectedRoute>
-                        <ProjectDetail />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/settings"
-                element={
-                    <ProtectedRoute>
-                        <PlaceholderPage title="Settings" />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/help"
-                element={
-                    <ProtectedRoute>
-                        <Help />
-                    </ProtectedRoute>
-                }
-            />
+                {/* Protected Routes */}
+                <Route
+                    path="/dashboard"
+                    element={
+                        <ProtectedRoute>
+                            <Dashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/tasks/:taskId"
+                    element={
+                        <ProtectedRoute>
+                            <TaskDetail />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/tasks"
+                    element={
+                        <ProtectedRoute>
+                            <PlaceholderPage title="Tasks" />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/files"
+                    element={
+                        <ProtectedRoute>
+                            <FileManager />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/agents"
+                    element={
+                        <ProtectedRoute>
+                            <Templates />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/projects"
+                    element={
+                        <ProtectedRoute>
+                            <Projects />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/projects/:id"
+                    element={
+                        <ProtectedRoute>
+                            <ProjectDetail />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/settings"
+                    element={
+                        <ProtectedRoute>
+                            <Settings />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/help"
+                    element={
+                        <ProtectedRoute>
+                            <Help />
+                        </ProtectedRoute>
+                    }
+                />
 
-            {/* Default Redirect */}
-            <Route
-                path="*"
-                element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />}
-            />
-        </Routes>
+                {/* Default Redirect */}
+                <Route
+                    path="*"
+                    element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />}
+                />
+            </Routes>
+        </Suspense>
     );
 }
 

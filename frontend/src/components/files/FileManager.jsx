@@ -11,6 +11,18 @@ const formatSize = (bytes) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+/**
+ * FileManager Component
+ * 
+ * Handles listing, downloading, and deleting files associated with 
+ * a project or task.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {number} [props.projectId] - Filter files by project ID.
+ * @param {number} [props.taskId] - Filter files by task ID.
+ * @param {any} [props.refreshTrigger] - Trigger to re-fetch files.
+ */
 const FileManager = ({ projectId, taskId, refreshTrigger }) => {
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(true);

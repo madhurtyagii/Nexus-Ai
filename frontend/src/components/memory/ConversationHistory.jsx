@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react';
 
 const API_BASE = 'http://localhost:8000';
 
+/**
+ * ConversationHistory Component
+ * 
+ * Displays a searchable and paginated history of user-AI interactions 
+ * stored in the semantic memory system.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {string} props.token - JWT authentication token.
+ */
 export default function ConversationHistory({ token }) {
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(true);

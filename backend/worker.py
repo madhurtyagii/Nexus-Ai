@@ -17,6 +17,8 @@ from llm.llm_manager import llm_manager
 from logging_config import get_worker_logger
 from agents.agent_factory import AgentFactory
 from tools.tool_registry import ToolRegistry
+from backend.exceptions.custom_exceptions import TaskExecutionError, AgentError, DatabaseError
+from backend.utils.retries import retry
 from messaging import (
     emit_task_event_sync,
     emit_agent_progress_sync,
@@ -100,6 +102,7 @@ class Worker:
         
         self.shutdown()
     
+    @retry(exceptions=(DatabaseError, AgentError), tries=3, delay=1)
     def process_subtask(self, subtask_id: int) -> bool:
         """
         Process a single subtask.

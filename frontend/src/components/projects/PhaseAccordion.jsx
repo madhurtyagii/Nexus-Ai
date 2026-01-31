@@ -2,8 +2,16 @@ import { useState } from 'react';
 import './PhaseAccordion.css';
 
 /**
- * PhaseAccordion - Collapsible accordion for project phases
- * Displays phases with their tasks in expandable sections
+ * PhaseAccordion Component
+ * 
+ * A collapsible accordion that organizes project phases into expandable 
+ * sections, showing the list of tasks for each phase.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {Array} props.phases - List of project phases.
+ * @param {number} props.currentPhase - The index of the active phase.
+ * @param {Function} [props.onTaskClick] - Callback when a task is clicked.
  */
 function PhaseAccordion({ phases, currentPhase, onTaskClick }) {
     const [expandedPhases, setExpandedPhases] = useState(() => {

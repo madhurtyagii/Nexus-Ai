@@ -1,6 +1,11 @@
-"""
-Nexus AI - Base Agent
-Abstract base class for all AI agents
+"""Nexus AI - Base Agent Definition.
+
+This module defines the abstract base class for all specialized AI agents 
+in the Nexus AI ecosystem. It provides core functionalities like tool usage, 
+LLM interaction, memory retrieval, and state management.
+
+Classes:
+    BaseAgent: Abstract base class for all Nexus AI agents.
 """
 
 import time
@@ -12,14 +17,24 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from llm.llm_manager import LLMManager
+from backend.utils.circuit_breaker import llm_circuit_breaker, search_circuit_breaker
+from backend.exceptions.custom_exceptions import AgentError, ToolExecutionError
 
 
 class BaseAgent(ABC):
-    """
-    Abstract base class for all AI agents.
+    """Abstract base class for specialized AI agents.
     
-    All specialized agents (Research, Code, Content, etc.)
-    must inherit from this class and implement the execute() method.
+    All specialized agents (Research, Code, Content, etc.) must inherit 
+    from this class and implement the `execute` method to define their 
+    unique logic and tool integrations.
+    
+    Attributes:
+        name (str): The unique identifier for the agent.
+        role (str): A brief description of the agent's responsibilities.
+        system_prompt (str): Instructions provided to the LLM for this agent.
+        llm (LLMManager): Utility for generating responses from configured models.
+        db (Session): Database session for persistence and context fetching.
+        tools (list): A list of tool instances available for the agent to call.
     """
     
     def __init__(
@@ -58,29 +73,29 @@ class BaseAgent(ABC):
     
     @abstractmethod
     def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Execute the agent's main task.
+        """Abstract method to perform the agent's primary task.
         
-        Must be implemented by child classes.
+        This method must be overridden by specific agent implementations.
         
         Args:
-            input_data: Input data for the agent
+            input_data: A dictionary containing task parameters and context.
             
         Returns:
-            Output dictionary with keys: status, output, metadata
+            dict: The result of agent execution, including status and output.
         """
         pass
     
-    def use_tool(self, tool_name: str, **kwargs) -> Dict[str, Any]:
-        """
-        Use a tool by name.
+    async def use_tool(self, tool_name: str, **kwargs) -> Dict[str, Any]:
+        """Executes a registered tool by name with specified arguments.
+        
+        Integrates with circuit breakers for external service calls.
         
         Args:
-            tool_name: Name of the tool to use
-            **kwargs: Arguments to pass to the tool
+            tool_name: The name of the tool to invoke.
+            **kwargs: Arbitrary keyword arguments passed to the tool.
             
         Returns:
-            Tool execution result
+            dict: The standardized output from the tool execution.
         """
         if tool_name not in self._tool_map:
             error_msg = f"Tool '{tool_name}' not found. Available: {list(self._tool_map.keys())}"
@@ -91,12 +106,23 @@ class BaseAgent(ABC):
         
         try:
             self.log_action("tool_call", {"tool": tool_name, "params": kwargs})
-            result = tool.execute(**kwargs)
+            
+            # Apply search circuit breaker for web search tool
+            if tool_name in ["WebSearch", "Scraper"]:
+                result = await search_circuit_breaker.call(tool.execute_async, **kwargs)
+            else:
+                if hasattr(tool, 'execute_async'):
+                    result = await tool.execute_async(**kwargs)
+                else:
+                    result = tool.execute(**kwargs)
+                
             self.log_action("tool_result", {"tool": tool_name, "success": result.get("success", False)})
             return result
         except Exception as e:
             error_msg = f"Tool '{tool_name}' failed: {str(e)}"
             self.log_action("tool_error", {"tool": tool_name, "error": error_msg})
+            if "Circuit Breaker" in str(e):
+                return {"success": False, "error": f"Service temporarily unavailable: {str(e)}", "retryable": False}
             return {"success": False, "error": error_msg}
     
     def generate_response(
@@ -105,16 +131,15 @@ class BaseAgent(ABC):
         context: Dict[str, Any] = None,
         use_cache: bool = True
     ) -> Optional[str]:
-        """
-        Generate a response using the LLM.
+        """Synthesizes a response from the LLM based on prompt and context.
         
         Args:
-            prompt: User prompt
-            context: Optional context to include
-            use_cache: Whether to use cached responses
+            prompt: The specific instruction or query for the LLM.
+            context: Optional metadata or data to append to the prompt.
+            use_cache: Whether to use recent cached responses for speed.
             
         Returns:
-            LLM response or None if failed
+            Optional[str]: The generated text from the LLM, or an error message.
         """
         # Build full prompt
         full_prompt = prompt
@@ -124,7 +149,8 @@ class BaseAgent(ABC):
             full_prompt = f"Context:\n{context_str}\n\nTask: {prompt}"
         
         try:
-            response = self.llm.generate(
+            response = llm_circuit_breaker.call(
+                self.llm.generate,
                 prompt=full_prompt,
                 system=self.system_prompt,
                 use_cache=use_cache
@@ -137,6 +163,8 @@ class BaseAgent(ABC):
             return response
         except Exception as e:
             self.log_action("llm_error", {"error": str(e)})
+            if "Circuit Breaker" in str(e):
+                return f"Error: LLM service is temporarily unavailable due to multiple failures. Please try again later."
             return None
     
     def log_action(self, action: str, details: Dict[str, Any] = None):
@@ -236,18 +264,17 @@ class BaseAgent(ABC):
         input_data: Dict[str, Any], 
         required_fields: List[str]
     ) -> bool:
-        """
-        Validate that input contains all required fields.
+        """Checks if the input dictionary contains all necessary keys.
         
         Args:
-            input_data: Input dictionary
-            required_fields: List of required field names
+            input_data: The raw input provided to the agent.
+            required_fields: A list of keys that must be present.
             
         Returns:
-            True if valid
+            bool: True if all fields are present.
             
         Raises:
-            ValueError: If missing required fields
+            ValueError: If any required fields are missing.
         """
         missing = [f for f in required_fields if f not in input_data]
         

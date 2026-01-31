@@ -5,8 +5,26 @@ Centralized logging setup with console and file handlers
 
 import logging
 import os
+import json
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
+
+class JSONFormatter(logging.Formatter):
+    """Custom JSON formatter for structured logging."""
+    def format(self, record):
+        log_obj = {
+            "timestamp": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "line": record.lineno,
+        }
+        if hasattr(record, "request_id"):
+            log_obj["request_id"] = record.request_id
+        if record.exc_info:
+            log_obj["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_obj)
 
 # Create logs directory if it doesn't exist
 LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
@@ -40,10 +58,13 @@ def setup_logging(
     logger.handlers = []
     
     # Log format
-    formatter = logging.Formatter(
-        "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    if settings.log_format == "json":
+        formatter = JSONFormatter(datefmt="%Y-%m-%dT%H:%M:%SZ")
+    else:
+        formatter = logging.Formatter(
+            "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
     
     # Console handler
     console_handler = logging.StreamHandler()

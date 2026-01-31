@@ -1,6 +1,8 @@
-"""
-Nexus AI - Research Agent
-AI agent specialized in web research and information synthesis
+"""Nexus AI - Research Agent.
+
+This module implements the ResearchAgent, which is specialized in gathering 
+information from the web, scraping content, and synthesizing findings into 
+comprehensive reports with citations.
 """
 
 import json
@@ -13,15 +15,24 @@ from agents.agent_registry import AgentRegistry
 
 @AgentRegistry.register
 class ResearchAgent(BaseAgent):
-    """
-    Research Agent - Specialized in web research and information gathering.
+    """Agent specialized in web research and information gathering.
     
-    Capabilities:
-    - Generate focused search queries
-    - Search the web for information
-    - Scrape and extract content from web pages
-    - Synthesize findings into comprehensive summaries
-    - Provide sources with citations
+    The ResearchAgent can generate optimized search queries, retrieve 
+    information from multiple search engines, scrape web pages for 
+    detailed content, and synthesize results into a cohesive summary 
+    with proper citations.
+    
+    Attributes:
+        name: Agent identifier ("ResearchAgent").
+        role: Description of the agent's purpose.
+        system_prompt: Core instructions for LLM interactions.
+        max_search_results: Number of results to fetch per query.
+        max_scrape_pages: Limit on the number of full pages to scrape.
+        
+    Example:
+        >>> agent = ResearchAgent(llm_manager, db_session)
+        >>> result = agent.execute({"query": "Recent advances in fusion energy"})
+        >>> print(result["output"]["summary"])
     """
     
     DEFAULT_ROLE = "Information gathering and research"
@@ -54,14 +65,16 @@ Format your responses clearly with sections and bullet points when appropriate."
         self.max_scrape_pages = 3
     
     def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Execute research task.
+        """Performs a comprehensive research task based on the provided query.
         
         Args:
-            input_data: Must contain "query" or "original_prompt"
-            
+            input_data: A dictionary containing:
+                - query (str): The specific research topic.
+                - original_prompt (str): Fallback if 'query' is missing.
+                
         Returns:
-            Research results with summary and sources
+            dict: Research findings including 'summary', 'key_findings', 
+                'sources', and 'confidence_score'.
         """
         self.start_execution()
         
@@ -86,15 +99,13 @@ Format your responses clearly with sections and bullet points when appropriate."
             return self.format_output(None, status="error", error=str(e))
     
     def _research_workflow(self, query: str) -> Dict[str, Any]:
-        """
-        Main research workflow.
+        """Coordinates the sequential steps of the research process.
         
-        Steps:
-        1. Generate search queries
-        2. Execute searches
-        3. Scrape top sources
-        4. Synthesize findings
-        5. Format output
+        Args:
+            query: The refined search query to process.
+            
+        Returns:
+            dict: Structured research data synthesized from multiple sources.
         """
         # Step 1: Generate search queries
         search_queries = self._generate_search_queries(query)

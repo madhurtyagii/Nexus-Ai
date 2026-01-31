@@ -1,6 +1,7 @@
-"""
-Nexus AI - Tasks Router
-Task CRUD endpoints with orchestrator integration
+"""Nexus AI - Tasks Router.
+
+This module provides API endpoints for managing tasks, including creation, 
+listing, status tracking, and background orchestrator integration.
 """
 
 import asyncio
@@ -15,11 +16,19 @@ from schemas.task import TaskCreate, TaskResponse, TaskWithSubtasksResponse
 from dependencies import get_current_user
 from services.task_service import TaskService
 from orchestrator.queue import task_queue
+from cache.redis_cache import cached
+from utils.audit import audit_log
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
-@router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", 
+    response_model=TaskResponse, 
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new AI task",
+    description="Submits a natural language prompt to the AI orchestrator. The task is queued and processed in the background."
+)
 async def create_task(
     task_data: TaskCreate,
     background_tasks: BackgroundTasks,
@@ -61,7 +70,12 @@ async def create_task(
     return new_task
 
 
-@router.get("/", response_model=List[TaskResponse])
+@router.get(
+    "/", 
+    response_model=List[TaskResponse],
+    summary="List user tasks",
+    description="Retrieves a paginated list of tasks belong to the authenticated user, optionally filtered by status."
+)
 async def list_tasks(
     task_status: Optional[str] = Query(None, alias="status", description="Filter by status"),
     limit: int = Query(50, ge=1, le=100),
@@ -71,12 +85,12 @@ async def list_tasks(
 ):
     """
     List all tasks for the current user.
-    
-    - Supports filtering by status
-    - Pagination with limit/offset
-    - Returns newest first
     """
-    query = db.query(Task).filter(Task.user_id == current_user.id)
+    return await _list_tasks_internal(task_status, limit, offset, db, current_user.id)
+
+@cached(ttl=60, key_prefix="tasks_list")
+async def _list_tasks_internal(task_status, limit, offset, db, user_id):
+    query = db.query(Task).filter(Task.user_id == user_id)
     
     if task_status:
         query = query.filter(Task.status == task_status)
@@ -86,7 +100,11 @@ async def list_tasks(
     return tasks
 
 
-@router.get("/queue")
+@router.get(
+    "/queue",
+    summary="Get queue status",
+    description="Returns global and user-specific queue statistics, including pending and active task counts."
+)
 async def get_queue_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -112,21 +130,24 @@ async def get_queue_status(
     }
 
 
-@router.get("/{task_id}", response_model=TaskWithSubtasksResponse)
+@router.get(
+    "/{task_id}", 
+    response_model=TaskWithSubtasksResponse,
+    summary="Get task details",
+    description="Retrieves full information for a specific task, including all associated agent subtasks."
+)
 async def get_task(
     task_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get a single task by ID with its subtasks.
-    
-    - Verifies task belongs to current user
-    - Returns task with all subtasks
-    """
+    return await _get_task_internal(task_id, db, current_user.id)
+
+@cached(ttl=300, key_prefix="task_detail")
+async def _get_task_internal(task_id, db, user_id):
     task = db.query(Task).filter(
         Task.id == task_id,
-        Task.user_id == current_user.id
+        Task.user_id == user_id
     ).first()
     
     if not task:
@@ -248,7 +269,8 @@ async def cancel_task(
 
 
 @router.delete("/{task_id}")
-async def delete_task(
+@audit_log("task_delete")
+async def delete_task_router(
     task_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)

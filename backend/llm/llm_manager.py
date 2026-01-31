@@ -1,6 +1,8 @@
-"""
-Nexus AI - LLM Manager
-Unified interface for multiple LLM providers with fallback and caching
+"""Nexus AI - LLM Manager.
+
+This module provides a unified interface for interacting with various 
+LLM providers (Ollama, Groq, etc.). It handles prompt templating, 
+response generation, and optional caching.
 """
 
 import hashlib
@@ -16,13 +18,17 @@ settings = get_settings()
 
 
 class LLMManager:
-    """
-    Unified LLM interface with automatic fallback and response caching.
+    """Standardized interface for interacting with Large Language Models.
     
-    Default behavior:
-    - Try Ollama first (local, free, private)
-    - Fall back to Groq if Ollama fails
-    - Cache responses in Redis to avoid duplicate API calls
+    The LLMManager abstracts the complexities of different LLM providers, 
+    providing a consistent `generate` method for text creation. It manages 
+    connection settings and supports response caching to improve performance.
+    
+    Attributes:
+        ollama: Client for local LLM execution.
+        groq: Client for high-speed cloud LLMs.
+        prefer_local (bool): If True, defaults to Ollama.
+        cache_expiry (int): TTL for cached responses.
     """
     
     def __init__(
@@ -60,19 +66,18 @@ class LLMManager:
         provider: str = "auto",
         temperature: float = 0.7
     ) -> Optional[str]:
-        """
-        Generate text completion with automatic fallback.
+        """Generates a text response from the configured LLM.
         
         Args:
-            prompt: User prompt
-            system: Optional system prompt
-            model: Specific model to use (provider-dependent)
-            use_cache: Whether to use cached responses
-            provider: "auto", "ollama", or "groq"
-            temperature: Creativity parameter
+            prompt: The user query or instruction.
+            system: Optional instructions to set the AI's behavior.
+            model: Specific model alias to use.
+            use_cache: If True, returns cached results for identical prompts.
+            provider: Explicitly select 'ollama' or 'groq'.
+            temperature: Creativity parameter (0.0 to 1.0).
             
         Returns:
-            Generated text or None if all providers fail
+            Optional[str]: The generated response text, or None if failed.
         """
         # Check cache first
         if use_cache:

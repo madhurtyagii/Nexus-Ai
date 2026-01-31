@@ -2,183 +2,193 @@ import { useState, useEffect } from 'react';
 
 const API_BASE = 'http://localhost:8000';
 
+/**
+ * MemoryAnalytics Component
+ * 
+ * Visualizes memory usage statistics, popular topics, quality scores, 
+ * and cleanup recommendations using CSS-based charts and clouds.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {string} props.token - JWT authentication token.
+ */
 export default function MemoryAnalytics({ token }) {
-    const [analytics, setAnalytics] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchAnalytics();
-    }, []);
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
 
-    const fetchAnalytics = async () => {
-        try {
-            const response = await fetch(`${API_BASE}/memory/analytics`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (response.ok) {
-                setAnalytics(await response.json());
-            }
-        } catch (error) {
-            console.error('Failed to fetch analytics:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="loading-state">
-                <div className="spinner"></div>
-                <p>Loading analytics...</p>
-            </div>
-        );
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/memory/analytics`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setAnalytics(await response.json());
+      }
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (!analytics) {
-        return (
-            <div className="empty-state">
-                <div className="empty-state-icon">📊</div>
-                <p>No analytics available yet</p>
-            </div>
-        );
-    }
-
-    const { statistics, popular_topics, quality_score, cleanup_suggestions } = analytics;
-
+  if (loading) {
     return (
-        <div className="memory-analytics">
-            {/* Stats Cards */}
-            <div className="stats-grid">
-                <div className="stat-card">
-                    <div className="stat-icon">🧠</div>
-                    <div className="stat-value">{statistics?.total_memories || 0}</div>
-                    <div className="stat-label">Total Memories</div>
-                </div>
+      <div className="loading-state">
+        <div className="spinner"></div>
+        <p>Loading analytics...</p>
+      </div>
+    );
+  }
 
-                <div className="stat-card">
-                    <div className="stat-icon">💬</div>
-                    <div className="stat-value">
-                        {statistics?.by_collection?.conversation_history || 0}
+  if (!analytics) {
+    return (
+      <div className="empty-state">
+        <div className="empty-state-icon">📊</div>
+        <p>No analytics available yet</p>
+      </div>
+    );
+  }
+
+  const { statistics, popular_topics, quality_score, cleanup_suggestions } = analytics;
+
+  return (
+    <div className="memory-analytics">
+      {/* Stats Cards */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon">🧠</div>
+          <div className="stat-value">{statistics?.total_memories || 0}</div>
+          <div className="stat-label">Total Memories</div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon">💬</div>
+          <div className="stat-value">
+            {statistics?.by_collection?.conversation_history || 0}
+          </div>
+          <div className="stat-label">Conversations</div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon">🤖</div>
+          <div className="stat-value">
+            {statistics?.by_collection?.agent_outputs || 0}
+          </div>
+          <div className="stat-label">Agent Outputs</div>
+        </div>
+
+        <div className="stat-card quality">
+          <div className="stat-icon">⭐</div>
+          <div className="stat-value">{quality_score?.overall_score || 0}</div>
+          <div className="stat-label">Quality Score</div>
+        </div>
+      </div>
+
+      {/* Agent Usage */}
+      {statistics?.by_agent && Object.keys(statistics.by_agent).length > 0 && (
+        <div className="section">
+          <h3>🤖 Agent Usage</h3>
+          <div className="bar-chart">
+            {Object.entries(statistics.by_agent)
+              .sort(([, a], [, b]) => b - a)
+              .slice(0, 5)
+              .map(([agent, count]) => {
+                const maxCount = Math.max(...Object.values(statistics.by_agent));
+                const percentage = (count / maxCount) * 100;
+
+                return (
+                  <div key={agent} className="bar-item">
+                    <div className="bar-label">{agent.replace('Agent', '')}</div>
+                    <div className="bar-container">
+                      <div
+                        className="bar-fill"
+                        style={{ width: `${percentage}%` }}
+                      ></div>
                     </div>
-                    <div className="stat-label">Conversations</div>
+                    <div className="bar-value">{count}</div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* Popular Topics */}
+      {popular_topics?.length > 0 && (
+        <div className="section">
+          <h3>🔥 Popular Topics</h3>
+          <div className="topics-cloud">
+            {popular_topics.slice(0, 15).map((topic, index) => (
+              <span
+                key={topic.topic}
+                className="topic-chip"
+                style={{
+                  fontSize: `${Math.max(0.75, 1 - index * 0.03)}rem`,
+                  opacity: Math.max(0.5, 1 - index * 0.05)
+                }}
+              >
+                {topic.topic}
+                <span className="topic-count">{topic.count}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Quality Breakdown */}
+      {quality_score?.breakdown && (
+        <div className="section">
+          <h3>📊 Quality Breakdown</h3>
+          <div className="quality-metrics">
+            {Object.entries(quality_score.breakdown).map(([metric, value]) => (
+              <div key={metric} className="quality-metric">
+                <div className="metric-header">
+                  <span className="metric-label">
+                    {metric.replace(/_/g, ' ')}
+                  </span>
+                  <span className="metric-value">{value}%</span>
                 </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon">🤖</div>
-                    <div className="stat-value">
-                        {statistics?.by_collection?.agent_outputs || 0}
-                    </div>
-                    <div className="stat-label">Agent Outputs</div>
+                <div className="metric-bar">
+                  <div
+                    className="metric-fill"
+                    style={{ width: `${value}%` }}
+                  ></div>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-                <div className="stat-card quality">
-                    <div className="stat-icon">⭐</div>
-                    <div className="stat-value">{quality_score?.overall_score || 0}</div>
-                    <div className="stat-label">Quality Score</div>
-                </div>
-            </div>
+      {/* Recommendations */}
+      {quality_score?.recommendations?.length > 0 && (
+        <div className="section recommendations">
+          <h3>💡 Recommendations</h3>
+          <ul className="recommendation-list">
+            {quality_score.recommendations.map((rec, index) => (
+              <li key={index}>{rec}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-            {/* Agent Usage */}
-            {statistics?.by_agent && Object.keys(statistics.by_agent).length > 0 && (
-                <div className="section">
-                    <h3>🤖 Agent Usage</h3>
-                    <div className="bar-chart">
-                        {Object.entries(statistics.by_agent)
-                            .sort(([, a], [, b]) => b - a)
-                            .slice(0, 5)
-                            .map(([agent, count]) => {
-                                const maxCount = Math.max(...Object.values(statistics.by_agent));
-                                const percentage = (count / maxCount) * 100;
+      {/* Cleanup Suggestions */}
+      {cleanup_suggestions?.recommendations?.length > 0 && (
+        <div className="section cleanup">
+          <h3>🧹 Cleanup Suggestions</h3>
+          <ul className="suggestion-list">
+            {cleanup_suggestions.recommendations.map((sug, index) => (
+              <li key={index}>{sug}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-                                return (
-                                    <div key={agent} className="bar-item">
-                                        <div className="bar-label">{agent.replace('Agent', '')}</div>
-                                        <div className="bar-container">
-                                            <div
-                                                className="bar-fill"
-                                                style={{ width: `${percentage}%` }}
-                                            ></div>
-                                        </div>
-                                        <div className="bar-value">{count}</div>
-                                    </div>
-                                );
-                            })}
-                    </div>
-                </div>
-            )}
-
-            {/* Popular Topics */}
-            {popular_topics?.length > 0 && (
-                <div className="section">
-                    <h3>🔥 Popular Topics</h3>
-                    <div className="topics-cloud">
-                        {popular_topics.slice(0, 15).map((topic, index) => (
-                            <span
-                                key={topic.topic}
-                                className="topic-chip"
-                                style={{
-                                    fontSize: `${Math.max(0.75, 1 - index * 0.03)}rem`,
-                                    opacity: Math.max(0.5, 1 - index * 0.05)
-                                }}
-                            >
-                                {topic.topic}
-                                <span className="topic-count">{topic.count}</span>
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Quality Breakdown */}
-            {quality_score?.breakdown && (
-                <div className="section">
-                    <h3>📊 Quality Breakdown</h3>
-                    <div className="quality-metrics">
-                        {Object.entries(quality_score.breakdown).map(([metric, value]) => (
-                            <div key={metric} className="quality-metric">
-                                <div className="metric-header">
-                                    <span className="metric-label">
-                                        {metric.replace(/_/g, ' ')}
-                                    </span>
-                                    <span className="metric-value">{value}%</span>
-                                </div>
-                                <div className="metric-bar">
-                                    <div
-                                        className="metric-fill"
-                                        style={{ width: `${value}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Recommendations */}
-            {quality_score?.recommendations?.length > 0 && (
-                <div className="section recommendations">
-                    <h3>💡 Recommendations</h3>
-                    <ul className="recommendation-list">
-                        {quality_score.recommendations.map((rec, index) => (
-                            <li key={index}>{rec}</li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {/* Cleanup Suggestions */}
-            {cleanup_suggestions?.recommendations?.length > 0 && (
-                <div className="section cleanup">
-                    <h3>🧹 Cleanup Suggestions</h3>
-                    <ul className="suggestion-list">
-                        {cleanup_suggestions.recommendations.map((sug, index) => (
-                            <li key={index}>{sug}</li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            <style jsx>{`
+      <style jsx>{`
         .memory-analytics {
           padding: 8px;
         }
@@ -326,6 +336,6 @@ export default function MemoryAnalytics({ token }) {
           border-left-color: #fbbf24;
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

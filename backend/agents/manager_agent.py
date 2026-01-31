@@ -1,6 +1,8 @@
-"""
-Nexus AI - Manager Agent
-Project planning and multi-agent coordination
+"""Nexus AI - Manager Agent.
+
+This module implements the ManagerAgent, responsible for high-level project 
+analysis, strategic planning, task decomposition, and multi-agent workflow 
+coordination.
 """
 
 import uuid
@@ -16,16 +18,23 @@ from llm.llm_manager import llm_manager
 
 @AgentRegistry.register
 class ManagerAgent(BaseAgent):
-    """
-    Manager Agent for project planning and agent coordination.
+    """Agent specialized in project management and agent orchestration.
     
-    Responsibilities:
-    - Analyze project complexity
-    - Break down projects into phases and tasks
-    - Assign tasks to appropriate agents
-    - Create dependency graphs and schedules
-    - Monitor project progress
-    - Generate project summaries
+    The ManagerAgent acts as a strategic lead, breaking down complex user 
+    requests into actionable plans with multiple phases. It identifies the 
+    best-suited specialized agents for each subtask and constructs efficient 
+    execution workflows.
+    
+    Attributes:
+        name: Agent identifier ("ManagerAgent").
+        role: Description of the agent's purpose.
+        system_prompt: Core principles for strategic planning.
+        project_planner: Tool for decomposition and phase generation.
+        
+    Example:
+        >>> agent = ManagerAgent()
+        >>> result = agent.execute({"complex_task": "Build a stock dashboard"})
+        >>> print(result["output"]["phases"])
     """
     
     SYSTEM_PROMPT = """You are a project manager for an AI agent system.
@@ -63,18 +72,17 @@ Think strategically. Plan thoroughly. Optimize for efficiency and quality."""
         self.complexity_threshold = 0.7  # Above this, use detailed planning
     
     def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Execute project planning and coordination.
+        """Orchestrates comprehensive project planning for complex requests.
         
         Args:
-            input_data: {
-                "project_description" or "complex_task": str,
-                "user_id": int (optional),
-                "constraints": dict (optional)
-            }
-            
+            input_data: A dictionary containing:
+                - project_description/complex_task (str): The high-level request.
+                - user_id (int, optional): The user initiating the request.
+                - constraints (dict, optional): Resource or time limitations.
+                
         Returns:
-            Complete project plan with phases, tasks, schedule
+            dict: Structured project plan including phases, task assignments, 
+                risk assessments, and execution workflows.
         """
         start_time = datetime.now()
         

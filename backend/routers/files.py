@@ -1,6 +1,7 @@
-"""
-Nexus AI - File Management Router
-Endpoints for uploading, listing, downloading, and deleting files
+"""Nexus AI - File Management Router.
+
+This module provides API endpoints for securely uploading, downloading, 
+listing, and deleting files associated with tasks and projects.
 """
 
 import os
@@ -16,11 +17,17 @@ from models.user import User
 from models.file import File as FileModel
 from dependencies import get_current_user
 from config import get_settings
+from utils.audit import audit_log
 
 router = APIRouter(prefix="/files", tags=["Files"])
 settings = get_settings()
 
-@router.post("/upload", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/upload", 
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload a file",
+    description="Uploads a file to the server and registers it in the database. Supports optional links to projects or tasks."
+)
 async def upload_file(
     file: UploadFile = File(...),
     project_id: Optional[int] = Query(None),
@@ -86,7 +93,12 @@ async def upload_file(
     
     return db_file.to_dict()
 
-@router.get("/", response_model=List[dict])
+@router.get(
+    "/", 
+    response_model=List[dict],
+    summary="List files",
+    description="Retrieves a list of files belonging to the current user, with optional filters for project and task."
+)
 async def list_files(
     project_id: Optional[int] = None,
     task_id: Optional[int] = None,
@@ -155,6 +167,7 @@ async def download_file(
     )
 
 @router.delete("/{file_id}")
+@audit_log("file_delete")
 async def delete_file(
     file_id: int,
     db: Session = Depends(get_db),

@@ -1,6 +1,7 @@
-"""
-Nexus AI - Content Agent
-AI agent specialized in writing documentation, blogs, and various content
+"""Nexus AI - Content Agent.
+
+This module implements the ContentAgent, specialized in high-quality writing, 
+copyediting, and documentation generation across various formats.
 """
 
 import json
@@ -14,16 +15,22 @@ from agents.agent_registry import AgentRegistry
 
 @AgentRegistry.register
 class ContentAgent(BaseAgent):
-    """
-    Content Agent - Specialized in content creation and writing.
+    """Agent specialized in writing, editing, and content generation.
     
-    Capabilities:
-    - Write blog posts
-    - Create documentation
-    - Generate tutorials
-    - Write README files
-    - Compose emails
-    - Create social media content
+    The ContentAgent handles a wide range of writing tasks, including 
+    blog posts, technical documentation, marketing copy, and emails. It 
+    ensures high readability, proper formatting, and adherence to specific 
+    tones and styles.
+    
+    Attributes:
+        name: Agent identifier ("ContentAgent").
+        role: Description of the agent's purpose.
+        system_prompt: Core instructions for high-quality writing.
+        
+    Example:
+        >>> agent = ContentAgent(llm_manager, db_session)
+        >>> result = agent.execute({"prompt": "Write a 500-word blog post about AI ethics"})
+        >>> print(result["output"]["content"])
     """
     
     DEFAULT_ROLE = "Writing and content creation"
@@ -63,14 +70,17 @@ Always:
         )
     
     def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Execute content creation task.
+        """Performs a writing or editing task based on the user's request.
         
         Args:
-            input_data: Contains topic, content_type, tone, etc.
-            
+            input_data: A dictionary containing:
+                - task/prompt/original_prompt (str): The writing requirement.
+                - context (dict, optional): Search results or data to include.
+                - format (str, optional): Target format (e.g., markdown, html).
+                - tone (str, optional): Desired voice (e.g., professional, casual).
+                
         Returns:
-            Generated content
+            dict: The generated or edited content and associated metadata.
         """
         self.start_execution()
         

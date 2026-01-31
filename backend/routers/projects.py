@@ -1,6 +1,7 @@
-"""
-Nexus AI - Projects Router (Phase 6)
-Project management with ManagerAgent integration and workflow execution
+"""Nexus AI - Projects Router.
+
+This module provides API endpoints for managing complex, multi-phase projects 
+coordinated by the ManagerAgent.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
@@ -21,11 +22,17 @@ from schemas.project_schemas import (
     ProjectPlanResponse
 )
 from dependencies import get_current_user
+from utils.audit import audit_log
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)  # Returns dict directly for reliability
+@router.post(
+    "/", 
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new project",
+    description="Initiates a complex multi-phase project. AI-powered planning runs in the background to decompose it into tasks."
+)
 async def create_project(
     project_data: ProjectCreate,
     background_tasks: BackgroundTasks,
@@ -245,7 +252,12 @@ def _run_ai_planning(project_id: int, description: str, user_id: int):
         db.close()
 
 
-@router.get("/", response_model=List[ProjectResponse])
+@router.get(
+    "/", 
+    response_model=List[ProjectResponse],
+    summary="List projects",
+    description="Retrieves projects belonging to the user with support for search, filtering by tags, and status."
+)
 async def list_projects(
     status_filter: Optional[str] = Query(None, description="Filter by status"),
     q: Optional[str] = Query(None, description="Search query"),
@@ -376,7 +388,11 @@ async def duplicate_project(
     return _project_to_response(duplicated_project)
 
 
-@router.get("/{project_id}")  # Removed response_model to avoid Pydantic validation issues
+@router.get(
+    "/{project_id}",
+    summary="Get project details",
+    description="Retrieves detailed project state, including the high-level plan, execution workflow, and current outputs."
+)
 async def get_project(
     project_id: int,
     db: Session = Depends(get_db),
@@ -575,6 +591,7 @@ async def update_project(
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+@audit_log("project_delete")
 async def delete_project(
     project_id: int,
     db: Session = Depends(get_db),

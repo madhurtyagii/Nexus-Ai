@@ -1,6 +1,8 @@
-"""
-Nexus AI - Memory Agent
-Specialized agent for memory operations, context management, and preference learning
+"""Nexus AI - Memory Agent.
+
+This module implements the MemoryAgent, specialized in persistent storage, 
+context retrieval, preference learning, and conversation summarization 
+using vector stores.
 """
 
 from typing import Dict, List, Any, Optional
@@ -19,14 +21,23 @@ logger = get_logger(__name__)
 
 @AgentRegistry.register
 class MemoryAgent(BaseAgent):
-    """
-    Agent specialized in memory management operations.
+    """Agent specialized in memory management and context orchestration.
     
-    Capabilities:
-    - Store and retrieve memories
-    - Summarize conversation history
-    - Learn user preferences
-    - Provide context for tasks
+    The MemoryAgent interacts directly with the system's vector store to 
+    maintain a long-term memory of interactions. It provides other agents 
+    with relevant context, learns user preferences, and generates 
+    summaries of complex execution trails.
+    
+    Attributes:
+        name: Agent identifier ("MemoryAgent").
+        role: Description of the agent's purpose.
+        system_prompt: Instructions for accurate memory handling.
+        vector_store: Reference to the underlying vector database.
+        
+    Example:
+        >>> agent = MemoryAgent(llm_manager, db_session)
+        >>> result = agent.execute({"operation": "retrieve", "query": "Past AI research"})
+        >>> print(result["output"]["memories"])
     """
     
     def __init__(self, llm_manager: LLMManager = None, db_session=None):
@@ -53,19 +64,18 @@ Always maintain accuracy - never fabricate memories.""",
         self.embedding_manager = get_embedding_manager()
     
     def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Execute memory operation.
+        """Performs specified memory operations like storage or retrieval.
         
         Args:
-            input_data: Must contain 'operation' key with one of:
-                - store: Save new memory
-                - retrieve: Search memories
-                - summarize: Condense history
-                - learn_preference: Extract user preference
-                - get_context: Get task context
-                
+            input_data: A dictionary containing:
+                - operation (str): One of 'store', 'retrieve', 'summarize', 
+                    'learn_preference', or 'get_context'.
+                - content/query (str, optional): Data to store or search for.
+                - metadata/filters (dict, optional): Additional context or 
+                    search constraints.
+                    
         Returns:
-            Operation result
+            dict: Results of the memory operation.
         """
         self.start_execution()
         

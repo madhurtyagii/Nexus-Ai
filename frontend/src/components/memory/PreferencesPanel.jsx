@@ -2,138 +2,148 @@ import { useState, useEffect } from 'react';
 
 const API_BASE = 'http://localhost:8000';
 
+/**
+ * PreferencesPanel Component
+ * 
+ * Displays user preferences learned by the AI, such as communication tone, 
+ * detail level, and preferred agents.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {string} props.token - JWT authentication token.
+ */
 export default function PreferencesPanel({ token }) {
-    const [preferences, setPreferences] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [preferences, setPreferences] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchPreferences();
-    }, []);
+  useEffect(() => {
+    fetchPreferences();
+  }, []);
 
-    const fetchPreferences = async () => {
-        try {
-            const response = await fetch(`${API_BASE}/memory/preferences`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setPreferences(data.preferences || {});
-            }
-        } catch (error) {
-            console.error('Failed to fetch preferences:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const preferenceCategories = [
-        {
-            id: 'tone',
-            label: '🎭 Communication Tone',
-            description: 'How you prefer responses to be written',
-            options: ['formal', 'professional', 'casual', 'friendly']
-        },
-        {
-            id: 'detail_level',
-            label: '📊 Detail Level',
-            description: 'How much detail you prefer in responses',
-            options: ['concise', 'moderate', 'detailed', 'comprehensive']
-        },
-        {
-            id: 'content_length',
-            label: '📏 Content Length',
-            description: 'Preferred length of generated content',
-            options: ['short', 'medium', 'long']
-        },
-        {
-            id: 'response_speed',
-            label: '⚡ Response Priority',
-            description: 'Speed vs thoroughness preference',
-            options: ['quick', 'balanced', 'thorough']
-        }
-    ];
-
-    if (loading) {
-        return (
-            <div className="loading-state">
-                <div className="spinner"></div>
-                <p>Loading preferences...</p>
-            </div>
-        );
+  const fetchPreferences = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/memory/preferences`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPreferences(data.preferences || {});
+      }
+    } catch (error) {
+      console.error('Failed to fetch preferences:', error);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  const preferenceCategories = [
+    {
+      id: 'tone',
+      label: '🎭 Communication Tone',
+      description: 'How you prefer responses to be written',
+      options: ['formal', 'professional', 'casual', 'friendly']
+    },
+    {
+      id: 'detail_level',
+      label: '📊 Detail Level',
+      description: 'How much detail you prefer in responses',
+      options: ['concise', 'moderate', 'detailed', 'comprehensive']
+    },
+    {
+      id: 'content_length',
+      label: '📏 Content Length',
+      description: 'Preferred length of generated content',
+      options: ['short', 'medium', 'long']
+    },
+    {
+      id: 'response_speed',
+      label: '⚡ Response Priority',
+      description: 'Speed vs thoroughness preference',
+      options: ['quick', 'balanced', 'thorough']
+    }
+  ];
+
+  if (loading) {
     return (
-        <div className="preferences-panel">
-            <div className="preferences-header">
-                <h3>Learned Preferences</h3>
-                <p className="subtitle">These preferences are learned from your interaction patterns</p>
+      <div className="loading-state">
+        <div className="spinner"></div>
+        <p>Loading preferences...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="preferences-panel">
+      <div className="preferences-header">
+        <h3>Learned Preferences</h3>
+        <p className="subtitle">These preferences are learned from your interaction patterns</p>
+      </div>
+
+      <div className="preferences-grid">
+        {preferenceCategories.map(category => {
+          const currentValue = preferences?.[category.id] || 'Not learned yet';
+
+          return (
+            <div key={category.id} className="preference-card">
+              <div className="preference-label">{category.label}</div>
+              <div className="preference-description">{category.description}</div>
+
+              <div className="preference-value">
+                <span className="current-value">{currentValue}</span>
+              </div>
+
+              <div className="preference-options">
+                {category.options.map(option => (
+                  <span
+                    key={option}
+                    className={`option-chip ${currentValue === option ? 'active' : ''}`}
+                  >
+                    {option}
+                  </span>
+                ))}
+              </div>
             </div>
+          );
+        })}
+      </div>
 
-            <div className="preferences-grid">
-                {preferenceCategories.map(category => {
-                    const currentValue = preferences?.[category.id] || 'Not learned yet';
+      {preferences?.preferred_agents?.length > 0 && (
+        <div className="preferred-agents-section">
+          <h4>🤖 Preferred Agents</h4>
+          <div className="agent-chips">
+            {preferences.preferred_agents.map(agent => (
+              <span key={agent} className="agent-chip">{agent}</span>
+            ))}
+          </div>
+        </div>
+      )}
 
-                    return (
-                        <div key={category.id} className="preference-card">
-                            <div className="preference-label">{category.label}</div>
-                            <div className="preference-description">{category.description}</div>
+      {preferences?.avg_satisfaction && (
+        <div className="satisfaction-section">
+          <h4>⭐ Average Satisfaction</h4>
+          <div className="satisfaction-score">
+            {[1, 2, 3, 4, 5].map(star => (
+              <span
+                key={star}
+                className={`star ${star <= preferences.avg_satisfaction ? 'filled' : ''}`}
+              >
+                ★
+              </span>
+            ))}
+            <span className="score-text">
+              {preferences.avg_satisfaction?.toFixed(1)} / 5
+            </span>
+          </div>
+        </div>
+      )}
 
-                            <div className="preference-value">
-                                <span className="current-value">{currentValue}</span>
-                            </div>
+      <div className="preferences-footer">
+        <p className="help-text">
+          💡 Tip: Provide feedback on tasks to help improve these preferences
+        </p>
+      </div>
 
-                            <div className="preference-options">
-                                {category.options.map(option => (
-                                    <span
-                                        key={option}
-                                        className={`option-chip ${currentValue === option ? 'active' : ''}`}
-                                    >
-                                        {option}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {preferences?.preferred_agents?.length > 0 && (
-                <div className="preferred-agents-section">
-                    <h4>🤖 Preferred Agents</h4>
-                    <div className="agent-chips">
-                        {preferences.preferred_agents.map(agent => (
-                            <span key={agent} className="agent-chip">{agent}</span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {preferences?.avg_satisfaction && (
-                <div className="satisfaction-section">
-                    <h4>⭐ Average Satisfaction</h4>
-                    <div className="satisfaction-score">
-                        {[1, 2, 3, 4, 5].map(star => (
-                            <span
-                                key={star}
-                                className={`star ${star <= preferences.avg_satisfaction ? 'filled' : ''}`}
-                            >
-                                ★
-                            </span>
-                        ))}
-                        <span className="score-text">
-                            {preferences.avg_satisfaction?.toFixed(1)} / 5
-                        </span>
-                    </div>
-                </div>
-            )}
-
-            <div className="preferences-footer">
-                <p className="help-text">
-                    💡 Tip: Provide feedback on tasks to help improve these preferences
-                </p>
-            </div>
-
-            <style jsx>{`
+      <style jsx>{`
         .preferences-panel {
           padding: 8px;
         }
@@ -248,6 +258,6 @@ export default function PreferencesPanel({ token }) {
           margin: 0;
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

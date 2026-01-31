@@ -3,6 +3,18 @@ import toast from 'react-hot-toast';
 import { filesAPI } from '../../services/api';
 import './FileUpload.css';
 
+/**
+ * FileUpload Component
+ * 
+ * A button and hidden input that handles file selection and 
+ * asynchronous upload to the backend.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {number} [props.projectId] - Associate upload with a project.
+ * @param {number} [props.taskId] - Associate upload with a task.
+ * @param {Function} [props.onUploadSuccess] - Callback after successful upload.
+ */
 const FileUpload = ({ projectId, taskId, onUploadSuccess }) => {
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);

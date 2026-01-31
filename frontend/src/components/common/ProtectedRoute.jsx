@@ -1,6 +1,17 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+/**
+ * ProtectedRoute Component
+ * 
+ * A wrapper component that enforces authentication. It redirects 
+ * unauthenticated users to the login page and displays a loading state 
+ * during session verification.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {React.ReactNode} props.children - The components to render if authenticated.
+ */
 export default function ProtectedRoute({ children }) {
     const { isAuthenticated, loading } = useAuth();
 

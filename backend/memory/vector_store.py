@@ -153,13 +153,63 @@ class VectorStore:
         except Exception as e:
             logger.error(f"Failed to add memory to '{collection_name}': {e}")
             raise
+
+    def add_memories_batch(
+        self,
+        collection_name: str,
+        contents: List[str],
+        metadatas: List[Dict[str, Any]],
+        memory_ids: List[str] = None,
+        embeddings: List[List[float]] = None
+    ) -> List[str]:
+        """
+        Add multiple memories to a collection in a batch.
+        
+        Args:
+            collection_name: Target collection name
+            contents: List of text contents
+            metadatas: List of metadata dicts
+            memory_ids: Optional list of IDs
+            embeddings: Optional list of pre-computed embeddings
+            
+        Returns:
+            List of memory IDs
+        """
+        collection = self.init_collection(collection_name)
+        
+        if not memory_ids:
+            memory_ids = [str(uuid.uuid4()) for _ in contents]
+            
+        clean_metadatas = [self._clean_metadata(m) for m in metadatas]
+        
+        try:
+            if embeddings:
+                collection.add(
+                    documents=contents,
+                    embeddings=embeddings,
+                    metadatas=clean_metadatas,
+                    ids=memory_ids
+                )
+            else:
+                collection.add(
+                    documents=contents,
+                    metadatas=clean_metadatas,
+                    ids=memory_ids
+                )
+            
+            logger.info(f"Added {len(memory_ids)} memories to '{collection_name}' in batch")
+            return memory_ids
+            
+        except Exception as e:
+            logger.error(f"Batch add to '{collection_name}' failed: {e}")
+            raise
     
     def search_memory(
         self,
         collection_name: str,
         query: str,
         filters: Dict[str, Any] = None,
-        limit: int = 5,
+        limit: int = 10,
         query_embedding: List[float] = None
     ) -> List[Dict[str, Any]]:
         """

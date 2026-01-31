@@ -102,13 +102,15 @@ class WorkflowEngine:
                     )
                     
                     if recovery.get("action") == "abort":
+                        # If critical, stop the entire workflow
                         results["status"] = "failed"
                         results["errors"].append(phase_result.get("error"))
                         break
                     elif recovery.get("action") == "skip":
+                        # For optional phases (like non-critical QA), just move on
                         continue
                     elif recovery.get("action") == "retry":
-                        # Retry the phase
+                        # Re-run the phase once if requested by recovery logic
                         phase_result = self._execute_phase(
                             phase=phase,
                             task_id=task_id,
@@ -250,11 +252,12 @@ class WorkflowEngine:
                 )
                 future_to_task[future] = task
             
-            # Collect results
+            # Collect results as they complete from the thread pool
             for future in as_completed(future_to_task):
                 task = future_to_task[future]
                 try:
-                    result = future.result(timeout=300)  # 5 min timeout
+                    # Impose a 5-minute safety timeout on individual agent tasks
+                    result = future.result(timeout=300) 
                     results.append(result)
                     self.completed_tasks[task.get("task_id")] = result
                 except Exception as e:
@@ -385,7 +388,7 @@ class WorkflowEngine:
                 
                 # 3. Wait for completion (Polling)
                 # This blocks the workflow thread, but allows the Worker to do the heavy lifting
-                # and enables persistence/visibility in the UI
+                # and enables persistence/visibility in the UI through the database state.
                 
                 max_retries = 300  # 300 * 2s = 10 minutes timeout
                 import time

@@ -2,8 +2,16 @@ import { useMemo } from 'react';
 import './ProjectTimeline.css';
 
 /**
- * ProjectTimeline - Visual timeline of project phases and tasks
- * Shows execution flow with dependencies
+ * ProjectTimeline Component
+ * 
+ * Renders a visual representation of the project's execution flow, 
+ * showing phases, tasks, and their respective completion statuses.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {Array} props.phases - List of project phases to display.
+ * @param {number} props.currentPhase - The index of the currently active phase.
+ * @param {Object} props.progressData - Real-time progress metadata.
  */
 function ProjectTimeline({ phases, currentPhase, progressData }) {
     const timelineItems = useMemo(() => {

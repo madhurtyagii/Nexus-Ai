@@ -2,140 +2,150 @@ import { useState } from 'react';
 
 const API_BASE = 'http://localhost:8000';
 
+/**
+ * RelatedTasks Component
+ * 
+ * Allows users to search for similar past tasks across their history 
+ * using semantic similarity search.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {string} props.token - JWT authentication token.
+ */
 export default function RelatedTasks({ token }) {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [results, setResults] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [hasSearched, setHasSearched] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-    const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
 
-        setLoading(true);
-        setHasSearched(true);
+    setLoading(true);
+    setHasSearched(true);
 
-        try {
-            const response = await fetch(
-                `${API_BASE}/memory/related?prompt=${encodeURIComponent(searchQuery)}&limit=10`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (response.ok) {
-                const data = await response.json();
-                setResults(data.related_tasks || []);
-            }
-        } catch (error) {
-            console.error('Search failed:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+      const response = await fetch(
+        `${API_BASE}/memory/related?prompt=${encodeURIComponent(searchQuery)}&limit=10`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setResults(data.related_tasks || []);
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const formatTimestamp = (timestamp) => {
-        if (!timestamp) return '';
-        const date = new Date(timestamp);
-        return date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
-    };
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
-    const getSimilarityColor = (similarity) => {
-        if (similarity >= 0.8) return '#10b981';
-        if (similarity >= 0.6) return '#fbbf24';
-        return '#ef4444';
-    };
+  const getSimilarityColor = (similarity) => {
+    if (similarity >= 0.8) return '#10b981';
+    if (similarity >= 0.6) return '#fbbf24';
+    return '#ef4444';
+  };
 
-    return (
-        <div className="related-tasks">
-            <div className="search-section">
-                <h3>🔍 Find Similar Past Tasks</h3>
-                <p className="subtitle">Search for tasks you've done before that are related to a topic</p>
+  return (
+    <div className="related-tasks">
+      <div className="search-section">
+        <h3>🔍 Find Similar Past Tasks</h3>
+        <p className="subtitle">Search for tasks you've done before that are related to a topic</p>
 
-                <div className="search-box">
-                    <input
-                        type="text"
-                        className="search-input"
-                        placeholder="Describe what you're looking for..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    />
-                    <button
-                        className="btn-primary"
-                        onClick={handleSearch}
-                        disabled={loading}
-                    >
-                        {loading ? 'Searching...' : 'Find Related'}
-                    </button>
+        <div className="search-box">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Describe what you're looking for..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+          />
+          <button
+            className="btn-primary"
+            onClick={handleSearch}
+            disabled={loading}
+          >
+            {loading ? 'Searching...' : 'Find Related'}
+          </button>
+        </div>
+      </div>
+
+      <div className="results-section">
+        {loading ? (
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Searching memories...</p>
+          </div>
+        ) : hasSearched && results.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">🔍</div>
+            <p>No related tasks found</p>
+            <p className="text-sm text-muted">Try a different search query</p>
+          </div>
+        ) : results.length > 0 ? (
+          <div className="results-list">
+            {results.map((result, index) => (
+              <div key={result.id || index} className="result-card">
+                <div className="result-header">
+                  <div className="similarity-badge" style={{
+                    background: `${getSimilarityColor(result.similarity)}20`,
+                    color: getSimilarityColor(result.similarity)
+                  }}>
+                    {Math.round((result.similarity || 0) * 100)}% match
+                  </div>
+                  <span className="result-date">
+                    {formatTimestamp(result.metadata?.timestamp)}
+                  </span>
                 </div>
-            </div>
 
-            <div className="results-section">
-                {loading ? (
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Searching memories...</p>
-                    </div>
-                ) : hasSearched && results.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-state-icon">🔍</div>
-                        <p>No related tasks found</p>
-                        <p className="text-sm text-muted">Try a different search query</p>
-                    </div>
-                ) : results.length > 0 ? (
-                    <div className="results-list">
-                        {results.map((result, index) => (
-                            <div key={result.id || index} className="result-card">
-                                <div className="result-header">
-                                    <div className="similarity-badge" style={{
-                                        background: `${getSimilarityColor(result.similarity)}20`,
-                                        color: getSimilarityColor(result.similarity)
-                                    }}>
-                                        {Math.round((result.similarity || 0) * 100)}% match
-                                    </div>
-                                    <span className="result-date">
-                                        {formatTimestamp(result.metadata?.timestamp)}
-                                    </span>
-                                </div>
+                <div className="result-content">
+                  {result.content}
+                </div>
 
-                                <div className="result-content">
-                                    {result.content}
-                                </div>
-
-                                {result.metadata?.task_id && (
-                                    <div className="result-meta">
-                                        Task #{result.metadata.task_id}
-                                        {result.metadata?.agent_name && (
-                                            <span className="agent-tag">{result.metadata.agent_name}</span>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="hint-section">
-                        <div className="hint-card">
-                            <div className="hint-icon">💡</div>
-                            <h4>How to use</h4>
-                            <p>Enter a description of what you're looking for to find similar past tasks.
-                                This helps you build on previous work and avoid duplication.</p>
-
-                            <div className="example-queries">
-                                <span className="example-label">Example queries:</span>
-                                <ul>
-                                    <li>"Python API authentication"</li>
-                                    <li>"Blog post about machine learning"</li>
-                                    <li>"Data analysis visualization"</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+                {result.metadata?.task_id && (
+                  <div className="result-meta">
+                    Task #{result.metadata.task_id}
+                    {result.metadata?.agent_name && (
+                      <span className="agent-tag">{result.metadata.agent_name}</span>
+                    )}
+                  </div>
                 )}
-            </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="hint-section">
+            <div className="hint-card">
+              <div className="hint-icon">💡</div>
+              <h4>How to use</h4>
+              <p>Enter a description of what you're looking for to find similar past tasks.
+                This helps you build on previous work and avoid duplication.</p>
 
-            <style jsx>{`
+              <div className="example-queries">
+                <span className="example-label">Example queries:</span>
+                <ul>
+                  <li>"Python API authentication"</li>
+                  <li>"Blog post about machine learning"</li>
+                  <li>"Data analysis visualization"</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style jsx>{`
         .related-tasks {
           padding: 8px;
         }
@@ -249,6 +259,6 @@ export default function RelatedTasks({ token }) {
         .text-sm { font-size: 0.875rem; }
         .text-muted { color: #666; }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

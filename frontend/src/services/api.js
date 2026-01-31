@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+import { setupErrorInterceptors } from '../utils/errorHandler';
+
 // Create axios instance with base configuration
 const api = axios.create({
     baseURL: 'http://localhost:8000',
@@ -7,6 +9,9 @@ const api = axios.create({
         'Content-Type': 'application/json',
     },
 });
+
+// Setup global error handling
+setupErrorInterceptors(api);
 
 // Request interceptor - attach JWT token to all requests
 api.interceptors.request.use(
@@ -22,7 +27,7 @@ api.interceptors.request.use(
     }
 );
 
-// Response interceptor - handle 401 errors
+// Response interceptor - handle 401 errors specifically for auth redirect
 api.interceptors.response.use(
     (response) => response,
     (error) => {

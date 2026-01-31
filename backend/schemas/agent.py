@@ -10,11 +10,11 @@ from typing import Optional, List
 
 class AgentResponse(BaseModel):
     """Schema for agent response"""
-    id: int
-    name: str
-    role: str
-    description: Optional[str] = None
-    is_active: bool
+    id: int = Field(..., example=1)
+    name: str = Field(..., example="ResearcherAgent")
+    role: str = Field(..., example="Researcher")
+    description: Optional[str] = Field(None, example="Specializes in web research and data gathering.")
+    is_active: bool = Field(..., example=True)
     
     class Config:
         from_attributes = True
@@ -29,11 +29,11 @@ class AgentDetailResponse(AgentResponse):
 
 class AgentMessageResponse(BaseModel):
     """Schema for agent message response"""
-    id: int
-    task_id: int
-    sender_agent: str
-    receiver_agent: Optional[str] = None
-    message_content: str
+    id: int = Field(..., example=501)
+    task_id: int = Field(..., example=10)
+    sender_agent: str = Field(..., example="ManagerAgent")
+    receiver_agent: Optional[str] = Field(None, example="CodeAgent")
+    message_content: str = Field(..., example="Please implement the authentication logic for the API.")
     timestamp: datetime
     
     class Config:

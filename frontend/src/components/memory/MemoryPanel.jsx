@@ -7,6 +7,16 @@ import './MemoryPanel.css';
 
 const API_BASE = 'http://localhost:8000';
 
+/**
+ * MemoryPanel Component
+ * 
+ * The main container for memory-related features, providing a tabbed 
+ * interface for History, Preferences, Related Tasks, and Analytics.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {string} props.token - JWT authentication token.
+ */
 export default function MemoryPanel({ token }) {
     const [activeTab, setActiveTab] = useState('history');
     const [stats, setStats] = useState(null);

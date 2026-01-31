@@ -1,6 +1,7 @@
-"""
-Nexus AI - User Model
-Database model for user authentication and profiles
+"""Nexus AI - User Model.
+
+This module defines the User model for authentication, profile management, 
+and establishing relationships with tasks, projects, and files.
 """
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
@@ -10,7 +11,20 @@ from database import Base
 
 
 class User(Base):
-    """User model for authentication and profile management"""
+    """Represents a registered user in the Nexus AI system.
+    
+    The User model stores authentication credentials and profile information. 
+    It serves as the parent for most other user-generated content like 
+    Tasks and Projects.
+    
+    Attributes:
+        id: Primary key identifier.
+        email: Unique user email address.
+        username: Unique display name.
+        hashed_password: Argon2 or BCrypt hashed credential.
+        is_active: Flag for account status.
+        created_at: Database timestamp of registration.
+    """
     
     __tablename__ = "users"
     

@@ -3,8 +3,15 @@ import api from '../../services/api';
 import './ProjectWizard.css';
 
 /**
- * ProjectWizard - Multi-step project creation wizard
- * Guides users through creating complex AI projects
+ * ProjectWizard Component
+ * 
+ * A multi-step form that guides users through the creation of a new project. 
+ * Handles state for name, description, objectives, and agent selection.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {Function} props.onComplete - Callback function called when the project is successfully created.
+ * @param {Function} props.onCancel - Callback function called to close the wizard.
  */
 function ProjectWizard({ onComplete, onCancel }) {
     const [step, setStep] = useState(1);

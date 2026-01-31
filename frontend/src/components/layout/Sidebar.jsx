@@ -9,6 +9,14 @@ const navItems = [
     { path: '/help', label: 'Help', icon: '❓' },
 ];
 
+/**
+ * Sidebar Component
+ * 
+ * The side navigation menu providing links to main application areas 
+ * and displaying real-time system status (Backend, Redis, Agents).
+ * 
+ * @component
+ */
 export default function Sidebar() {
     return (
         <aside className="w-64 min-h-[calc(100vh-73px)] bg-dark-800 border-r border-dark-700 p-4 hidden lg:block">

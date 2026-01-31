@@ -1,6 +1,14 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+/**
+ * Navbar Component
+ * 
+ * The top navigation bar displaying the application logo, 
+ * current user information, and logout functionality.
+ * 
+ * @component
+ */
 export default function Navbar() {
     const { user, logout } = useAuth();
 

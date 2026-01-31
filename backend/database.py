@@ -1,6 +1,7 @@
-"""
-Nexus AI - Database Configuration
-SQLAlchemy engine, session management, and base model
+"""Nexus AI - Database Configuration.
+
+This module sets up the SQLAlchemy ORM infrastructure, including the 
+engine, session local factory, and the Base class for all models.
 """
 
 from sqlalchemy import create_engine
@@ -29,9 +30,11 @@ Base = declarative_base()
 
 
 def get_db():
-    """
-    Dependency function that yields database session.
-    Ensures session is closed after request completes.
+    """Dependency for providing a database session to FastAPI routes.
+    
+    Yields:
+        db (Session): A SQLAlchemy database session that is automatically 
+            closed after the request completes.
     """
     db = SessionLocal()
     try:

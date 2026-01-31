@@ -1,6 +1,11 @@
-"""
-Nexus AI - Orchestrator Core
-Main orchestrator engine that analyzes tasks and coordinates agent execution
+"""Nexus AI - Orchestrator Core.
+
+This module provides the primary logic for task decomposition, agent assignment, 
+and multi-agent workflow coordination. It uses LLMs to analyze user prompts 
+and breaks them down into executable subtasks assigned to specialized agents.
+
+Classes:
+    OrchestratorEngine: Coordinates the overall task execution lifecycle.
 """
 
 import json
@@ -12,12 +17,20 @@ from models.task import Task, Subtask, TaskStatus
 from models.agent import Agent
 from llm.llm_manager import llm_manager
 from redis_client import enqueue_task
+from backend.exceptions.custom_exceptions import TaskExecutionError, DatabaseError
+from backend.utils.retries import retry
 
 
 class OrchestratorEngine:
-    """
-    Core orchestrator that analyzes user tasks, creates execution plans,
-    and coordinates multi-agent workflows.
+    """The central brain responsible for task analysis and execution planning.
+    
+    The OrchestratorEngine takes raw user prompts, analyzes their complexity 
+    and requirements using LLMs, and converts them into a series of subtasks 
+    that are then enqueued for background processing by specialized agents.
+    
+    Attributes:
+        db (Session): SQLAlchemy database session for task persistence.
+        llm (LLMManager): Utility for interacting with configured LLM models.
     """
     
     ANALYSIS_SYSTEM_PROMPT = """You are a task analyzer for an AI agent system.
@@ -41,24 +54,34 @@ Analyze the user's task and respond with JSON only:
 }"""
 
     def __init__(self, db: Session):
-        """
-        Initialize orchestrator with database session.
+        """Initializes the OrchestratorEngine with a database session.
         
         Args:
-            db: SQLAlchemy database session
+            db: A SQLAlchemy database session object.
         """
         self.db = db
         self.llm = llm_manager
     
-    def analyze_task(self, user_prompt: str) -> Dict[str, Any]:
-        """
-        Use LLM to analyze task requirements.
+    @retry(exceptions=(Exception,), tries=3, delay=2)
+    def analyze_task(self, user_prompt: str, user_id: int = 1) -> Dict[str, Any]:
+        """Analyzes a user's task prompt to determine necessary agents and complexity.
+        
+        Uses the LLM to parse the intent, assign appropriate agents, estimate 
+        execution time, and assign a complexity score.
         
         Args:
-            user_prompt: The user's task description
+            user_prompt: The raw text description of the task from the user.
+            user_id: ID of the user owning the task. Defaults to 1.
             
         Returns:
-            Analysis dictionary with complexity, agents, type, time
+            dict: Analysis results containing 'complexity_score', 
+                'required_agents', 'task_type', 'estimated_time', and 'reasoning'.
+            
+        Example:
+            >>> engine = OrchestratorEngine(db)
+            >>> analysis = engine.analyze_task("Write a blog post about AI")
+            >>> print(analysis["required_agents"])
+            ['ContentAgent']
         """
         print(f"🔍 Analyzing task: {user_prompt[:50]}...")
         
@@ -96,7 +119,14 @@ Analyze the user's task and respond with JSON only:
             return self._fallback_analysis(user_prompt)
     
     def _fallback_analysis(self, user_prompt: str) -> Dict[str, Any]:
-        """Simple keyword-based fallback analysis."""
+        """Performs simple keyword-based analysis when the LLM is unavailable.
+        
+        Args:
+            user_prompt: The raw task description.
+            
+        Returns:
+            dict: Basic analysis mapping keywords to agents.
+        """
         prompt_lower = user_prompt.lower()
         
         agents = []
@@ -144,15 +174,17 @@ Analyze the user's task and respond with JSON only:
         task_id: int, 
         analysis: Dict[str, Any]
     ) -> List[int]:
-        """
-        Create subtasks for each required agent.
+        """Generates subtasks based on the provided task analysis.
         
         Args:
-            task_id: Parent task ID
-            analysis: Task analysis from analyze_task()
+            task_id: The ID of the parent task row.
+            analysis: The output of analyze_task() defining required agents.
             
         Returns:
-            List of created subtask IDs
+            List[int]: A list of IDs for the newly created subtasks.
+            
+        Raises:
+            ValueError: If the parent task_id does not exist.
         """
         required_agents = analysis.get("required_agents", ["ResearchAgent"])
         complexity = analysis.get("complexity_score", 0.3)
@@ -193,60 +225,68 @@ Analyze the user's task and respond with JSON only:
         print(f"✅ Created execution plan: {len(subtask_ids)} subtasks")
         return subtask_ids
     
+    @retry(exceptions=(TaskExecutionError, DatabaseError), tries=3, delay=1)
     def execute_task(self, task_id: int) -> Dict[str, Any]:
-        """
-        Full task execution pipeline.
+        """Runs the complete end-to-end task execution pipeline.
         
-        1. Analyze task
-        2. Create subtasks
-        3. Update task status
-        4. Enqueue subtasks to Redis
+        Orchestrates analysis, subtask creation, and enqueuing to background 
+        workers.
         
         Args:
-            task_id: Task ID to execute
+            task_id: The ID of the task to process.
             
         Returns:
-            Execution summary
+            dict: Summary of the triggered execution, including subtask IDs.
+            
+        Raises:
+            TaskExecutionError: If any stage of the pipeline fails.
+            DatabaseError: If database persistence fails during the process.
         """
         print(f"🚀 Executing task {task_id}")
         
-        # Get task
-        task = self.db.query(Task).filter(Task.id == task_id).first()
-        if not task:
-            raise ValueError(f"Task {task_id} not found")
-        
-        # Analyze
-        analysis = self.analyze_task(task.user_prompt)
-        
-        # Update task with analysis
-        task.complexity_score = analysis.get("complexity_score", 0.3)
-        task.status = TaskStatus.IN_PROGRESS.value
-        self.db.commit()
-        
-        # Create execution plan
-        subtask_ids = self.create_execution_plan(task_id, analysis)
-        
-        # Enqueue subtasks to Redis
-        for subtask_id in subtask_ids:
-            enqueue_task(subtask_id)
-        
-        return {
-            "task_id": task_id,
-            "status": "in_progress",
-            "analysis": analysis,
-            "subtask_ids": subtask_ids,
-            "message": f"Created {len(subtask_ids)} subtasks"
-        }
+        try:
+            # Get task
+            task = self.db.query(Task).filter(Task.id == task_id).first()
+            if not task:
+                raise TaskExecutionError(f"Task {task_id} not found")
+            
+            # Analyze
+            analysis = self.analyze_task(task.user_prompt)
+            
+            # Update task with analysis
+            task.complexity_score = analysis.get("complexity_score", 0.3)
+            task.status = TaskStatus.IN_PROGRESS.value
+            self.db.commit()
+            
+            # Create execution plan
+            subtask_ids = self.create_execution_plan(task_id, analysis)
+            
+            # Enqueue subtasks to Redis
+            for subtask_id in subtask_ids:
+                enqueue_task(subtask_id)
+            
+            return {
+                "task_id": task_id,
+                "status": "in_progress",
+                "analysis": analysis,
+                "subtask_ids": subtask_ids,
+                "message": f"Created {len(subtask_ids)} subtasks"
+            }
+        except Exception as e:
+            self.db.rollback()
+            if isinstance(e, TaskExecutionError):
+                raise e
+            raise TaskExecutionError(f"Failed to execute task {task_id}: {str(e)}")
     
     def get_task_progress(self, task_id: int) -> Dict[str, Any]:
-        """
-        Get current progress of a task.
+        """Retrieves and calculates the current progress of a task.
         
         Args:
-            task_id: Task ID to check
+            task_id: The ID of the task to check.
             
         Returns:
-            Progress dictionary
+            dict: Progress report containing percentage complete, 
+                subtask counts, and active agent details.
         """
         task = self.db.query(Task).filter(Task.id == task_id).first()
         if not task:

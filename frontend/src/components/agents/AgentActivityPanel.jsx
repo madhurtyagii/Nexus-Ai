@@ -9,6 +9,14 @@ import './AgentActivityPanel.css';
 
 /**
  * AgentCard - Shows individual agent status
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {string} props.agentName - The name of the agent.
+ * @param {string} props.status - Current status (e.g., 'starting', 'completed').
+ * @param {number} [props.progress] - Completion percentage.
+ * @param {string} [props.message] - Latest status message from the agent.
+ * @param {string} [props.timestamp] - Time of the last update.
  */
 function AgentCard({ agentName, status, progress, message, timestamp }) {
     const getStatusColor = () => {
@@ -93,7 +101,11 @@ function AgentCard({ agentName, status, progress, message, timestamp }) {
 }
 
 /**
- * TaskProgressTimeline - Shows timeline of events
+ * TaskProgressTimeline - Shows a timeline of task and agent events.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {Array} props.events - List of event objects to display.
  */
 function TaskProgressTimeline({ events }) {
     if (!events || events.length === 0) {
@@ -150,7 +162,15 @@ function TaskProgressTimeline({ events }) {
 }
 
 /**
- * AgentActivityPanel - Main panel showing agent activity
+ * AgentActivityPanel - Main panel showing real-time agent activity.
+ * 
+ * Uses WebSockets to receive live updates about agent status and 
+ * task progress.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {string|number} props.taskId - The ID of the task to monitor.
+ * @param {string} props.token - JWT authentication token.
  */
 function AgentActivityPanel({ taskId, token }) {
     const {
@@ -202,7 +222,14 @@ function AgentActivityPanel({ taskId, token }) {
 }
 
 /**
- * AgentActivityPanelStandalone - For use without WebSocket (polling)
+ * AgentActivityPanelPolling - Version of the panel for use without WebSockets.
+ * 
+ * Typically used for historical tasks or when subtasks are already loaded.
+ * 
+ * @component
+ * @param {Object} props - Component props.
+ * @param {Array} [props.subtasks] - List of subtasks to display as cards.
+ * @param {string} [props.status] - Overall task status badge.
  */
 export function AgentActivityPanelPolling({ subtasks = [], status }) {
     return (

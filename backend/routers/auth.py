@@ -1,6 +1,7 @@
-"""
-Nexus AI - Auth Router
-Authentication endpoints: signup, login, get current user
+"""Nexus AI - Auth Router.
+
+This module provides API endpoints for user authentication, including 
+signup, login, and retrieval of the current user's profile.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -19,7 +20,13 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 settings = get_settings()
 
 
-@router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/signup", 
+    response_model=UserResponse, 
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a new user",
+    description="Creates a new user account with a unique email and username. Passwords are securely hashed."
+)
 async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user account.
@@ -59,7 +66,12 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login", 
+    response_model=Token,
+    summary="User login (JSON)",
+    description="Authenticates with email and password to return a JWT access token."
+)
 async def login(user_data: UserLogin, db: Session = Depends(get_db)):
     """
     Authenticate user and return JWT token.
@@ -130,7 +142,12 @@ async def login_form(
     return Token(access_token=access_token, token_type="bearer")
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get(
+    "/me", 
+    response_model=UserResponse,
+    summary="Get current user",
+    description="Retrieves the profile of the currently authenticated user."
+)
 async def get_me(current_user: User = Depends(get_current_user)):
     """
     Get current authenticated user's profile.
