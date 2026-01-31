@@ -6,9 +6,10 @@ set -e
 echo "--- Starting Migrations ---"
 python migrate.py
 
-echo "--- Starting Celery Worker in Background ---"
+echo "--- Starting Custom Worker in Background ---"
 # We run the worker in the background so the web server can start
-celery -A worker.celery worker --loglevel=info --concurrency=1 &
+# This uses the custom TaskQueue based on Redis, not Celery
+python worker.py &
 
 echo "--- Starting Gunicorn Web Server ---"
 # The web server must run in the foreground (hold the process)
