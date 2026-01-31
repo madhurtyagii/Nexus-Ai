@@ -14,34 +14,35 @@ from seed_templates import seed_templates
 from seed_agents import seed_agents
 
 def run_migrations():
-    print("🚀 Starting database migrations...")
+    print("🚀 Starting database migrations script...", flush=True)
     
     # Create all tables
     try:
-        print("Creating tables...")
+        print("🔍 Creating tables...", flush=True)
         Base.metadata.create_all(bind=engine)
-        print("✅ Tables created successfully.")
+        print("✅ Tables created successfully.", flush=True)
     except Exception as e:
-        print(f"❌ Table creation failed: {e}")
+        print(f"❌ Table creation failed: {e}", flush=True)
         # Don't exit, might be existing tables
         
     # Seed templates
     try:
-        print("Seeding workflow templates...")
+        print("🌱 Seeding workflow templates...", flush=True)
         seed_templates()
-        print("✅ Templates seeded successfully.")
+        print("✅ Templates seeded successfully.", flush=True)
     except Exception as e:
-        print(f"❌ Template seeding failed: {e}")
+        print(f"❌ Template seeding failed: {e}", flush=True)
 
     # Seed agents
     try:
-        print("Seeding default agents...")
+        print("🤖 Seeding default agents...", flush=True)
         seed_agents()
-        print("✅ Agents seeded successfully.")
+        print("✅ Agents seeded successfully.", flush=True)
     except Exception as e:
-        print(f"❌ Agent seeding failed: {e}")
+        print(f"❌ Agent seeding failed: {e}", flush=True)
 
-    print("✨ Migration process complete.")
+    print("✨ Migration process complete.", flush=True)
+
 
 if __name__ == "__main__":
     run_migrations()

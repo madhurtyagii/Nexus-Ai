@@ -19,8 +19,18 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")
 
-# Create SQLAlchemy engine
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+# Create SQLAlchemy engine with connection timeout and pooling
+engine = create_engine(
+    DATABASE_URL, 
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    connect_args={
+        "connect_timeout": 10,  # 10 seconds timeout
+        "application_name": "nexus_ai_api"
+    }
+)
+
 
 # Create SessionLocal class for database sessions
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
