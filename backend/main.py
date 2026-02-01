@@ -148,9 +148,11 @@ cors_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
-    "https://nexus-ai.vercel.app",
-    "https://*.vercel.app",  # Allow all Vercel preview deployments
+    "https://nexus-ai-three-chi.vercel.app", # Fixed actual Vercel URL
 ]
+
+# regex to allow all vercel subdomains
+vercel_regex = r"https://.*\.vercel\.app"
 
 # Also check for CORS_ORIGINS environment variable
 import os
@@ -161,10 +163,10 @@ if env_cors:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex=vercel_regex,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
 
 # Security & Rate Limiting Middlewares
