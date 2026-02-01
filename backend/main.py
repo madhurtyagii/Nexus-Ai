@@ -155,18 +155,11 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, limit=100, window=60)
 
 # 2. CORS (Outer)
-# Fixed: Added last so it's the first to handle requests and the last to finish them.
-# allow_credentials=True requires specific origins (no "*")
+# Simplified to allow maximum compatibility for debugging
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://nexus-ai-three-chi.vercel.app",
-        "https://nexus-ai.vercel.app",
-    ],
-    allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False, # JWT in headers doesn't require credentials
     allow_methods=["*"],
     allow_headers=["*"],
 )
