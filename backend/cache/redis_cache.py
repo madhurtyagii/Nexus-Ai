@@ -1,8 +1,9 @@
 import json
 import logging
 import functools
+import asyncio
 from typing import Any, Optional, Callable
-from redis_client import redis_client # Assuming this exists from Phase 2/4
+from redis_client import redis_client
 
 logger = logging.getLogger(__name__)
 
@@ -40,30 +41,39 @@ def cache_clear_pattern(pattern: str):
         logger.error(f"Cache clear pattern error for {pattern}: {e}")
 
 def cached(ttl: int = 300, key_prefix: str = "nexus_cache"):
-    """Decorator to cache function results."""
+    """Decorator to cache function results. Supports both sync and async functions."""
     def decorator(func: Callable):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            # Generate cache key from function name and args
-            key_parts = [key_prefix, func.__name__]
-            if args:
-                key_parts.append(str(args))
-            if kwargs:
-                key_parts.append(str(sorted(kwargs.items())))
-            
-            cache_key = ":".join(key_parts)
-            
-            # Check cache
-            cached_val = cache_get(cache_key)
-            if cached_val is not None:
-                logger.debug(f"Cache hit: {cache_key}")
-                return cached_val
-            
-            # Execute function
-            result = func(*args, **kwargs)
-            
-            # Store in cache
-            cache_set(cache_key, result, ttl)
-            return result
-        return wrapper
+        if asyncio.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                cache_key = _gen_key(key_prefix, func, args, kwargs)
+                cached_val = cache_get(cache_key)
+                if cached_val is not None:
+                    return cached_val
+                
+                result = await func(*args, **kwargs)
+                cache_set(cache_key, result, ttl)
+                return result
+            return async_wrapper
+        else:
+            @functools.wraps(func)
+            def sync_wrapper(*args, **kwargs):
+                cache_key = _gen_key(key_prefix, func, args, kwargs)
+                cached_val = cache_get(cache_key)
+                if cached_val is not None:
+                    return cached_val
+                
+                result = func(*args, **kwargs)
+                cache_set(cache_key, result, ttl)
+                return result
+            return sync_wrapper
     return decorator
+
+def _gen_key(key_prefix: str, func: Callable, args, kwargs) -> str:
+    """Helper to generate a consistent cache key."""
+    key_parts = [key_prefix, func.__name__]
+    if args:
+        key_parts.append(str(args))
+    if kwargs:
+        key_parts.append(str(sorted(kwargs.items())))
+    return ":".join(key_parts)
