@@ -1,16 +1,13 @@
-"""Nexus AI - Main Application Entry Point.
+"""Nexus AI - Main Application Entry Point."""
 
-This module initializes the FastAPI application, configures middleware (CORS, 
-Rate Limiting, Security Headers, etc.), and includes all router modules. 
-It also handles the application lifespan events and WebSocket connections.
-
-Features:
-    - FastAPI app initialization
-    - Global middleware configuration
-    - Lifespan management (DB, Redis)
-    - WebSocket orchestration
-    - Global exception handling
-"""
+# CRITICAL: Monkeypatch bcrypt for passlib compatibility BEFORE any other imports
+# This resolves the 30-second logic hang/timeout during startup or auth
+try:
+    import bcrypt
+    if not hasattr(bcrypt, "__about__"):
+        bcrypt.__about__ = bcrypt
+except ImportError:
+    pass
 
 # Fix Windows console encoding to support Unicode/emoji output
 import sys
