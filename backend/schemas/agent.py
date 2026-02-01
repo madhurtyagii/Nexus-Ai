@@ -3,7 +3,7 @@ Nexus AI - Agent Schemas
 Pydantic models for agent-related responses
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, List
 
