@@ -7,8 +7,8 @@ echo "--- Starting Migrations ($(date)) ---"
 # Use -u for unbuffered output so logs show up immediately
 python -u migrate.py
 
-echo "--- Starting Custom Worker in Background ($(date)) ---"
-python -u worker.py > worker.log 2>&1 &
+echo "--- Starting Custom Worker (Merged into Web Server) ---"
+# Worker now starts inside main.py for memory efficiency
 
 echo "--- Starting Gunicorn Web Server ($(date)) ---"
 # Bind to $PORT which is required by Render

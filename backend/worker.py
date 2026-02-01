@@ -515,11 +515,25 @@ def run_worker():
         print("\n🛑 Shutting down worker...")
         worker.running = False
     
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    try:
+        import signal
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+    except (ValueError, RuntimeError):
+        # Signals only work in main thread
+        pass
     
     # Start worker
     worker.run()
+
+
+def start_worker_thread():
+    """Starts the worker in a background thread (for single-process environments)."""
+    import threading
+    worker = Worker()
+    thread = threading.Thread(target=worker.run, daemon=True)
+    thread.start()
+    return thread
 
 
 if __name__ == "__main__":

@@ -90,6 +90,11 @@ async def lifespan(app: FastAPI):
         # Start WebSocket manager
         await ws_manager.start()
         print("✅ WebSocket manager started")
+        
+        # Start background worker thread (Single-Process Optimization)
+        from worker import start_worker_thread
+        start_worker_thread()
+        print("✅ Background worker started in shared memory")
     else:
         print("⚠️ Redis connection failed - some features may be unavailable")
     
@@ -155,11 +160,15 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, limit=100, window=60)
 
 # 2. CORS (Outer)
-# Simplified to allow maximum compatibility for debugging
+# Fixed: allow_credentials=True requires specific origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False, # JWT in headers doesn't require credentials
+    allow_origins=[
+        "http://localhost:5173",
+        "https://nexus-ai-three-chi.vercel.app",
+        "https://nexus-ai.vercel.app",
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
