@@ -160,7 +160,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, limit=100, window=60)
 
 # 2. CORS (Outer)
-# Fixed: allow_credentials=True requires specific origins.
+# Loosened further to allow all vercel apps during debugging
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -168,6 +168,7 @@ app.add_middleware(
         "https://nexus-ai-three-chi.vercel.app",
         "https://nexus-ai.vercel.app",
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app", # Allow all vercel subdomains
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -236,9 +237,14 @@ async def health_check():
     """
     import psutil
     
+    # Debug logging for health check
+    print("DEBUG: Performing health check...")
+    
     redis_status = "connected" if ping_redis() else "disconnected"
     cpu_usage = psutil.cpu_percent()
     memory_usage = psutil.virtual_memory().percent
+    
+    print(f"DEBUG: Health check results - Redis: {redis_status}, CPU: {cpu_usage}%, Memory: {memory_usage}%")
     
     return {
         "status": "healthy",

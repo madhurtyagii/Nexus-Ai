@@ -30,11 +30,9 @@ settings = get_settings()
 async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user account.
-    
-    - Validates email and username are unique
-    - Hashes password before storing
-    - Returns created user (without password)
     """
+    # Debug logging
+    print(f"DEBUG: Signup attempt - Email: {user_data.email}, User: {user_data.username}, Pass Len: {len(user_data.password)}")
     # Check if email already exists
     existing_email = db.query(User).filter(User.email == user_data.email).first()
     if existing_email:

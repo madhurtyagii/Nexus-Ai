@@ -40,7 +40,9 @@ def get_password_hash(password: str) -> str:
     Returns:
         Hashed password string
     """
-    return pwd_context.hash(password)
+    # Truncate to 72 bytes to avoid passlib/bcrypt ValueError
+    safe_password = password.encode('utf-8')[:72].decode('utf-8', 'ignore')
+    return pwd_context.hash(safe_password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
