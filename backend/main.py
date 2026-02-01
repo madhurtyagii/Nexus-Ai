@@ -143,10 +143,24 @@ Developed with a focus on performance, security, and developer experience.
     ]
 )
 
-# Configure CORS - Allow all origins in development
+# Configure CORS - Allow frontend origins
+cors_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "https://nexus-ai.vercel.app",
+    "https://*.vercel.app",  # Allow all Vercel preview deployments
+]
+
+# Also check for CORS_ORIGINS environment variable
+import os
+env_cors = os.getenv("CORS_ORIGINS", "")
+if env_cors:
+    cors_origins.extend([origin.strip() for origin in env_cors.split(",") if origin.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
@@ -164,17 +178,20 @@ import time
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    """Middleware for logging HTTP requests and their processing time.
+    """Middleware for logging HTTP requests and their processing time."""
+    start_time = time.time()
     
-    Logs the request method, path, status code, and duration to a local-file.
+    # Call the next handler
+    response = await call_next(request)
     
-    Args:
-        request: The incoming HTTP request.
-        call_next: The next middleware or route handler in the chain.
-        
-    Returns:
-        The HTTP response from the downstream handler.
-    """
+    # Calculate processing time
+    process_time = time.time() - start_time
+    
+    # Log the request (skip health checks to reduce noise)
+    if request.url.path != "/health":
+        print(f"{request.method} {request.url.path} - {response.status_code} - {process_time:.3f}s")
+    
+    return response
 
 
 # Global exception handlers

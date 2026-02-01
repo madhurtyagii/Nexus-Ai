@@ -1,7 +1,7 @@
 import time
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
-from redis_client import redis_client
+from starlette.responses import JSONResponse
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, limit: int = 100, window: int = 60):
@@ -10,18 +10,27 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.window = window
 
     async def dispatch(self, request: Request, call_next):
-        # Skip for health checks or non-API routes
-        if not request.url.path.startswith("/"):
+        # Skip rate limiting for health checks
+        if request.url.path == "/health":
+            return await call_next(request)
+        
+        # Handle case where client might be None (health checks, internal requests)
+        if request.client is None:
             return await call_next(request)
 
-        # Use IP or user_id as key
         client_ip = request.client.host
         key = f"rate_limit:{client_ip}"
 
         try:
+            # Import redis_client lazily to avoid import issues
+            from redis_client import redis_client
+            
             current = redis_client.get(key)
             if current and int(current) >= self.limit:
-                raise HTTPException(status_code=429, detail="Too many requests")
+                return JSONResponse(
+                    status_code=429,
+                    content={"detail": "Too many requests"}
+                )
 
             # Increment and set expiry if new
             pipe = redis_client.pipeline()
@@ -29,7 +38,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             pipe.expire(key, self.window)
             pipe.execute()
         except Exception as e:
-            # Don't block requests if Redis is down, but log it
-            print(f"Rate limiter error: {e}")
+            # Don't block requests if Redis is down
+            print(f"Rate limiter error (non-fatal): {e}")
 
         return await call_next(request)
