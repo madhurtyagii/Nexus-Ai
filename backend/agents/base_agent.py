@@ -17,8 +17,8 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from llm.llm_manager import LLMManager
-from backend.utils.circuit_breaker import llm_circuit_breaker, search_circuit_breaker
-from backend.exceptions.custom_exceptions import AgentError, ToolExecutionError
+from utils.circuit_breaker import llm_circuit_breaker, search_circuit_breaker
+from exceptions.custom_exceptions import AgentError, ToolExecutionError
 
 
 class BaseAgent(ABC):

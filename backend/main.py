@@ -58,9 +58,9 @@ from routers.exports import router as exports_router
 from messaging import ws_manager
 
 # Import security middlewares
-from backend.middleware.rate_limit import RateLimitMiddleware
-from backend.middleware.security_headers import SecurityHeadersMiddleware
-from backend.middleware.request_id import RequestIDMiddleware
+from middleware.rate_limit import RateLimitMiddleware
+from middleware.security_headers import SecurityHeadersMiddleware
+from middleware.request_id import RequestIDMiddleware
 
 
 settings = get_settings()
@@ -178,7 +178,7 @@ async def log_requests(request: Request, call_next):
 
 
 # Global exception handlers
-from backend.middleware.error_handler import setup_exception_handlers
+from middleware.error_handler import setup_exception_handlers
 setup_exception_handlers(app)
 
 

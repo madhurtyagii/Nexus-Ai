@@ -17,8 +17,8 @@ from models.task import Task, Subtask, TaskStatus
 from models.agent import Agent
 from llm.llm_manager import llm_manager
 from redis_client import enqueue_task
-from backend.exceptions.custom_exceptions import TaskExecutionError, DatabaseError
-from backend.utils.retries import retry
+from exceptions.custom_exceptions import TaskExecutionError, DatabaseError
+from utils.retries import retry
 
 
 class OrchestratorEngine:
