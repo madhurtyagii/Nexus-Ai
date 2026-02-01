@@ -8,6 +8,9 @@ import os
 import json
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
+from config import get_settings
+
+settings = get_settings()
 
 class JSONFormatter(logging.Formatter):
     """Custom JSON formatter for structured logging."""
