@@ -13,8 +13,7 @@ from config import get_settings
 settings = get_settings()
 
 # Password hashing context
-# Force bcrypt backend to avoid slow version detection bug in passlib
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__backend="bcrypt")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
