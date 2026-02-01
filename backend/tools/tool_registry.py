@@ -17,57 +17,66 @@ class ToolRegistry:
     
     _instance = None
     _tools: Dict[str, BaseTool] = {}
+    _lazy_tools: Dict[str, str] = {
+        "web_search": "tools.web_search.WebSearchTool",
+        "web_scraper": "tools.web_scraper.WebScraperTool",
+        "code_executor": "tools.code_executor.CodeExecutorTool",
+        "data_analysis": "tools.data_analysis.DataAnalysisTool",
+        "FileProcessor": "tools.file_processor.FileProcessorTool",
+        "project_planner": "tools.project_planner.ProjectPlannerTool",
+        "task_scheduler": "tools.task_scheduler.task_scheduler.TaskSchedulerTool",
+        "validation": "tools.validation_tools.ValidationTool",
+        "quality_checker": "tools.quality_checker.QualityCheckerTool",
+    }
     
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._initialized = False
+            cls._initialized = True # Mark as initialized to skip old eager init
         return cls._instance
     
     def __init__(self):
-        if not self._initialized:
-            self._initialize_default_tools()
-            ToolRegistry._initialized = True
-    
-    def _initialize_default_tools(self):
-        """Initialize default tools."""
-        from tools.web_search import WebSearchTool
-        from tools.web_scraper import WebScraperTool
-        from tools.code_executor import CodeExecutorTool
-        from tools.data_analysis import DataAnalysisTool
-        from tools.file_processor import FileProcessorTool
-        
-        # Register default tools
-        self.register_tool(WebSearchTool())
-        self.register_tool(WebScraperTool())
-        self.register_tool(CodeExecutorTool())
-        self.register_tool(DataAnalysisTool())
-        self.register_tool(FileProcessorTool())
+        # Empty init, we use lazy loading now
+        pass
     
     def register_tool(self, tool: BaseTool):
         """
-        Register a tool instance.
-        
-        Args:
-            tool: Tool instance to register
+        Register a tool instance (eager).
         """
         if not hasattr(tool, 'name') or not hasattr(tool, 'execute'):
             raise ValueError("Tool must have 'name' and 'execute' attributes")
         
         ToolRegistry._tools[tool.name] = tool
+        # Remove from lazy if it's already registered
+        if tool.name in ToolRegistry._lazy_tools:
+            del ToolRegistry._lazy_tools[tool.name]
         print(f"✅ Registered tool: {tool.name}")
     
     def get_tool(self, tool_name: str) -> Optional[BaseTool]:
         """
-        Get a tool by name.
-        
-        Args:
-            tool_name: Name of the tool
-            
-        Returns:
-            Tool instance or None
+        Get a tool by name, loading it lazily if necessary.
         """
-        return ToolRegistry._tools.get(tool_name)
+        if tool_name in ToolRegistry._tools:
+            return ToolRegistry._tools[tool_name]
+            
+        if tool_name in ToolRegistry._lazy_tools:
+            module_path = ToolRegistry._lazy_tools[tool_name]
+            try:
+                import importlib
+                module_name, class_name = module_path.rsplit(".", 1)
+                print(f"🚚 Lazy loading tool: {tool_name} from {module_name}")
+                module = importlib.import_module(module_name)
+                tool_class = getattr(module, class_name)
+                tool_instance = tool_class()
+                
+                ToolRegistry._tools[tool_name] = tool_instance
+                del ToolRegistry._lazy_tools[tool_name]
+                return tool_instance
+            except Exception as e:
+                print(f"❌ Failed to lazy load tool {tool_name}: {e}")
+                return None
+                
+        return None
     
     def list_tools(self) -> List[Dict[str, Any]]:
         """

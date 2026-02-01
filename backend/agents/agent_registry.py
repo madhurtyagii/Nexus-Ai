@@ -19,6 +19,14 @@ class AgentRegistry:
     
     _instance = None
     _agents: Dict[str, Type] = {}
+    _lazy_agents: Dict[str, str] = {
+        "ResearchAgent": "agents.research_agent.ResearchAgent",
+        "CodeAgent": "agents.code_agent.CodeAgent",
+        "ContentAgent": "agents.content_agent.ContentAgent",
+        "DataAgent": "agents.data_agent.DataAgent",
+        "QAAgent": "agents.qa_agent.QAAgent",
+        "ManagerAgent": "agents.manager_agent.ManagerAgent",
+    }
     
     def __new__(cls):
         if cls._instance is None:
@@ -28,47 +36,46 @@ class AgentRegistry:
     @classmethod
     def register(cls, agent_class: Type = None, name: str = None):
         """
-        Register an agent class.
-        
-        Can be used as a decorator:
-            @AgentRegistry.register
-            class MyAgent(BaseAgent):
-                ...
-        
-        Or with custom name:
-            @AgentRegistry.register(name="CustomName")
-            class MyAgent(BaseAgent):
-                ...
-        
-        Args:
-            agent_class: The agent class to register
-            name: Optional custom name (defaults to class name)
+        Register an agent class (eager or lazy).
         """
         def decorator(cls_to_register):
             agent_name = name or cls_to_register.__name__
             AgentRegistry._agents[agent_name] = cls_to_register
+            # Remove from lazy if it's already loaded
+            if agent_name in AgentRegistry._lazy_agents:
+                del AgentRegistry._lazy_agents[agent_name]
             print(f"✅ Registered agent: {agent_name}")
             return cls_to_register
         
         if agent_class is not None:
-            # Called without parentheses: @AgentRegistry.register
             return decorator(agent_class)
         else:
-            # Called with parentheses: @AgentRegistry.register(name="...")
             return decorator
     
     @classmethod
     def get_agent_class(cls, agent_name: str) -> Optional[Type]:
         """
-        Get an agent class by name.
-        
-        Args:
-            agent_name: Name of the agent
-            
-        Returns:
-            Agent class or None if not found
+        Get an agent class by name, loading it lazily if necessary.
         """
-        return cls._agents.get(agent_name)
+        if agent_name in cls._agents:
+            return cls._agents[agent_name]
+        
+        if agent_name in cls._lazy_agents:
+            module_path = cls._lazy_agents[agent_name]
+            try:
+                import importlib
+                module_name, class_name = module_path.rsplit(".", 1)
+                print(f"🚚 Lazy loading agent: {agent_name} from {module_name}")
+                module = importlib.import_module(module_name)
+                cls_to_register = getattr(module, class_name)
+                cls._agents[agent_name] = cls_to_register
+                del cls._lazy_agents[agent_name]
+                return cls_to_register
+            except Exception as e:
+                print(f"❌ Failed to lazy load agent {agent_name}: {e}")
+                return None
+            
+        return None
     
     @classmethod
     def get_agent(cls, agent_name: str, **kwargs):
