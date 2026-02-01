@@ -10,8 +10,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.window = window
 
     async def dispatch(self, request: Request, call_next):
-        # Skip rate limiting for health checks
-        if request.url.path == "/health":
+        # Skip rate limiting for health checks and CORS preflight
+        if request.url.path == "/health" or request.method == "OPTIONS":
             return await call_next(request)
         
         # Handle case where client might be None (health checks, internal requests)

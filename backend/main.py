@@ -143,36 +143,26 @@ Developed with a focus on performance, security, and developer experience.
     ]
 )
 
-# Configure CORS - Allow frontend origins
-cors_origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "https://nexus-ai-three-chi.vercel.app", # Fixed actual Vercel URL
-]
+# --- Middleware Stack ---
+# (Note: Starlette processes middlewares in reverse order of addition.
+# The LAST one added will be the FIRST one to receive the request.)
 
-# regex to allow all vercel subdomains
-vercel_regex = r"https://.*\.vercel\.app"
+# 4. Security & Request ID (Innermost)
+app.add_middleware(RequestIDMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
-# Also check for CORS_ORIGINS environment variable
-import os
-env_cors = os.getenv("CORS_ORIGINS", "")
-if env_cors:
-    cors_origins.extend([origin.strip() for origin in env_cors.split(",") if origin.strip()])
+# 3. Rate Limiting
+app.add_middleware(RateLimitMiddleware, limit=100, window=60)
 
+# 2. CORS (Outer)
+# Fixed: Added last so it's the first to handle requests and the last to finish them.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_origin_regex=vercel_regex,
+    allow_origins=["*"], # Open for production stability
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Security & Rate Limiting Middlewares
-app.add_middleware(RequestIDMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RateLimitMiddleware, limit=100, window=60)
 
 # Logging Middleware
 from fastapi import Request
