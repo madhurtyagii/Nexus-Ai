@@ -5,9 +5,14 @@ JWT token creation, verification, and password hashing
 
 from datetime import datetime, timedelta
 from typing import Optional, Union
+import bcrypt
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from config import get_settings
+
+# Monkeypatch bcrypt for passlib compatibility (fixes 30s delay)
+if not hasattr(bcrypt, "__about__"):
+    bcrypt.__about__ = bcrypt
 
 # Get settings
 settings = get_settings()
