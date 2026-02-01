@@ -23,7 +23,8 @@ def run_migrations():
         print("✅ Tables created successfully.", flush=True)
     except Exception as e:
         print(f"❌ Table creation failed: {e}", flush=True)
-        # Don't exit, might be existing tables
+        # Critical failure: exit script to prevent starting broken app
+        sys.exit(1)
         
     # Seed templates
     try:

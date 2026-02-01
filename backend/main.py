@@ -80,9 +80,9 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting Nexus AI...")
     
-    # Create database tables
-    Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created/verified")
+    # Database verification
+    # Note: Table creation is handled by migrate.py in start.sh
+    print("🔍 Database connection: Initializing pool...")
     
     # Test Redis connection
     if ping_redis():
