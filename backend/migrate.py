@@ -34,8 +34,8 @@ def run_migrations():
                 print(f"⏳ Retrying in {RETRY_DELAY} seconds...", flush=True)
                 time.sleep(RETRY_DELAY)
             else:
-                print("❌ All retry attempts failed. Exiting.", flush=True)
-                sys.exit(1)
+                print("⚠️ All retry attempts failed. Continuing anyway (server will start).", flush=True)
+                # Don't exit - let the server start, it will retry on first request
         
     # Seed templates
     try:
