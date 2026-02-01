@@ -71,7 +71,7 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const signup = async (username, email, password) => {
+    const signup = async (email, username, password) => {
         try {
             // Signup returns user data, not token
             await api.post('/auth/signup', {
