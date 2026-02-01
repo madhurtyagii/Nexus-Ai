@@ -8,9 +8,9 @@ import os
 import json
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
-from config import get_settings
 
-settings = get_settings()
+# Use environment variable directly to avoid import chain issues
+LOG_FORMAT = os.getenv("LOG_FORMAT", "text")  # "text" or "json"
 
 class JSONFormatter(logging.Formatter):
     """Custom JSON formatter for structured logging."""
@@ -60,8 +60,8 @@ def setup_logging(
     # Clear existing handlers
     logger.handlers = []
     
-    # Log format
-    if settings.log_format == "json":
+    # Log format - use environment variable
+    if LOG_FORMAT == "json":
         formatter = JSONFormatter(datefmt="%Y-%m-%dT%H:%M:%SZ")
     else:
         formatter = logging.Formatter(
