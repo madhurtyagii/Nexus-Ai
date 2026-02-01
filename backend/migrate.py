@@ -13,18 +13,29 @@ from database import engine, Base
 from seed_templates import seed_templates
 from seed_agents import seed_agents
 
+import time
+
+MAX_RETRIES = 3
+RETRY_DELAY = 5  # seconds
+
 def run_migrations():
     print("🚀 Starting database migrations script...", flush=True)
     
-    # Create all tables
-    try:
-        print("🔍 Creating tables...", flush=True)
-        Base.metadata.create_all(bind=engine)
-        print("✅ Tables created successfully.", flush=True)
-    except Exception as e:
-        print(f"❌ Table creation failed: {e}", flush=True)
-        # Critical failure: exit script to prevent starting broken app
-        sys.exit(1)
+    # Create all tables with retry logic
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            print(f"🔍 Creating tables (attempt {attempt}/{MAX_RETRIES})...", flush=True)
+            Base.metadata.create_all(bind=engine)
+            print("✅ Tables created successfully.", flush=True)
+            break
+        except Exception as e:
+            print(f"❌ Table creation failed: {e}", flush=True)
+            if attempt < MAX_RETRIES:
+                print(f"⏳ Retrying in {RETRY_DELAY} seconds...", flush=True)
+                time.sleep(RETRY_DELAY)
+            else:
+                print("❌ All retry attempts failed. Exiting.", flush=True)
+                sys.exit(1)
         
     # Seed templates
     try:

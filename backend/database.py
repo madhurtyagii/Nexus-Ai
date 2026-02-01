@@ -30,9 +30,14 @@ engine = create_engine(
     pool_pre_ping=True,
     pool_size=5,
     max_overflow=10,
+    pool_recycle=300,  # Recycle connections every 5 minutes
     connect_args={
-        "connect_timeout": 15,  # Increased to 15s for pooler cold starts
-        "application_name": "nexus_ai_api"
+        "connect_timeout": 30,  # Increased to 30s for cold starts
+        "application_name": "nexus_ai_api",
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5
     }
 )
 
