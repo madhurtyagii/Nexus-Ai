@@ -6,9 +6,11 @@ Welcome to the Nexus AI documentation.
 
 ### User Guide
 - [Getting Started](./user-guide/getting-started.md)
-- [Creating Tasks](./user-guide/creating-tasks.md)
-- [Understanding Agents](./user-guide/agents.md)
-- [Project Management](./user-guide/projects.md)
+- [📋 Task Management](./user-guide/creating-tasks.md)
+- [🤖 Agent Deep-Dives](./user-guide/agents.md)
+- [📁 File Orchestration](./user-guide/files.md)
+- [⚙️ Settings & Account](./user-guide/settings.md)
+- [🏗️ Project Management](./user-guide/projects.md)
 
 ### Developer Guide
 - [Architecture Overview](./developer-guide/architecture.md)
