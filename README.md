@@ -1,10 +1,20 @@
-# <img src="frontend/public/logo.png" width="48" height="48" align="center" /> 🧠 Nexus AI: The Autonomous Multi-Agent Workspace
+<p align="center">
+  <img src="frontend/public/logo.png" width="120" />
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Python: 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python)](https://www.python.org/)
-[![FastAPI: 0.100+](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![React: 18.x](https://img.shields.io/badge/React-18.x-61DAFB?logo=react)](https://react.dev/)
-[![Docker: Required](https://img.shields.io/badge/Docker-Required-2496ED?logo=docker)](https://www.docker.com/)
+<h1 align="center">Nexus AI</h1>
+
+<p align="center">
+  <strong>The Autonomous Multi-Agent Workspace</strong>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python" alt="Python: 3.11+" />
+  <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi" alt="FastAPI: 0.100+" />
+  <img src="https://img.shields.io/badge/React-18.x-61DAFB?logo=react" alt="React: 18.x" />
+  <img src="https://img.shields.io/badge/Docker-Required-2496ED?logo=docker" alt="Docker: Required" />
+</p>
 
 **Nexus AI** is a cutting-edge, autonomous workspace that orchestrates a team of specialized AI agents to solve complex challenges through intelligent collaboration, semantic memory, and robust project orchestration.
 
