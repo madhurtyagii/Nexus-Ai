@@ -1,14 +1,5 @@
 """Nexus AI - Main Application Entry Point."""
 
-# CRITICAL: Monkeypatch bcrypt for passlib compatibility BEFORE any other imports
-# This resolves the 30-second logic hang/timeout during startup or auth
-try:
-    import bcrypt
-    if not hasattr(bcrypt, "__about__"):
-        bcrypt.__about__ = bcrypt
-except ImportError:
-    pass
-
 # Fix Windows console encoding to support Unicode/emoji output
 import sys
 import os
@@ -146,8 +137,6 @@ Developed with a focus on performance, security, and developer experience.
 )
 
 # --- Middleware Stack ---
-# (Note: Starlette processes middlewares in reverse order of addition.
-# The LAST one added will be the FIRST one to receive the request.)
 
 # 4. Security & Request ID (Innermost)
 app.add_middleware(RequestIDMiddleware)
@@ -157,15 +146,9 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, limit=100, window=60)
 
 # 2. CORS (Outer)
-# Loosened further to allow all vercel apps during debugging
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://nexus-ai-three-chi.vercel.app",
-        "https://nexus-ai.vercel.app",
-    ],
-    allow_origin_regex=r"https://.*\.vercel\.app", # Allow all vercel subdomains
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

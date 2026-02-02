@@ -1,87 +1,44 @@
-# Nexus AI Backend
+# ⚙️ Nexus AI Backend
 
-The robust API and Orchestration engine behind Nexus AI.
-
-## 🏗️ Architecture
-
-The backend is built on **FastAPI** and uses a modular architecture:
-
-- **Orchestrator**: The heart of the system. The `WorkflowEngine` breaks projects into phases and tasks.
-- **Task Queue**: **Redis** is used to persist tasks. The `worker.py` process consumes these tasks, ensuring reliable execution even if the main server restarts.
-- **Agents**: Autonomous entities (Manager, QA, Code, Research, etc.) implemented with specific tools and prompts.
-- **Memory**: ChromaDB vector store for retrieval-augmented generation (RAG).
-
-## 🚀 Key Components
-
-### 1. Workflow Engine (`orchestrator/workflow_engine.py`)
-- Handles execution of complex dependency graphs.
-- Supports **Parallel** (async) and **Sequential** execution types.
-- Integrates with `ManagerAgent` for high-level planning.
-
-### 2. Background Worker (`worker.py`)
-- Runs independently from the API server.
-- Polls Redis for "queued" subtasks.
-- Instantiates agents, executes tools, and updates the database.
-
-### 3. Project Management API (`routers/projects.py`)
-- `POST /projects/`: Create a project (triggers background planning).
-- `POST /projects/{id}/execute`: Dispatch tasks to the queue.
-- `GET /projects/{id}/progress`: Real-time status updates.
+The backend of Nexus AI is a high-performance, asynchronous orchestration engine built with **FastAPI**. It manages agent personas, long-term memory, and real-time project execution.
 
 ---
 
-## 🛠️ Setup & Run
-
-### Prerequisites
-- Python 3.11+
-- Redis Server (Must be running locally or via Docker)
-
-### Installation
-
-1. **Virtual Env**:
-   ```bash
-   python -m venv venv
-   .\venv\Scripts\activate
-   ```
-
-2. **Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Env Config**:
-   ```bash
-   cp .env.example .env
-   # Add your GROQ_API_KEY and other secrets
-   ```
-
-### Running the System
-
-You need **two** terminal windows running simultaneously:
-
-**Terminal 1: API Server**
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-**Terminal 2: Task Worker**
-```bash
-python worker.py
-```
+## 🛠️ Core Technologies
+- **Framework**: FastAPI (Asynchronous Python)
+- **Task Management**: Redis-backed shared memory queue
+- **Database**: PostgreSQL (SQLAlchemy ORM)
+- **Vector Search**: ChromaDB / Sentence Transformers
+- **WebSocket**: Real-time pub/sub manager
 
 ---
 
-## 📂 Folder Structure
+## 🏗️ Technical Highlights
 
-```
-backend/
-├── agents/           # Intelligence layer (Manager, QA, etc.)
-├── tools/            # Functional capability tools
-├── orchestrator/     # Workflow & Queue logic
-├── routers/          # REST API endpoints
-├── models/           # Database schema
-├── services/         # Business logic
-├── memory/           # RAG & Vector store
-├── worker.py         # Task queue consumer
-└── main.py           # App entry point
-```
+### 1. Unified Agent Registry
+All agents are registered via a singleton `AgentRegistry`. This allows the system to dynamically instantiate agents based on the task requirement, providing a scalable way to add new personas.
+
+### 2. Semantic Memory Engine
+The backend uses **Vector Embeddings** to store context. When an agent starts a task, it automatically "recalls" relevant past successes or user preferences, ensuring projects have continuity.
+
+### 3. Integrated Tool Registry
+Agents don't just "talk"—they "do." The `ToolRegistry` provides agents with access to:
+- **WebSearch**: Real-time factual research via Tavily.
+- **CodeExecutor**: Safe, isolated logic execution.
+- **DataAnalysis**: High-speed processing via Pandas/NumPy.
+
+---
+
+## 🚀 Running Locally
+
+1.  **Environment**: Ensure you have a `.env` file based on `.env.example`.
+2.  **Install dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  **Launch**:
+    ```bash
+    python main.py
+    ```
+
+The API will be available at `http://localhost:8000`, and you can explore the interactive docs at `/docs`.
