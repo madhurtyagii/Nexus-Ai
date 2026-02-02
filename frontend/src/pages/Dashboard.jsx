@@ -20,11 +20,11 @@ export default function Dashboard() {
         loadRecentTasks();
         loadPinnedProjects();
 
-        // Auto-refresh tasks every 5 seconds
+        // Auto-refresh tasks every 15 seconds (optimized for rate limits)
         const interval = setInterval(() => {
             loadRecentTasks();
             loadPinnedProjects();
-        }, 5000);
+        }, 15000);
         return () => clearInterval(interval);
     }, []);
 
@@ -184,8 +184,8 @@ export default function Dashboard() {
                                 {recentTasks.slice(0, 4).map((task, i) => (
                                     <div key={task.id} className="flex items-start gap-3">
                                         <div className={`w-2 h-2 rounded-full mt-2 ${task.status === 'completed' ? 'bg-green-400' :
-                                                task.status === 'in_progress' ? 'bg-yellow-400 animate-pulse' :
-                                                    task.status === 'failed' ? 'bg-red-400' : 'bg-blue-400'
+                                            task.status === 'in_progress' ? 'bg-yellow-400 animate-pulse' :
+                                                task.status === 'failed' ? 'bg-red-400' : 'bg-blue-400'
                                             }`}></div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-white text-sm line-clamp-1">{task.user_prompt}</p>

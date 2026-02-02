@@ -116,7 +116,16 @@ export default function Tasks() {
                 <main className="flex-1 p-6 lg:p-8">
                     {/* Header */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-white mb-2">📋 All Tasks</h1>
+                        <div className="flex items-center gap-4 mb-2">
+                            <button
+                                onClick={() => navigate('/dashboard')}
+                                className="bg-dark-700 hover:bg-dark-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                                title="Back to Dashboard"
+                            >
+                                ←
+                            </button>
+                            <h1 className="text-3xl font-bold text-white">📋 All Tasks</h1>
+                        </div>
                         <p className="text-dark-400">View, manage, and track all your AI tasks.</p>
                     </div>
 

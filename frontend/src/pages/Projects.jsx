@@ -70,7 +70,16 @@ function Projects() {
         <div className="projects-container">
             <div className="projects-header">
                 <div className="header-left">
-                    <h1>📋 Projects</h1>
+                    <div className="flex items-center gap-4 mb-1">
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            className="bg-dark-700 hover:bg-dark-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                            title="Back to Dashboard"
+                        >
+                            ←
+                        </button>
+                        <h1>📋 Projects</h1>
+                    </div>
                     <p>Manage complex multi-phase AI projects</p>
                 </div>
                 <div className="header-actions">

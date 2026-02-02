@@ -29,13 +29,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             if current and int(current) >= self.limit:
                 return JSONResponse(
                     status_code=429,
-                    content={"detail": "Too many requests"}
+                    content={"detail": "Too many requests. Please slow down."}
                 )
 
-            # Increment and set expiry if new
+            # Increment and set expiry IF it's a new window (atomically)
             pipe = redis_client.pipeline()
             pipe.incr(key)
-            pipe.expire(key, self.window)
+            # Only set expiry if it doesn't exist (fixed window)
+            pipe.expire(key, self.window, nx=True)
             pipe.execute()
         except Exception as e:
             # Don't block requests if Redis is down

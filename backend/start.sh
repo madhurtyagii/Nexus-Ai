@@ -11,7 +11,7 @@ echo "--- Starting Custom Worker (Merged into Web Server) ---"
 # Worker now starts inside main.py for memory efficiency
 
 echo "--- Starting Gunicorn Web Server ($(date)) ---"
-# Bind to $PORT which is required by Render
+# Bind to $PORT which is required by the environment
 exec gunicorn main:app \
     --workers 1 \
     --worker-class uvicorn.workers.UvicornWorker \
