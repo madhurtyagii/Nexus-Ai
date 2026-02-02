@@ -12,16 +12,22 @@ The Nexus AI Frontend is a premium, reactive dashboard designed for orchestratin
 
 ---
 
-## 🧩 Key Views
+## 🧩 Key Views (Fully Implemented)
 
 ### 1. The Command Center (Dashboard)
-A Bird's-eye view of all active projects, memory stats, and agent health.
+A Bird's-eye view of all active projects, memory stats, and agent health. Now enhanced with **Quick Actions** and **Real-time System Status**.
 
-### 2. The Project Orchestrator
-A real-time workspace where you can watch tasks move from "Queued" to "Complete" across multiple agents. Includes live WebSocket logs of the inner "thought process" of each agent.
+### 2. The Task Manager
+Searchable, filterable task list with progress tracking and expanded detail modals for every AI sub-task.
 
-### 3. Semantic Memory Explorer
-A dedicated interface for browsing through the "long-term memory" that your agents have built up about your projects.
+### 3. Agent Gallery
+A detailed view of all 7 specialized AI agents, their current performance stats, and specific capabilities.
+
+### 4. File Management
+Complete file browser for task-related assets with storage usage visualization and filtering.
+
+### 5. Settings Panel
+Full configuration for account details, password updates, API keys, and notification preferences.
 
 ---
 

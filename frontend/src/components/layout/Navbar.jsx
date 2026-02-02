@@ -17,9 +17,7 @@ export default function Navbar() {
             <div className="flex items-center justify-between">
                 {/* Logo */}
                 <Link to="/dashboard" className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center">
-                        <span className="text-white font-bold text-xl">N</span>
-                    </div>
+                    <img src="/logo.png" alt="Nexus AI Logo" className="w-10 h-10 object-contain" />
                     <span className="text-xl font-bold gradient-text">Nexus AI</span>
                 </Link>
 

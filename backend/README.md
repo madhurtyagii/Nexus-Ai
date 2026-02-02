@@ -15,11 +15,13 @@ The backend of Nexus AI is a high-performance, asynchronous orchestration engine
 
 ## 🏗️ Technical Highlights
 
-### 1. Unified Agent Registry
-All agents are registered via a singleton `AgentRegistry`. This allows the system to dynamically instantiate agents based on the task requirement, providing a scalable way to add new personas.
-
 ### 2. Semantic Memory Engine
 The backend uses **Vector Embeddings** to store context. When an agent starts a task, it automatically "recalls" relevant past successes or user preferences, ensuring projects have continuity.
+
+### 3. Security & Account Management
+The backend now supports full password life-cycle management, including:
+- **`PUT /auth/password`**: Securely update user passwords with current-password verification.
+- **Robust Error Handling**: Standardized 422/400 validation responses for cleaner frontend integration.
 
 ### 3. Integrated Tool Registry
 Agents don't just "talk"—they "do." The `ToolRegistry` provides agents with access to:

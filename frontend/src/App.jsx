@@ -8,11 +8,14 @@ const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const TaskDetail = lazy(() => import('./pages/TaskDetail'));
+const Tasks = lazy(() => import('./pages/Tasks'));
 const Projects = lazy(() => import('./pages/Projects'));
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const Help = lazy(() => import('./pages/Help'));
 const FileManager = lazy(() => import('./pages/FileManager'));
+const Files = lazy(() => import('./pages/Files'));
 const Templates = lazy(() => import('./pages/Templates'));
+const Agents = lazy(() => import('./pages/Agents'));
 const Settings = lazy(() => import('./pages/Settings'));
 
 // Placeholder pages for routes we'll build later
@@ -33,8 +36,8 @@ function App() {
     if (loading) {
         return (
             <div className="min-h-screen bg-dark-900 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center animate-pulse">
-                    <span className="text-white font-bold text-2xl">N</span>
+                <div className="w-20 h-20 flex items-center justify-center animate-pulse">
+                    <img src="/logo.png" alt="Nexus AI Logo" className="w-full h-full object-contain" />
                 </div>
             </div>
         );
@@ -43,8 +46,8 @@ function App() {
     return (
         <Suspense fallback={
             <div className="min-h-screen bg-dark-900 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center animate-spin">
-                    <span className="text-white font-bold text-2xl">N</span>
+                <div className="w-16 h-16 flex items-center justify-center animate-spin">
+                    <img src="/logo.png" alt="Loading..." className="w-full h-full object-contain opacity-50" />
                 </div>
             </div>
         }>
@@ -80,7 +83,7 @@ function App() {
                     path="/tasks"
                     element={
                         <ProtectedRoute>
-                            <PlaceholderPage title="Tasks" />
+                            <Tasks />
                         </ProtectedRoute>
                     }
                 />
@@ -88,7 +91,7 @@ function App() {
                     path="/files"
                     element={
                         <ProtectedRoute>
-                            <FileManager />
+                            <Files />
                         </ProtectedRoute>
                     }
                 />
@@ -96,7 +99,7 @@ function App() {
                     path="/agents"
                     element={
                         <ProtectedRoute>
-                            <Templates />
+                            <Agents />
                         </ProtectedRoute>
                     }
                 />

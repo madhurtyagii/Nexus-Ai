@@ -26,7 +26,8 @@ export default function Login() {
         <div className="min-h-screen flex items-center justify-center bg-dark-900 px-4">
             <div className="w-full max-w-md">
                 {/* Logo */}
-                <div className="text-center mb-8">
+                <div className="text-center mb-10 group">
+                    <img src="/logo.png" alt="Nexus AI" className="w-24 h-24 mx-auto mb-4 object-contain animate-float" />
                     <h1 className="text-4xl font-bold gradient-text mb-2">Nexus AI</h1>
                     <p className="text-dark-400">Multi-Agent AI Workspace</p>
                 </div>

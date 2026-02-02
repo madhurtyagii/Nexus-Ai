@@ -12,7 +12,7 @@ from datetime import timedelta
 from database import get_db
 from auth import verify_password, get_password_hash, create_access_token
 from models.user import User
-from schemas.user import UserCreate, UserLogin, UserResponse, Token
+from schemas.user import UserCreate, UserLogin, UserResponse, Token, PasswordUpdate
 from dependencies import get_current_user
 from config import get_settings
 
@@ -148,8 +148,34 @@ async def login_form(
 )
 async def get_me(current_user: User = Depends(get_current_user)):
     """
-    Get current authenticated user's profile.
-    
     Requires valid JWT token in Authorization header.
     """
     return current_user
+
+
+@router.put(
+    "/password",
+    summary="Update current user's password",
+    description="Updates the authenticated user's password. Requires verification of the current password."
+)
+async def update_password(
+    data: PasswordUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update password for the current user.
+    """
+    # Verify current password
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect current password"
+        )
+    
+    # Hash and save new password
+    current_user.hashed_password = get_password_hash(data.new_password)
+    db.add(current_user)
+    db.commit()
+    
+    return {"message": "Password updated successfully"}

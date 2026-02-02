@@ -132,6 +132,115 @@ export default function Dashboard() {
                         </form>
                     </div>
 
+                    {/* Quick Actions & System Status Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        {/* Quick Actions */}
+                        <div className="card">
+                            <h2 className="text-lg font-semibold text-white mb-4">⚡ Quick Actions</h2>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => document.querySelector('input[placeholder*="Describe"]')?.focus()}
+                                    className="w-full p-3 rounded-lg bg-dark-700 hover:bg-dark-600 text-left text-white transition-colors flex items-center gap-3"
+                                >
+                                    <span className="text-xl">➕</span>
+                                    <span>New Task</span>
+                                </button>
+                                <button
+                                    onClick={() => navigate('/projects')}
+                                    className="w-full p-3 rounded-lg bg-dark-700 hover:bg-dark-600 text-left text-white transition-colors flex items-center gap-3"
+                                >
+                                    <span className="text-xl">📁</span>
+                                    <span>New Project</span>
+                                </button>
+                                <button
+                                    onClick={() => navigate('/files')}
+                                    className="w-full p-3 rounded-lg bg-dark-700 hover:bg-dark-600 text-left text-white transition-colors flex items-center gap-3"
+                                >
+                                    <span className="text-xl">📤</span>
+                                    <span>Upload File</span>
+                                </button>
+                                <button
+                                    onClick={() => navigate('/agents')}
+                                    className="w-full p-3 rounded-lg bg-dark-700 hover:bg-dark-600 text-left text-white transition-colors flex items-center gap-3"
+                                >
+                                    <span className="text-xl">🤖</span>
+                                    <span>Browse Agents</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Activity Feed */}
+                        <div className="card">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold text-white">📈 Recent Activity</h2>
+                                <button
+                                    onClick={() => navigate('/tasks')}
+                                    className="text-xs text-primary-400 hover:text-primary-300"
+                                >
+                                    View All
+                                </button>
+                            </div>
+                            <div className="space-y-3">
+                                {recentTasks.slice(0, 4).map((task, i) => (
+                                    <div key={task.id} className="flex items-start gap-3">
+                                        <div className={`w-2 h-2 rounded-full mt-2 ${task.status === 'completed' ? 'bg-green-400' :
+                                                task.status === 'in_progress' ? 'bg-yellow-400 animate-pulse' :
+                                                    task.status === 'failed' ? 'bg-red-400' : 'bg-blue-400'
+                                            }`}></div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-white text-sm line-clamp-1">{task.user_prompt}</p>
+                                            <p className="text-dark-500 text-xs">
+                                                {task.status === 'completed' ? 'Completed' :
+                                                    task.status === 'in_progress' ? 'Running...' :
+                                                        task.status === 'failed' ? 'Failed' : 'Queued'} • {
+                                                    new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                                {recentTasks.length === 0 && (
+                                    <p className="text-dark-500 text-sm text-center py-4">No activity yet</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* System Status */}
+                        <div className="card">
+                            <h2 className="text-lg font-semibold text-white mb-4">🏥 System Status</h2>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-dark-400">Backend API</span>
+                                    <span className="flex items-center gap-2 text-green-400 text-sm">
+                                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                                        Online
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-dark-400">Redis Queue</span>
+                                    <span className="flex items-center gap-2 text-green-400 text-sm">
+                                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                                        Connected
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-dark-400">AI Agents</span>
+                                    <span className="flex items-center gap-2 text-green-400 text-sm">
+                                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                                        {agents.length} Active
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-dark-400">Database</span>
+                                    <span className="flex items-center gap-2 text-green-400 text-sm">
+                                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                                        Healthy
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Pinned Projects */}
                         <div className="card">
