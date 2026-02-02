@@ -72,6 +72,7 @@ Visit `http://localhost:5173` to start orchestrating!
 ---
 
 ## 📊 Documentation Roadmap
+- [📖 User Manual & Setup Guide](USER_MANUAL.md)
 - [🏗️ System Architecture](docs/ARCHITECTURE.md)
 - [🤖 Agent Deep-Dives](docs/AGENTS.md)
 - [🔌 API Reference](backend/docs/API_GUIDE.md)
