@@ -19,26 +19,12 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")
 
-# Create SQLAlchemy engine with connection timeout and pooling
-# Ensure sslmode=require for Supabase/Render
-if "sslmode" not in DATABASE_URL:
-    separator = "&" if "?" in DATABASE_URL else "?"
-    DATABASE_URL += f"{separator}sslmode=require"
-
+# Create SQLAlchemy engine
 engine = create_engine(
     DATABASE_URL, 
     pool_pre_ping=True,
     pool_size=5,
-    max_overflow=10,
-    pool_recycle=300,  # Recycle connections every 5 minutes
-    connect_args={
-        "connect_timeout": 30,  # Increased to 30s for cold starts
-        "application_name": "nexus_ai_api",
-        "keepalives": 1,
-        "keepalives_idle": 30,
-        "keepalives_interval": 10,
-        "keepalives_count": 5
-    }
+    max_overflow=10
 )
 
 

@@ -4,8 +4,7 @@ import { setupErrorInterceptors } from '../utils/errorHandler';
 
 // Create axios instance with base configuration
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'https://nexus-ai-backend.onrender.com', // Updated fallback to match deployment
-    timeout: 20000, // 20 second timeout for all requests
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
     headers: {
         'Content-Type': 'application/json',
     },

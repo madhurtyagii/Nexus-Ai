@@ -1,7 +1,10 @@
-// Rate limiting for multiple identical toasts (prevent bombardment)
-let lastNetworkErrorTime = 0;
-const NETWORK_ERROR_THROTTLE = 5000; // 5 seconds
+import toast from 'react-hot-toast';
 
+/**
+ * Centrally handles API errors.
+ * 
+ * @param {Error} error - The error object from axios
+ */
 export const handleApiError = (error) => {
     // If it's a cancellation, do nothing
     if (error.__CANCEL__) return;
@@ -14,41 +17,64 @@ export const handleApiError = (error) => {
     let errorCode = 'UNKNOWN';
 
     if (response) {
-        // ...Existing response handling...
+        // The server responded with a status code that falls out of the range of 2xx
         const data = response.data;
+
+        // Handle standardized Nexus error format
         if (data && data.error) {
             message = data.message || message;
             errorCode = data.error_code || 'SERVER_ERROR';
         } else if (data && data.detail) {
+            // Standard FastAPI detail
             message = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
         }
 
+        // Specific handling based on status codes
         switch (response.status) {
-            case 400: toast.error(`Invalid Request: ${message}`); break;
-            case 401: break; // Handled by interceptor
-            case 403: toast.error('Access Denied'); break;
-            case 404: toast.error('Not Found'); break;
-            case 422: toast.error('Validation Error'); break;
-            case 429: toast.error('Too Many Requests'); break;
-            case 500: toast.error('Server error'); break;
-            default: toast.error(message);
+            case 400:
+                toast.error(`Invalid Request: ${message}`);
+                break;
+            case 401:
+                // Handled by axios interceptor (redirect to login)
+                break;
+            case 403:
+                toast.error('Access Denied: You do not have permission.');
+                break;
+            case 404:
+                toast.error('Not Found: The requested resource does not exist.');
+                break;
+            case 422:
+                // Validation error
+                toast.error('Validation Error: Please check your input.');
+                break;
+            case 429:
+                toast.error('Too Many Requests: Please slow down.');
+                break;
+            case 500:
+                toast.error('Server error. Our engineers have been notified.');
+                break;
+            case 503:
+                toast.error('Service Unavailable: Please try again later.');
+                break;
+            default:
+                toast.error(message);
         }
     } else if (request) {
-        // Handle "bombardment" of Network Errors
-        const now = Date.now();
-        if (now - lastNetworkErrorTime > NETWORK_ERROR_THROTTLE) {
-            toast.error('Network Error: Unable to reach the server. Please check your connection.', {
-                id: 'network-error-toast', // Use constant ID to replace existing ones
-            });
-            lastNetworkErrorTime = now;
-        }
+        // The request was made but no response was received
+        toast.error('Network Error: Unable to reach the server. Please check your connection.');
         message = 'Network error';
         errorCode = 'NETWORK_ERROR';
     } else {
+        // Something happened in setting up the request that triggered an Error
+        console.error('Error', error.message);
         toast.error(error.message);
     }
 
-    return { message, errorCode, status: response?.status };
+    return {
+        message,
+        errorCode,
+        status: response?.status
+    };
 };
 
 /**
