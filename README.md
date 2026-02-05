@@ -9,96 +9,118 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Version-2.0-blueviolet" alt="Version: 2.0" />
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python" alt="Python: 3.11+" />
   <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi" alt="FastAPI: 0.100+" />
   <img src="https://img.shields.io/badge/React-18.x-61DAFB?logo=react" alt="React: 18.x" />
-  <img src="https://img.shields.io/badge/Docker-Required-2496ED?logo=docker" alt="Docker: Required" />
+  <img src="https://img.shields.io/badge/PWA-Installable-8b5cf6" alt="PWA: Installable" />
 </p>
 
 **Nexus AI** is a cutting-edge, autonomous workspace that orchestrates a team of specialized AI agents to solve complex challenges through intelligent collaboration, semantic memory, and robust project orchestration.
 
 ---
 
-## 🔥 The Value Proposition
-Unlike standard chat interfaces, Nexus AI treats AI as a **workforce**. You provide a high-level goal, and the orchestrator breaks it down into actionable sub-tasks, assigns them to the most qualified agents, and manages the entire execution lifecycle in real-time.
+## 🚀 Quick Start
 
-### ✨ New: Fully Functional Pro Dashboard
-The latest update replaces all placeholders with production-ready components:
-- **📋 Tasks**: Search, filter, and manage tasks with real-time status updates.
-- **🤖 Agents**: Full gallery of 7 specialized agents with capability deep-dives.
-- **📁 Files**: Complete file management with storage visualization.
-- **⚙️ Settings**: Account, API management, and preferences panel.
-- **📊 Enhanced Dashboard**: Quick Actions, Activity Feed, and System Status monitoring.
-
----
-
-## 🤖 The Specialist Team
-Each agent in Nexus AI is a distinct persona with specialized tools and refined prompts:
-
-*   **👑 The Manager**: The central orchestrator. Decomposes goals, creates project plans, and ensures quality.
-*   **🔍 The Researcher**: Scours the web using Tavily to provide deep-dive insights and factual data.
-*   **💻 The Coder**: Specialized in logic, debugging, and software architecture across multiple languages.
-*   **✍️ The Content Lead**: Expert in creative writing, professional emails, and high-impact documentation.
-*   **🧪 The QA Analyst**: Rigorously tests outputs and validates that user requirements are met.
-*   **🧠 Memory Guardian**: Manages semantic context using vector embeddings for long-term project continuity.
-
----
-
-## 🏗️ Technical Architecture
-Nexus AI is built on a high-performance, resilient stack designed for local-first excellence:
-
-- **Backend**: FastAPI (Python) with an asynchronous task orchestration engine and custom auth.
-- **Frontend**: Premium React (Vite) dashboard with the new **Nexus AI Branding** and direct-path asset optimization.
-- **Cache & Messaging**: Redis for lightning-fast task queuing and WebSocket pub/sub updates.
-- **Database**: SQLAlchemy/PostgreSQL (Windows/Docker) for robust state management.
-- **LLM Engine**: Blazing-fast generation via **Groq API** or privacy-focused local models via **Ollama**.
-
----
-
-## 🚀 Quick Start (Docker-First)
-
-### 1. Prerequisites
+### Prerequisites
 - Docker & Docker Compose
 - Python 3.11+
 - Node.js 18+
 
-### 2. Launching the Workspace
+### Launch Commands
 ```bash
 # Clone the repository
 git clone https://github.com/madhurtyagii/nexus-ai.git
 cd nexus-ai
 
-# Start local databases (Postgres & Redis)
+# Start databases (Postgres & Redis)
 docker-compose up -d
 
-# Start the Backend
+# Backend (Terminal 1)
 cd backend
 python -m venv venv
-# Activate venv (Windows: venv\Scripts\activate | Linux: source venv/bin/activate)
+venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 python main.py
 
-# Start the Frontend
-cd ../frontend
+# Frontend (Terminal 2)
+cd frontend
 npm install
 npm run dev
 ```
 
-Visit `http://localhost:5173` to start orchestrating!
+### 🔗 Local URLs
+| Service | URL |
+|---------|-----|
+| **Frontend** | http://localhost:5173 |
+| **Backend API** | http://localhost:8000 |
+| **API Docs** | http://localhost:8000/docs |
+| **PostgreSQL** | localhost:5432 |
+| **Redis** | localhost:6379 |
 
 ---
 
-## 📊 Documentation Roadmap
-- [📖 User Manual & Setup Guide](USER_MANUAL.md)
-- [🏗️ System Architecture](docs/ARCHITECTURE.md)
-- [🤖 Agent Deep-Dives](docs/AGENTS.md)
+## ✨ v2.0 Features
+
+### Phase 1: Real-time & Interactivity
+- ⚡ **WebSocket Live Mirroring** - Instant task updates with visual "Live" indicator
+- 💬 **Direct Agent Chat** - Communicate directly with any agent
+- 📊 **Agent Metrics** - Performance stats and activity charts
+
+### Phase 2: Intelligence & Workflow
+- 🧠 **RAG for Files** - Semantic search: "Ask Your Files" natural language queries
+- 🔀 **Visual Workflow Builder** - Drag-and-drop agent orchestration
+- 📤 **Export Engine** - PDF, Markdown, DOCX, JSON exports
+
+### Phase 3: Accessibility
+- 📱 **PWA Support** - Install as standalone mobile/desktop app
+- 🔽 **Mobile Bottom Nav** - Touch-friendly navigation
+- 💅 **Responsive Design** - Safe-area support for notched phones
+
+---
+
+## 🤖 The Specialist Team
+
+| Agent | Role |
+|-------|------|
+| 👑 **Manager** | Orchestrates goals, creates plans, ensures quality |
+| 🔍 **Researcher** | Web research via Tavily for deep insights |
+| 💻 **Coder** | Logic, debugging, software architecture |
+| ✍️ **Content Lead** | Creative writing, documentation |
+| 🧪 **QA Analyst** | Tests outputs, validates requirements |
+| 📊 **Data Agent** | Data analysis, visualization |
+| 🧠 **Memory Guardian** | Semantic context and long-term memory |
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐
+│  React (Vite)   │────▶│  FastAPI        │
+│  PWA Frontend   │     │  Backend        │
+└─────────────────┘     └────────┬────────┘
+                                 │
+        ┌────────────────────────┼────────────────────────┐
+        ▼                        ▼                        ▼
+┌───────────────┐      ┌───────────────┐       ┌───────────────┐
+│  PostgreSQL   │      │     Redis     │       │   ChromaDB    │
+│  (Database)   │      │ (Queue/Cache) │       │ (Vectors/RAG) │
+└───────────────┘      └───────────────┘       └───────────────┘
+```
+
+---
+
+## 📖 Documentation
+- [📖 User Manual](USER_MANUAL.md)
+- [🏗️ Architecture](docs/ARCHITECTURE.md)
+- [🤖 Agents Guide](docs/AGENTS.md)
 - [🔌 API Reference](backend/docs/API_GUIDE.md)
-- [🛠️ Tooling System](docs/TOOLS.md)
 
 ---
 
 ## 🤝 Contributing & License
-Nexus AI is released under the [MIT License](LICENSE). Contributions that advance the goal of autonomous collaboration are always welcome.
+Nexus AI is released under the [MIT License](LICENSE). Contributions welcome!
 
 Developed with ❤️ by [Madhur Tyagi](https://github.com/madhurtyagii)
