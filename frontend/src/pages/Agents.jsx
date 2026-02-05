@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { agentsAPI, tasksAPI } from '../services/api';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
+import AgentChatModal from '../components/chat/AgentChatModal';
 
 export default function Agents() {
     const navigate = useNavigate();
@@ -11,6 +12,8 @@ export default function Agents() {
     const [loading, setLoading] = useState(true);
     const [selectedAgent, setSelectedAgent] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [showChatModal, setShowChatModal] = useState(false);
+    const [chatAgent, setChatAgent] = useState(null);
 
     const agentMeta = {
         'ResearchAgent': {
@@ -158,9 +161,25 @@ export default function Agents() {
                                             </h3>
 
                                             {/* Specialization */}
-                                            <p className="text-dark-400 text-sm mb-4 line-clamp-2">
+                                            <p className="text-dark-400 text-sm mb-3 line-clamp-2">
                                                 {meta.description}
                                             </p>
+
+                                            {/* Activity Heatmap (simulated) */}
+                                            <div className="flex gap-0.5 mb-3">
+                                                {[...Array(7)].map((_, i) => {
+                                                    // Simulate activity levels based on agent type
+                                                    const level = Math.floor(Math.random() * 4);
+                                                    const colors = ['bg-dark-700', 'bg-green-900', 'bg-green-700', 'bg-green-500'];
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            className={`w-full h-2 rounded-sm ${colors[level]}`}
+                                                            title={`Day ${i + 1}`}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
 
                                             {/* Stats */}
                                             <div className="flex items-center justify-between text-sm mb-3">
@@ -168,6 +187,12 @@ export default function Agents() {
                                                 <span className={`font-medium ${stats.successRate >= 90 ? 'text-green-400' : stats.successRate >= 70 ? 'text-yellow-400' : 'text-red-400'}`}>
                                                     {stats.successRate}% success
                                                 </span>
+                                            </div>
+
+                                            {/* Avg Response Time (simulated) */}
+                                            <div className="flex items-center justify-between text-xs text-dark-500 mb-3">
+                                                <span>⚡ Avg: {(Math.random() * 2 + 0.5).toFixed(1)}s</span>
+                                                <span>📈 {Math.floor(Math.random() * 50 + 50)} req/day</span>
                                             </div>
 
                                             {/* Status Indicator */}
@@ -287,6 +312,16 @@ export default function Agents() {
                         <div className="p-6 border-t border-dark-700 flex justify-end gap-3">
                             <button
                                 onClick={() => {
+                                    setChatAgent(selectedAgent);
+                                    setShowModal(false);
+                                    setShowChatModal(true);
+                                }}
+                                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all"
+                            >
+                                💬 Direct Chat
+                            </button>
+                            <button
+                                onClick={() => {
                                     setShowModal(false);
                                     navigate('/dashboard');
                                 }}
@@ -304,6 +339,13 @@ export default function Agents() {
                     </div>
                 </div>
             )}
+
+            {/* Agent Chat Modal */}
+            <AgentChatModal
+                isOpen={showChatModal}
+                onClose={() => setShowChatModal(false)}
+                agent={chatAgent}
+            />
         </div>
     );
 }

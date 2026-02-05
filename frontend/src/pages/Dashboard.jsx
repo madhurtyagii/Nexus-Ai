@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { agentsAPI, tasksAPI, projectsAPI } from '../services/api';
+import { useWebSocket, EventType, ConnectionState } from '../hooks/useWebSocket';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
 import toast from 'react-hot-toast';
 
 export default function Dashboard() {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const navigate = useNavigate();
     const [agents, setAgents] = useState([]);
     const [recentTasks, setRecentTasks] = useState([]);
@@ -15,16 +16,29 @@ export default function Dashboard() {
     const [prompt, setPrompt] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // WebSocket setup for real-time updates
+    const handleWebSocketMessage = useCallback((message) => {
+        // Refresh data when relevant events occur
+        if ([EventType.TASK_CREATED, EventType.TASK_COMPLETED, EventType.TASK_FAILED].includes(message.event_type)) {
+            loadRecentTasks();
+        }
+    }, []);
+
+    const { isConnected, connectionState } = useWebSocket(token, {
+        onMessage: handleWebSocketMessage,
+        autoConnect: !!token
+    });
+
     useEffect(() => {
         loadAgents();
         loadRecentTasks();
         loadPinnedProjects();
 
-        // Auto-refresh tasks every 15 seconds (optimized for rate limits)
+        // Fallback polling at 30s (WebSocket is primary)
         const interval = setInterval(() => {
             loadRecentTasks();
             loadPinnedProjects();
-        }, 15000);
+        }, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -102,9 +116,17 @@ export default function Dashboard() {
                 <main className="flex-1 p-6 lg:p-8">
                     {/* Welcome Section */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-white mb-2">
-                            Welcome back, <span className="gradient-text">{user?.username}</span>
-                        </h1>
+                        <div className="flex items-center gap-3 mb-2">
+                            <h1 className="text-3xl font-bold text-white">
+                                Welcome back, <span className="gradient-text">{user?.username}</span>
+                            </h1>
+                            {isConnected && (
+                                <span className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-green-400 bg-green-400/10 rounded-full border border-green-400/30">
+                                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                                    Live
+                                </span>
+                            )}
+                        </div>
                         <p className="text-dark-400">
                             What would you like your agents to work on today?
                         </p>
