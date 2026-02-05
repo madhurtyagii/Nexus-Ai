@@ -8,24 +8,24 @@ import uuid
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-import chromadb
-from chromadb.config import Settings
+# --- Pydantic v2 Compatibility Handle ---
+CHROMADB_AVAILABLE = False
+try:
+    import chromadb
+    from chromadb.config import Settings
+    CHROMADB_AVAILABLE = True
+except Exception:
+    # We will log this later if needed, but for now we just want to NOT crash
+    chromadb = None
+    Settings = None
 
 from logging_config import get_logger
-
 logger = get_logger(__name__)
-
 
 class VectorStore:
     """
     ChromaDB-based vector store for semantic memory storage and retrieval.
-    
-    Collections:
-    - conversation_history: user conversations and task prompts
-    - agent_outputs: all agent execution results
-    - user_preferences: learned user preferences
-    - domain_knowledge: pre-loaded expert knowledge per agent
-    - task_context: context from related tasks
+    (With in-memory fallback if ChromaDB is unavailable)
     """
     
     # Collection names
@@ -36,32 +36,27 @@ class VectorStore:
     TASK_CONTEXT = "task_context"
     
     def __init__(self, persist_directory: str = None):
-        """
-        Initialize ChromaDB client in persistent mode.
-        
-        Args:
-            persist_directory: Directory to persist ChromaDB data
-        """
+        """Initialize ChromaDB client or in-memory fallback."""
         self.persist_directory = persist_directory or os.getenv(
             "CHROMADB_DIR", "./data/chromadb"
         )
+        self._collections = {}
+        self._fallback_storage = {}
         
-        # Ensure directory exists
-        os.makedirs(self.persist_directory, exist_ok=True)
-        
-        # Initialize ChromaDB client with persistence
-        self.client = chromadb.PersistentClient(
-            path=self.persist_directory,
-            settings=Settings(
-                anonymized_telemetry=False,
-                allow_reset=True
-            )
-        )
-        
-        # Track initialized collections
-        self._collections: Dict[str, chromadb.Collection] = {}
-        
-        logger.info(f"VectorStore initialized with persist_directory: {self.persist_directory}")
+        if CHROMADB_AVAILABLE:
+            try:
+                os.makedirs(self.persist_directory, exist_ok=True)
+                self.client = chromadb.PersistentClient(
+                    path=self.persist_directory,
+                    settings=Settings(anonymized_telemetry=False, allow_reset=True)
+                )
+                logger.info(f"✅ VectorStore initialized with ChromaDB at: {self.persist_directory}")
+            except Exception as e:
+                logger.warning(f"⚠️ ChromaDB failed to init: {e}. Using fallback.")
+                self.client = None
+        else:
+            self.client = None
+            logger.warning("🧱 VectorStore running in fallback (in-memory) mode.")
     
     def init_collection(
         self, 

@@ -2,6 +2,19 @@
 
 All notable changes to Nexus AI will be documented in this file.
 
+## [2.2.0] - 2026-02-06
+### Added
+- 🖱️ **6 Cursor Effects** - Ring, Particles, Ribbon, Aurora, Stardust, Orbit with Settings controls
+- 👤 **Account Editing** - Update username & email in Settings with live validation
+- 🔒 **PUT /auth/me** - Backend endpoint for profile updates
+- 🎨 **Enhanced Settings UI** - Editable fields with pencil icons, save/cancel actions
+- 📝 **Updated READMEs** - Comprehensive documentation with new logo
+
+### Improved
+- Settings Appearance tab with cursor effect selector
+- Account tab with inline editing capabilities
+- Username validation to allow spaces and capitals
+
 ## [2.1.0] - 2024-05-20
 ### Added
 - Comprehensive Google-style docstrings for all backend modules.

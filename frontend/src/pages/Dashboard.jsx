@@ -2,10 +2,48 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { agentsAPI, tasksAPI, projectsAPI } from '../services/api';
-import { useWebSocket, EventType, ConnectionState } from '../hooks/useWebSocket';
+import { useWebSocket, EventType } from '../hooks/useWebSocket';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    Plus,
+    FolderPlus,
+    Upload,
+    Users,
+    Activity,
+    ShieldCheck,
+    Database,
+    Zap,
+    ChevronRight,
+    Pin,
+    ArrowUpRight,
+    Sparkles,
+    Search,
+    BrainCircuit
+} from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
+import { Skeleton, TaskListSkeleton, CardSkeleton } from '../components/common/Skeleton';
 import toast from 'react-hot-toast';
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.2
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: { type: 'spring', stiffness: 300, damping: 24 }
+    }
+};
 
 export default function Dashboard() {
     const { user, token } = useAuth();
@@ -15,26 +53,27 @@ export default function Dashboard() {
     const [pinnedProjects, setPinnedProjects] = useState([]);
     const [prompt, setPrompt] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // WebSocket setup for real-time updates
     const handleWebSocketMessage = useCallback((message) => {
-        // Refresh data when relevant events occur
         if ([EventType.TASK_CREATED, EventType.TASK_COMPLETED, EventType.TASK_FAILED].includes(message.event_type)) {
             loadRecentTasks();
         }
     }, []);
 
-    const { isConnected, connectionState } = useWebSocket(token, {
+    const { isConnected } = useWebSocket(token, {
         onMessage: handleWebSocketMessage,
         autoConnect: !!token
     });
 
     useEffect(() => {
-        loadAgents();
-        loadRecentTasks();
-        loadPinnedProjects();
+        const loadInitialData = async () => {
+            setIsLoading(true);
+            await Promise.all([loadAgents(), loadRecentTasks(), loadPinnedProjects()]);
+            setIsLoading(false);
+        };
+        loadInitialData();
 
-        // Fallback polling at 30s (WebSocket is primary)
         const interval = setInterval(() => {
             loadRecentTasks();
             loadPinnedProjects();
@@ -75,7 +114,7 @@ export default function Dashboard() {
 
         setIsSubmitting(true);
         try {
-            const response = await tasksAPI.create({ user_prompt: prompt });
+            await tasksAPI.create({ user_prompt: prompt });
             toast.success('Task created! Processing...');
             setPrompt('');
             loadRecentTasks();
@@ -88,295 +127,250 @@ export default function Dashboard() {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'completed': return 'text-green-400 bg-green-400/10';
-            case 'in_progress': return 'text-yellow-400 bg-yellow-400/10';
-            case 'failed': return 'text-red-400 bg-red-400/10';
-            default: return 'text-blue-400 bg-blue-400/10';
+            case 'completed': return 'text-green-400 bg-green-400/10 border-green-400/20';
+            case 'in_progress': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20';
+            case 'failed': return 'text-red-400 bg-red-400/10 border-red-400/20';
+            default: return 'text-primary-400 bg-primary-400/10 border-primary-400/20';
         }
     };
 
-    const agentEmojis = {
-        'ResearchAgent': '🔍',
-        'CodeAgent': '💻',
-        'ContentAgent': '✍️',
-        'DataAgent': '📊',
-        'QAAgent': '✅',
-        'MemoryAgent': '🧠',
-        'ManagerAgent': '📋',
-    };
-
     return (
-        <div className="min-h-screen bg-dark-900">
+        <div className="min-h-screen bg-dark-900 selection:bg-primary-500/30">
             <Navbar />
 
             <div className="flex">
                 <Sidebar />
 
-                {/* Main Content */}
                 <main className="flex-1 p-6 lg:p-8">
-                    {/* Welcome Section */}
-                    <div className="mb-8">
-                        <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-3xl font-bold text-white">
-                                Welcome back, <span className="gradient-text">{user?.username}</span>
-                            </h1>
-                            {isConnected && (
-                                <span className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-green-400 bg-green-400/10 rounded-full border border-green-400/30">
-                                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                                    Live
-                                </span>
-                            )}
-                        </div>
-                        <p className="text-dark-400">
-                            What would you like your agents to work on today?
-                        </p>
-                    </div>
+                    <motion.div
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                        className="max-w-7xl mx-auto"
+                    >
+                        {/* Welcome Section */}
+                        <motion.div variants={itemVariants} className="mb-8">
+                            <div className="flex items-center gap-4 mb-3">
+                                <div className="w-1.5 h-8 bg-primary-500 rounded-full shadow-[0_0_15px_rgba(14,165,233,0.5)]" />
+                                <h1 className="text-4xl font-bold tracking-tight text-white">
+                                    Welcome back, <span className="text-primary-400 tracking-tighter">{user?.username}</span>
+                                </h1>
+                                {isConnected && (
+                                    <span className="flex items-center gap-2 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-green-400 bg-green-400/10 rounded-full border border-green-400/20 backdrop-blur-md">
+                                        <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span>
+                                        Live Connection
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-dark-400 text-lg max-w-2xl font-medium leading-relaxed">
+                                Your autonomous fleet is standby. What should we build next? 🚀
+                            </p>
+                        </motion.div>
 
-                    {/* Task Input */}
-                    <div className="card gradient-border mb-8">
-                        <form onSubmit={handleSubmitTask}>
-                            <div className="flex gap-4">
-                                <input
-                                    type="text"
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    placeholder="Describe your task... e.g., 'Research the latest AI trends and write a summary'"
-                                    className="flex-1 input-field"
-                                />
+                        {/* Premium Task Input */}
+                        <motion.div variants={itemVariants} className="card p-1.5 mb-10 overflow-hidden relative group">
+                            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <form onSubmit={handleSubmitTask} className="flex gap-2">
+                                <div className="flex-1 relative flex items-center">
+                                    <Search className="absolute left-6 w-5 h-5 text-dark-500 group-focus-within:text-primary-400 transition-colors" />
+                                    <input
+                                        type="text"
+                                        value={prompt}
+                                        onChange={(e) => setPrompt(e.target.value)}
+                                        placeholder="Command your agents... e.g., 'Draft a technical spec for the new API'"
+                                        className="w-full bg-transparent border-none text-white pl-14 pr-6 py-5 focus:ring-0 text-lg placeholder:text-dark-600 font-medium"
+                                    />
+                                </div>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting || !prompt.trim()}
-                                    className="btn-primary px-8 disabled:opacity-50"
+                                    className="btn-primary rounded-xl px-10 m-1 flex items-center gap-2 shadow-[0_10px_20px_rgba(14,165,233,0.2)] hover:shadow-[0_15px_30px_rgba(14,165,233,0.3)] disabled:opacity-30 disabled:grayscale transition-all"
                                 >
-                                    {isSubmitting ? 'Sending...' : 'Send Task'}
+                                    <Zap className={`w-5 h-5 ${isSubmitting ? 'animate-spin' : 'animate-pulse'}`} />
+                                    <span className="font-bold tracking-tight">{isSubmitting ? 'Executing...' : 'Deploy'}</span>
                                 </button>
-                            </div>
-                        </form>
-                    </div>
+                            </form>
+                        </motion.div>
 
-                    {/* Quick Actions & System Status Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        {/* Quick Actions */}
-                        <div className="card">
-                            <h2 className="text-lg font-semibold text-white mb-4">⚡ Quick Actions</h2>
-                            <div className="space-y-2">
-                                <button
-                                    onClick={() => document.querySelector('input[placeholder*="Describe"]')?.focus()}
-                                    className="w-full p-3 rounded-lg bg-dark-700 hover:bg-dark-600 text-left text-white transition-colors flex items-center gap-3"
-                                >
-                                    <span className="text-xl">➕</span>
-                                    <span>New Task</span>
-                                </button>
-                                <button
-                                    onClick={() => navigate('/projects')}
-                                    className="w-full p-3 rounded-lg bg-dark-700 hover:bg-dark-600 text-left text-white transition-colors flex items-center gap-3"
-                                >
-                                    <span className="text-xl">📁</span>
-                                    <span>New Project</span>
-                                </button>
-                                <button
-                                    onClick={() => navigate('/files')}
-                                    className="w-full p-3 rounded-lg bg-dark-700 hover:bg-dark-600 text-left text-white transition-colors flex items-center gap-3"
-                                >
-                                    <span className="text-xl">📤</span>
-                                    <span>Upload File</span>
-                                </button>
-                                <button
-                                    onClick={() => navigate('/agents')}
-                                    className="w-full p-3 rounded-lg bg-dark-700 hover:bg-dark-600 text-left text-white transition-colors flex items-center gap-3"
-                                >
-                                    <span className="text-xl">🤖</span>
-                                    <span>Browse Agents</span>
-                                </button>
-                            </div>
+                        {/* Grid Row 1 */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                            {/* Quick Actions */}
+                            <motion.div variants={itemVariants} className="card p-6 flex flex-col">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="p-2 bg-primary-500/10 rounded-lg">
+                                        <ArrowUpRight className="w-5 h-5 text-primary-400" />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-white tracking-tight">Quick Actions</h2>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 flex-1">
+                                    {[
+                                        { label: 'New Task', icon: Plus, path: '/tasks', color: 'bg-primary-500/10' },
+                                        { label: 'Project', icon: FolderPlus, path: '/projects', color: 'bg-purple-500/10' },
+                                        { label: 'Upload', icon: Upload, path: '/files', color: 'bg-blue-500/10' },
+                                        { label: 'Agents', icon: Users, path: '/agents', color: 'bg-green-500/10' },
+                                    ].map((action) => (
+                                        <button
+                                            key={action.label}
+                                            onClick={() => navigate(action.path)}
+                                            className="p-4 rounded-2xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 transition-all group/action text-left"
+                                        >
+                                            <action.icon className="w-6 h-6 text-dark-300 group-hover/action:text-white transition-colors mb-4" />
+                                            <p className="text-sm font-bold text-white leading-none">{action.label}</p>
+                                        </button>
+                                    ))}
+                                </div>
+                            </motion.div>
+
+                            {/* Activity Feed */}
+                            <motion.div variants={itemVariants} className="card p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-yellow-500/10 rounded-lg">
+                                            <Activity className="w-5 h-5 text-yellow-500" />
+                                        </div>
+                                        <h2 className="text-xl font-bold text-white tracking-tight">Intelligence Feed</h2>
+                                    </div>
+                                    <button onClick={() => navigate('/tasks')} className="text-xs font-bold text-primary-400 hover:text-white transition-colors">VIEW ALL</button>
+                                </div>
+                                <div className="space-y-4">
+                                    <AnimatePresence mode="popLayout">
+                                        {recentTasks.slice(0, 4).map((task) => (
+                                            <motion.div
+                                                layout
+                                                key={task.id}
+                                                className="flex items-center gap-4 group/feed cursor-pointer"
+                                                onClick={() => navigate(`/tasks/${task.id}`)}
+                                            >
+                                                <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor(task.status).split(' ')[0]} ${task.status === 'in_progress' ? 'animate-ping' : ''}`} />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-dark-100 line-clamp-1 group-hover/feed:text-white transition-colors">{task.user_prompt}</p>
+                                                    <p className="text-[10px] font-bold text-dark-500 uppercase tracking-widest mt-1">
+                                                        {task.status.replace('_', ' ')} • {new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+                                    {recentTasks.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center py-8 opacity-30">
+                                            <Sparkles className="w-8 h-8 mb-2" />
+                                            <p className="text-xs font-bold uppercase tracking-widest">Awaiting Signals</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+
+                            {/* System Status Container */}
+                            <motion.div variants={itemVariants} className="card p-6 bg-primary-500/5 border-primary-500/10 overflow-hidden relative">
+                                <div className="flex items-center gap-3 mb-6 relative z-10">
+                                    <div className="p-2 bg-green-500/10 rounded-lg">
+                                        <ShieldCheck className="w-5 h-5 text-green-500" />
+                                    </div>
+                                    <h2 className="text-xl font-bold tracking-tight">Pro Monitor</h2>
+                                </div>
+                                <div className="space-y-4 relative z-10">
+                                    {[
+                                        { label: 'Neural Backend', status: 'Optimal', icon: Database },
+                                        { label: 'Redis Streams', status: 'Synced', icon: Activity },
+                                        { label: 'Active Fleet', status: `${agents.length} Online`, icon: Users },
+                                    ].map((stat) => (
+                                        <div key={stat.label} className="flex items-center justify-between p-3 rounded-xl bg-black/5 dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                                            <div className="flex items-center gap-3">
+                                                <stat.icon className="w-4 h-4 text-slate-500 dark:text-dark-400" />
+                                                <span className="text-xs font-bold text-slate-700 dark:text-dark-200">{stat.label}</span>
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase text-green-500 tracking-tighter">{stat.status}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
                         </div>
 
-                        {/* Activity Feed */}
-                        <div className="card">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold text-white">📈 Recent Activity</h2>
-                                <button
-                                    onClick={() => navigate('/tasks')}
-                                    className="text-xs text-primary-400 hover:text-primary-300"
-                                >
-                                    View All
-                                </button>
-                            </div>
-                            <div className="space-y-3">
-                                {recentTasks.slice(0, 4).map((task, i) => (
-                                    <div key={task.id} className="flex items-start gap-3">
-                                        <div className={`w-2 h-2 rounded-full mt-2 ${task.status === 'completed' ? 'bg-green-400' :
-                                            task.status === 'in_progress' ? 'bg-yellow-400 animate-pulse' :
-                                                task.status === 'failed' ? 'bg-red-400' : 'bg-blue-400'
-                                            }`}></div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-white text-sm line-clamp-1">{task.user_prompt}</p>
-                                            <p className="text-dark-500 text-xs">
-                                                {task.status === 'completed' ? 'Completed' :
-                                                    task.status === 'in_progress' ? 'Running...' :
-                                                        task.status === 'failed' ? 'Failed' : 'Queued'} • {
-                                                    new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                                }
+                        {/* Grid Row 2: Projects & Detailed Tasks */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            <motion.div variants={itemVariants} className="card p-8">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-3">
+                                        <Pin className="w-6 h-6 text-primary-400 -rotate-45" />
+                                        <h2 className="text-2xl font-black text-white tracking-tighter italic">Pinned Core</h2>
+                                    </div>
+                                    <button onClick={() => navigate('/projects')} className="bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors"><ChevronRight className="w-5 h-5 text-white" /></button>
+                                </div>
+                                <div className="space-y-4">
+                                    {pinnedProjects.map((project) => (
+                                        <div
+                                            key={project.id}
+                                            onClick={() => navigate(`/projects/${project.id}`)}
+                                            className="group relative p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-primary-500/30 transition-all cursor-pointer overflow-hidden"
+                                        >
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h3 className="font-bold text-lg text-white group-hover:text-primary-400 transition-colors uppercase tracking-tight">{project.name}</h3>
+                                                <Zap className="w-4 h-4 text-dark-600 group-hover:text-primary-400 transition-colors" />
+                                            </div>
+                                            <p className="text-sm text-dark-500 font-medium mb-5 line-clamp-1">{project.description || 'System generated core project'}</p>
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex-1 h-1.5 bg-dark-800 rounded-full overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${project.progress}%` }}
+                                                        className="h-full bg-gradient-to-r from-primary-500 to-primary-300 rounded-full"
+                                                    />
+                                                </div>
+                                                <span className="text-xs font-black text-primary-400 tracking-tighter italic">{project.progress}%</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
+
+                            <motion.div variants={itemVariants} className="card p-8">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h2 className="text-2xl font-black text-white tracking-tighter italic">Recent Operations</h2>
+                                    <span className="text-[10px] font-bold text-dark-600 uppercase tracking-widest bg-white/5 px-2 py-1 rounded">Real-time Node</span>
+                                </div>
+                                <div className="space-y-3">
+                                    {recentTasks.map((task) => (
+                                        <div
+                                            key={task.id}
+                                            onClick={() => navigate(`/tasks/${task.id}`)}
+                                            className="p-4 rounded-xl bg-white/[0.01] hover:bg-white/[0.04] border border-white/5 hover:border-primary-500/20 transition-all cursor-pointer group"
+                                        >
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${getStatusColor(task.status)}`}>
+                                                    {task.status}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-dark-500">#{task.id.slice(-6)}</span>
+                                            </div>
+                                            <p className="text-sm font-bold text-dark-100 group-hover:text-white transition-colors line-clamp-2">
+                                                {task.user_prompt}
                                             </p>
                                         </div>
-                                    </div>
-                                ))}
-                                {recentTasks.length === 0 && (
-                                    <p className="text-dark-500 text-sm text-center py-4">No activity yet</p>
-                                )}
-                            </div>
+                                    ))}
+                                </div>
+                            </motion.div>
                         </div>
 
-                        {/* System Status */}
-                        <div className="card">
-                            <h2 className="text-lg font-semibold text-white mb-4">🏥 System Status</h2>
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-dark-400">Backend API</span>
-                                    <span className="flex items-center gap-2 text-green-400 text-sm">
-                                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                                        Online
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-dark-400">Redis Queue</span>
-                                    <span className="flex items-center gap-2 text-green-400 text-sm">
-                                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                                        Connected
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-dark-400">AI Agents</span>
-                                    <span className="flex items-center gap-2 text-green-400 text-sm">
-                                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                                        {agents.length} Active
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-dark-400">Database</span>
-                                    <span className="flex items-center gap-2 text-green-400 text-sm">
-                                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                                        Healthy
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Pinned Projects */}
-                        <div className="card">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-semibold text-white">📌 Pinned Projects</h2>
-                                <button
-                                    onClick={() => navigate('/projects')}
-                                    className="text-sm text-primary-400 hover:text-primary-300"
+                        {/* Staggered Quick Stats */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {[
+                                { label: 'Active Fleet', value: agents.length, icon: Users, color: 'text-primary-400' },
+                                { label: 'Completed', value: recentTasks.filter(t => t.status === 'completed').length, icon: ShieldCheck, color: 'text-green-400' },
+                                { label: 'In Execution', value: recentTasks.filter(t => t.status === 'in_progress').length, icon: Activity, color: 'text-yellow-400' },
+                                { label: 'Operations', value: recentTasks.length, icon: BrainCircuit, color: 'text-blue-400' },
+                            ].map((stat) => (
+                                <motion.div
+                                    key={stat.label}
+                                    variants={itemVariants}
+                                    whileHover={{ scale: 1.05, y: -5 }}
+                                    className="card p-6 text-center group cursor-default"
                                 >
-                                    View All
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-1 gap-3">
-                                {pinnedProjects.map((project) => (
-                                    <div
-                                        key={project.id}
-                                        onClick={() => navigate(`/projects/${project.id}`)}
-                                        className="p-4 rounded-xl bg-dark-700/50 border border-dark-600 hover:border-primary-500/50 transition-all cursor-pointer group relative overflow-hidden"
-                                    >
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h3 className="font-semibold text-white group-hover:text-primary-400 transition-colors">
-                                                {project.name}
-                                            </h3>
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full bg-primary-500/10 text-primary-400 border border-primary-500/20`}>
-                                                {project.status.replace('_', ' ')}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-dark-400 line-clamp-1 mb-3">
-                                            {project.description || 'No description'}
-                                        </p>
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex-1 h-1 bg-dark-600 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-gradient-to-r from-primary-500 to-purple-500"
-                                                    style={{ width: `${project.progress}%` }}
-                                                />
-                                            </div>
-                                            <span className="text-[10px] text-dark-400 font-medium">
-                                                {project.progress}%
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                                {pinnedProjects.length === 0 && (
-                                    <div className="text-center py-6 border-2 border-dashed border-dark-700 rounded-xl">
-                                        <p className="text-dark-500 text-sm">No pinned projects yet</p>
-                                        <button
-                                            onClick={() => navigate('/projects')}
-                                            className="mt-2 text-xs text-primary-400 hover:underline"
-                                        >
-                                            Go to Projects
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                                    <stat.icon className={`w-8 h-8 mx-auto mb-4 ${stat.color} opacity-40 group-hover:opacity-100 transition-opacity`} />
+                                    <div className={`text-3xl font-black italic tracking-tighter ${stat.color}`}>{stat.value}</div>
+                                    <p className="text-[10px] uppercase font-bold tracking-widest text-dark-500 mt-2">{stat.label}</p>
+                                </motion.div>
+                            ))}
                         </div>
-
-                        {/* Recent Tasks */}
-                        <div className="card">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-semibold text-white">Recent Tasks</h2>
-                                <span className="text-xs text-dark-500">Auto-refreshing</span>
-                            </div>
-                            <div className="space-y-3">
-                                {recentTasks.map((task) => (
-                                    <div
-                                        key={task.id}
-                                        onClick={() => navigate(`/tasks/${task.id}`)}
-                                        className="p-3 rounded-lg bg-dark-700/50 hover:bg-dark-700 transition-colors cursor-pointer group"
-                                    >
-                                        <p className="text-white text-sm mb-2 line-clamp-2 group-hover:text-primary-400 transition-colors">
-                                            {task.user_prompt}
-                                        </p>
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(task.status)}`}>
-                                                {task.status}
-                                            </span>
-                                            <span className="text-xs text-dark-500">
-                                                {new Date(task.created_at).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                        {task.status === 'in_progress' && (
-                                            <div className="mt-2 h-1 bg-dark-600 rounded-full overflow-hidden">
-                                                <div className="h-full w-1/2 bg-gradient-to-r from-primary-500 to-purple-500 rounded-full animate-pulse" />
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                                {recentTasks.length === 0 && (
-                                    <p className="text-dark-400 text-center py-4">No tasks yet. Create your first one!</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quick Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                        <div className="card text-center">
-                            <div className="text-3xl font-bold gradient-text">{agents.length}</div>
-                            <p className="text-dark-400 text-sm">Active Agents</p>
-                        </div>
-                        <div className="card text-center">
-                            <div className="text-3xl font-bold text-green-400">{recentTasks.filter(t => t.status === 'completed').length}</div>
-                            <p className="text-dark-400 text-sm">Completed</p>
-                        </div>
-                        <div className="card text-center">
-                            <div className="text-3xl font-bold text-yellow-400">{recentTasks.filter(t => t.status === 'in_progress').length}</div>
-                            <p className="text-dark-400 text-sm">In Progress</p>
-                        </div>
-                        <div className="card text-center">
-                            <div className="text-3xl font-bold text-blue-400">{recentTasks.filter(t => t.status === 'queued').length}</div>
-                            <p className="text-dark-400 text-sm">Queued</p>
-                        </div>
-                    </div>
+                    </motion.div>
                 </main>
             </div>
         </div>

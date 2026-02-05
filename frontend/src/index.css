@@ -6,19 +6,267 @@
   font-family: 'Inter', system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+  letter-spacing: -0.01em;
+  /* Optimized for modern displays */
   color-scheme: dark;
 
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent: #0ea5e9;
-  --accent-hover: #38bdf8;
-  --border: #334155;
+  /* Apple-Grade Mesh Gradient Colors */
+  --mesh-1: rgba(14, 165, 233, 0.15);
+  /* Primary Blue */
+  --mesh-2: rgba(139, 92, 246, 0.15);
+  /* Purple */
+  --mesh-3: rgba(236, 72, 153, 0.1);
+  /* Pink */
+
+  /* Dark Theme Palette (Default) */
+  --color-dark-50: #f8fafc;
+  --color-dark-100: #f1f5f9;
+  --color-dark-200: #e2e8f0;
+  --color-dark-300: #cbd5e1;
+  --color-dark-400: #94a3b8;
+  --color-dark-500: #64748b;
+  --color-dark-600: #475569;
+  --color-dark-700: #334155;
+  --color-dark-800: #1e293b;
+  --color-dark-900: #0f172a;
+  --color-dark-950: #020617;
+
+  /* Primary Theme Palette */
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+  --color-primary-950: #082f49;
+
+  /* Semantic Aliases */
+  --bg-primary: var(--color-dark-900);
+  --bg-secondary: var(--color-dark-800);
+  --bg-tertiary: var(--color-dark-700);
+  --text-primary: var(--color-dark-50);
+  --text-secondary: var(--color-dark-400);
+  --border: rgba(255, 255, 255, 0.08);
+  /* Refined glass border */
+  --accent: var(--color-primary-500);
+  --accent-hover: var(--color-primary-400);
   --success: #22c55e;
   --error: #ef4444;
   --warning: #f59e0b;
+}
+
+:root.light {
+  color-scheme: light;
+  letter-spacing: -0.015em;
+
+  /* Light Mesh Gradients */
+  --mesh-1: rgba(14, 165, 233, 0.08);
+  --mesh-2: rgba(139, 92, 246, 0.08);
+  --mesh-3: rgba(236, 72, 153, 0.05);
+
+  /* Inverted Palette for Light Mode */
+  --color-dark-50: #020617;
+  /* Text (Inverted) */
+  --color-dark-100: #0f172a;
+  --color-dark-200: #1e293b;
+  --color-dark-300: #334155;
+  --color-dark-400: #475569;
+  --color-dark-500: #64748b;
+  --color-dark-600: #94a3b8;
+  --color-dark-700: #cbd5e1;
+  --color-dark-800: #f1f5f9;
+  /* Cards (Inverted) */
+  --color-dark-900: #f8fafc;
+  /* BG (Inverted) */
+  --color-dark-950: #ffffff;
+
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+
+  /* Semantic Updates */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #020617;
+  --text-secondary: #475569;
+  --border: rgba(0, 0, 0, 0.05);
+}
+
+/* Global Visual Overrides */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  background-image:
+    radial-gradient(at 0% 0%, var(--mesh-1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, var(--mesh-2) 0, transparent 50%),
+    radial-gradient(at 50% 100%, var(--mesh-3) 0, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism 2.0 Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+:root.light .glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card {
+  @apply glass rounded-2xl shadow-xl transition-all duration-300;
+  background-clip: padding-box;
+}
+
+.card:hover {
+  @apply -translate-y-1 shadow-2xl;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+:root.light .card:hover {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Typography Polish */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply tracking-tight font-bold text-white;
+}
+
+:root.light h1,
+:root.light h2,
+:root.light h3,
+:root.light h4,
+:root.light h5,
+:root.light h6 {
+  @apply text-slate-900;
+}
+
+/* Light Mode Global Text Overrides */
+:root.light .text-white {
+  color: #0f172a !important;
+}
+
+:root.light .text-dark-50 {
+  color: #f8fafc !important;
+}
+
+:root.light .text-dark-100,
+:root.light .text-dark-200 {
+  color: #e2e8f0 !important;
+}
+
+:root.light .text-dark-300 {
+  color: #334155 !important;
+}
+
+:root.light .text-dark-400 {
+  color: #475569 !important;
+}
+
+:root.light .text-dark-500 {
+  color: #64748b !important;
+}
+
+:root.light .text-dark-600 {
+  color: #94a3b8 !important;
+}
+
+/* Light Mode Background Fixes */
+:root.light .bg-dark-900,
+:root.light .bg-dark-950 {
+  background-color: #f8fafc !important;
+}
+
+:root.light .bg-dark-800 {
+  background-color: #f1f5f9 !important;
+}
+
+:root.light .bg-dark-700 {
+  background-color: #e2e8f0 !important;
+}
+
+/* Light Mode Border Fixes */
+:root.light .border-white\/5,
+:root.light .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Light Mode Input Fields */
+:root.light .input-field,
+:root.light input[type="text"],
+:root.light input[type="email"],
+:root.light input[type="password"],
+:root.light textarea {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+:root.light .input-field::placeholder,
+:root.light input::placeholder,
+:root.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Light Mode Button Fixes */
+:root.light .btn-primary {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+  color: #ffffff !important;
+}
+
+/* Light Mode Sidebar & Navbar Text */
+:root.light [class*="font-bold"],
+:root.light [class*="font-black"] {
+  text-shadow: none;
+}
+
+/* Ensure primary colors stay vibrant in light mode */
+:root.light .text-primary-400 {
+  color: #0284c7 !important;
+}
+
+:root.light .text-primary-500 {
+  color: #0369a1 !important;
+}
+
+/* Global View Transition API - Circular Reveal */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+  animation: circle-reveal 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes circle-reveal {
+  from {
+    clip-path: circle(0% at var(--transition-x, 50%) var(--transition-y, 50%));
+  }
+
+  to {
+    clip-path: circle(125% at var(--transition-x, 50%) var(--transition-y, 50%));
+  }
 }
 
 * {

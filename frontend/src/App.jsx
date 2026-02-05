@@ -3,8 +3,11 @@ import React, { Suspense, lazy } from 'react';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import BottomNav from './components/layout/BottomNav';
+import CommandPalette from './components/common/CommandPalette';
+import CursorFollower from './components/common/CursorFollower';
 
 // Lazy load route components
+const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -46,116 +49,128 @@ function App() {
     }
 
     return (
-        <Suspense fallback={
-            <div className="min-h-screen bg-dark-900 flex items-center justify-center">
-                <div className="w-16 h-16 flex items-center justify-center animate-spin">
-                    <img src="/logo.png" alt="Loading..." className="w-full h-full object-contain opacity-50" />
+        <>
+            {/* Global Cursor Follower Effect */}
+            <CursorFollower />
+
+            <Suspense fallback={
+                <div className="min-h-screen bg-dark-900 flex items-center justify-center">
+                    <div className="w-16 h-16 flex items-center justify-center animate-spin">
+                        <img src="/logo.png" alt="Loading..." className="w-full h-full object-contain opacity-50" />
+                    </div>
                 </div>
-            </div>
-        }>
-            {/* Mobile Bottom Navigation */}
-            {isAuthenticated && <BottomNav />}
+            }>
+                {/* Global Components for Authenticated Users */}
+                {isAuthenticated && <BottomNav />}
+                {isAuthenticated && <CommandPalette />}
 
-            <Routes>
-                {/* Public Routes */}
-                <Route
-                    path="/login"
-                    element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />}
-                />
-                <Route
-                    path="/signup"
-                    element={isAuthenticated ? <Navigate to="/dashboard" /> : <Signup />}
-                />
+                <Routes>
+                    {/* Landing Page - First impression for new users */}
+                    <Route
+                        path="/"
+                        element={isAuthenticated ? <Navigate to="/dashboard" /> : <Landing />}
+                    />
 
-                {/* Protected Routes */}
-                <Route
-                    path="/dashboard"
-                    element={
-                        <ProtectedRoute>
-                            <Dashboard />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/tasks/:taskId"
-                    element={
-                        <ProtectedRoute>
-                            <TaskDetail />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/tasks"
-                    element={
-                        <ProtectedRoute>
-                            <Tasks />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/files"
-                    element={
-                        <ProtectedRoute>
-                            <Files />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/agents"
-                    element={
-                        <ProtectedRoute>
-                            <Agents />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/projects"
-                    element={
-                        <ProtectedRoute>
-                            <Projects />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/projects/:id"
-                    element={
-                        <ProtectedRoute>
-                            <ProjectDetail />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/settings"
-                    element={
-                        <ProtectedRoute>
-                            <Settings />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/help"
-                    element={
-                        <ProtectedRoute>
-                            <Help />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/workflow-builder"
-                    element={
-                        <ProtectedRoute>
-                            <WorkflowBuilder />
-                        </ProtectedRoute>
-                    }
-                />
+                    {/* Public Routes */}
+                    <Route
+                        path="/login"
+                        element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />}
+                    />
+                    <Route
+                        path="/signup"
+                        element={isAuthenticated ? <Navigate to="/dashboard" /> : <Signup />}
+                    />
 
-                {/* Default Redirect */}
-                <Route
-                    path="*"
-                    element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />}
-                />
-            </Routes>
-        </Suspense>
+                    {/* Protected Routes */}
+                    <Route
+                        path="/dashboard"
+                        element={
+                            <ProtectedRoute>
+                                <Dashboard />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/tasks/:taskId"
+                        element={
+                            <ProtectedRoute>
+                                <TaskDetail />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/tasks"
+                        element={
+                            <ProtectedRoute>
+                                <Tasks />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/files"
+                        element={
+                            <ProtectedRoute>
+                                <Files />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/agents"
+                        element={
+                            <ProtectedRoute>
+                                <Agents />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/projects"
+                        element={
+                            <ProtectedRoute>
+                                <Projects />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/projects/:id"
+                        element={
+                            <ProtectedRoute>
+                                <ProjectDetail />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/settings"
+                        element={
+                            <ProtectedRoute>
+                                <Settings />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/help"
+                        element={
+                            <ProtectedRoute>
+                                <Help />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/workflow-builder"
+                        element={
+                            <ProtectedRoute>
+                                <WorkflowBuilder />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* Default Redirect */}
+                    <Route
+                        path="*"
+                        element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />}
+                    />
+                </Routes>
+            </Suspense>
+        </>
     );
 }
 

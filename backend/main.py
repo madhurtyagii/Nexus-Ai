@@ -1,5 +1,28 @@
 """Nexus AI - Main Application Entry Point."""
 
+# --- Pydantic v2 Compatibility Monkeypatch for ChromaDB ---
+import sys
+try:
+    import pydantic
+    if pydantic.VERSION.startswith("2."):
+        # Patch before any possible import
+        from pydantic.v1 import BaseSettings as PydanticV1BaseSettings
+        from pydantic import ConfigDict
+        
+        # We need to make sure chromadb.config.Settings exists and is patched
+        # If it's already in sys.modules, it might be too late, but we try anyway
+        import chromadb.config
+        if hasattr(chromadb.config, 'Settings'):
+            class PatchedSettings(PydanticV1BaseSettings):
+                model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
+            
+            # This is the critical part that prevents the ConfigError
+            chromadb.config.Settings.__config__.arbitrary_types_allowed = True
+except Exception as e:
+    # Fail silently but maybe print for debugging if we can
+    pass
+# --------------------------------------------------------
+
 # Fix Windows console encoding to support Unicode/emoji output
 import sys
 import os
@@ -68,17 +91,56 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting Nexus AI...")
     
-    # Database verification
-    # Note: Table creation is handled by migrate.py in start.sh
-    print("🔍 Database connection: Initializing pool...")
-    
+    # Database verification and seeding
+    from database import SessionLocal, engine
+    db = SessionLocal()
+    try:
+        from models.agent import Agent
+        from agents.agent_registry import AgentRegistry
+        
+        print(f"🔍 Database Engine URL: {engine.url}")
+        
+        # Check if agents table is empty
+        agent_count = db.query(Agent).count()
+        print(f"📊 Current agent count in DB: {agent_count}")
+        
+        if agent_count == 0:
+            print("🌱 Seeding agents table...")
+            
+            default_agents = [
+                {"name": "ResearchAgent", "role": "Researcher", "description": "Specialized in web research and information gathering."},
+                {"name": "CodeAgent", "role": "Developer", "description": "Specialized in writing and debugging code."},
+                {"name": "ContentAgent", "role": "Writer", "description": "Specialized in content creation and editing."},
+                {"name": "DataAgent", "role": "Analyst", "description": "Specialized in data analysis and visualization."},
+                {"name": "QAAgent", "role": "Quality Assurance", "description": "Specialized in testing and validation."},
+                {"name": "ManagerAgent", "role": "Orchestrator", "description": "Specialized in task planning and agent coordination."}
+            ]
+            
+            for agent_data in default_agents:
+                new_agent = Agent(
+                    name=agent_data["name"],
+                    role=agent_data["role"],
+                    description=agent_data["description"],
+                    is_active=True
+                )
+                db.add(new_agent)
+                print(f"  + Pre-seeding agent: {agent_data['name']}")
+            
+            db.commit()
+            print(f"✅ Seeding complete. New count: {db.query(Agent).count()}")
+    except Exception as e:
+        print(f"❌ Seeding ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        db.close()
+
     # Test Redis connection
     if ping_redis():
         print("✅ Redis connection successful")
         # Start WebSocket manager
         await ws_manager.start()
         print("✅ WebSocket manager started")
-        
         # Start background worker thread (Single-Process Optimization)
         from worker import start_worker_thread
         start_worker_thread()

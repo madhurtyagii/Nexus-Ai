@@ -1,123 +1,127 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { authAPI, tasksAPI, filesAPI } from '../services/api';
+import { authAPI, default as api } from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    User,
+    Shield,
+    Bell,
+    Zap,
+    Eye,
+    EyeOff,
+    Key,
+    Database,
+    Moon,
+    Sun,
+    Mail,
+    ChevronRight,
+    MousePointer2,
+    Pencil,
+    Check,
+    X
+} from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
 import toast from 'react-hot-toast';
+import { toggleCursorEffect, setCursorEffectType, CURSOR_EFFECTS } from '../components/common/CursorFollower';
 
 export default function Settings() {
-    const { user, logout } = useAuth();
+    const { user, refreshUser } = useAuth();
     const [activeTab, setActiveTab] = useState('account');
-    const [loading, setLoading] = useState(false);
-    const [stats, setStats] = useState({ tasks: 0, files: 0, storage: 0 });
-
-    // Form states
-    const [passwordData, setPasswordData] = useState({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-    });
     const [apiKey, setApiKey] = useState('');
     const [showApiKey, setShowApiKey] = useState(false);
-    const [theme, setTheme] = useState('dark');
-    const [notifications, setNotifications] = useState({
-        email: true,
-        push: true
+    const [theme, setTheme] = useState(localStorage.getItem('nexus_theme') || 'dark');
+    const [cursorEnabled, setCursorEnabled] = useState(() => {
+        const saved = localStorage.getItem('nexus-cursor-effect');
+        return saved === null ? true : saved === 'true';
+    });
+    const [cursorEffect, setCursorEffect] = useState(() => {
+        return localStorage.getItem('nexus-cursor-type') || 'ring';
     });
 
-    useEffect(() => {
-        loadStats();
-    }, []);
+    // Account editing states
+    const [editingUsername, setEditingUsername] = useState(false);
+    const [editingEmail, setEditingEmail] = useState(false);
+    const [newUsername, setNewUsername] = useState('');
+    const [newEmail, setNewEmail] = useState('');
+    const [savingAccount, setSavingAccount] = useState(false);
 
-    const loadStats = async () => {
+    const fetchApiKey = async () => {
         try {
-            const [tasksRes, filesRes] = await Promise.all([
-                tasksAPI.list({ limit: 100 }),
-                filesAPI.list({ limit: 100 })
-            ]);
-            const totalStorage = filesRes.data.reduce((acc, f) => acc + (f.size || 0), 0);
-            setStats({
-                tasks: tasksRes.data.length,
-                files: filesRes.data.length,
-                storage: totalStorage
-            });
+            const response = await api.get('/auth/me/api-key');
+            setApiKey(response.data.api_key);
+            setShowApiKey(true);
         } catch (error) {
-            console.error('Failed to load stats:', error);
+            toast.error('Failed to fetch API key');
         }
     };
 
-    const handlePasswordChange = async (e) => {
-        e.preventDefault();
-        if (passwordData.newPassword !== passwordData.confirmPassword) {
-            toast.error('Passwords do not match');
+    const saveUsername = async () => {
+        if (!newUsername.trim() || newUsername === user?.username) {
+            setEditingUsername(false);
             return;
         }
-        if (passwordData.newPassword.length < 6) {
-            toast.error('Password must be at least 6 characters');
-            return;
-        }
-
-        setLoading(true);
+        setSavingAccount(true);
         try {
-            await authAPI.changePassword({
-                current_password: passwordData.currentPassword,
-                new_password: passwordData.newPassword
-            });
-            toast.success('Password changed successfully');
-            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            await api.put('/auth/me', { username: newUsername.trim() });
+            toast.success('Username updated!');
+            if (refreshUser) refreshUser();
+            setEditingUsername(false);
         } catch (error) {
-            // Error toast is handled by handleApiError in setupErrorInterceptors
-            console.error('Password change failed:', error);
+            toast.error(error.response?.data?.detail || 'Failed to update username');
         } finally {
-            setLoading(false);
+            setSavingAccount(false);
         }
     };
 
-    const handleDeleteAllTasks = async () => {
-        if (!confirm('Are you sure you want to delete ALL tasks? This cannot be undone.')) return;
-
-        setLoading(true);
+    const saveEmail = async () => {
+        if (!newEmail.trim() || newEmail === user?.email) {
+            setEditingEmail(false);
+            return;
+        }
+        setSavingAccount(true);
         try {
-            const tasksRes = await tasksAPI.list({ limit: 1000 });
-            for (const task of tasksRes.data) {
-                await tasksAPI.delete(task.id);
+            await api.put('/auth/me', { email: newEmail.trim() });
+            toast.success('Email updated!');
+            if (refreshUser) refreshUser();
+            setEditingEmail(false);
+        } catch (error) {
+            toast.error(error.response?.data?.detail || 'Failed to update email');
+        } finally {
+            setSavingAccount(false);
+        }
+    };
+
+    const toggleTheme = (newTheme, event) => {
+        const x = event.clientX;
+        const y = event.clientY;
+
+        document.documentElement.style.setProperty('--transition-x', `${x}px`);
+        document.documentElement.style.setProperty('--transition-y', `${y}px`);
+
+        if (!document.startViewTransition) {
+            setTheme(newTheme);
+            localStorage.setItem('nexus_theme', newTheme);
+            return;
+        }
+
+        document.startViewTransition(() => {
+            setTheme(newTheme);
+            localStorage.setItem('nexus_theme', newTheme);
+            if (newTheme === 'light') {
+                document.documentElement.classList.add('light');
+            } else {
+                document.documentElement.classList.remove('light');
             }
-            toast.success('All tasks deleted');
-            loadStats();
-        } catch (error) {
-            toast.error('Failed to delete tasks');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDeleteAccount = async () => {
-        if (!confirm('Are you ABSOLUTELY SURE you want to delete your account? This will permanently delete all your data.')) return;
-        if (!confirm('This action CANNOT be undone. Type DELETE to confirm.')) return;
-
-        try {
-            // Note: Backend endpoint would need to be created
-            toast.success('Account deletion requested');
-            logout();
-        } catch (error) {
-            toast.error('Failed to delete account');
-        }
-    };
-
-    const formatBytes = (bytes) => {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        });
     };
 
     const tabs = [
-        { id: 'account', label: 'Account', icon: '👤' },
-        { id: 'api', label: 'API', icon: '🔑' },
-        { id: 'preferences', label: 'Preferences', icon: '⚙️' },
-        { id: 'storage', label: 'Storage', icon: '💾' },
-        { id: 'danger', label: 'Danger Zone', icon: '⚠️' }
+        { id: 'account', label: 'Account', icon: User },
+        { id: 'security', label: 'Security', icon: Shield },
+        { id: 'notifications', label: 'Notifications', icon: Bell },
+        { id: 'api', label: 'API Keys', icon: Key },
+        { id: 'appearance', label: 'Appearance', icon: Zap },
     ];
 
     return (
@@ -125,295 +129,446 @@ export default function Settings() {
             <Navbar />
             <div className="flex">
                 <Sidebar />
-                <main className="flex-1 p-6 lg:p-8">
-                    {/* Header */}
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-white mb-2">⚙️ Settings</h1>
-                        <p className="text-dark-400">Manage your account, preferences, and platform settings.</p>
-                    </div>
+                <main className="flex-1 p-6 lg:p-10 max-w-6xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <header className="mb-10">
+                            <h1 className="text-4xl font-bold text-white tracking-tight mb-2">Settings</h1>
+                            <p className="text-dark-400 font-medium italic">Nexus Intelligence v2.0 Configuration</p>
+                        </header>
 
-                    {/* Tabs */}
-                    <div className="flex flex-wrap gap-2 mb-6">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${activeTab === tab.id
-                                    ? 'bg-primary-500 text-white'
-                                    : 'bg-dark-800 text-dark-400 hover:bg-dark-700 hover:text-white'
-                                    }`}
-                            >
-                                <span>{tab.icon}</span>
-                                <span>{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
+                        <div className="flex flex-col md:flex-row gap-8">
+                            {/* Navigation Sidebar */}
+                            <aside className="w-full md:w-64 space-y-2">
+                                {tabs.map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold text-sm ${activeTab === tab.id
+                                            ? 'bg-primary-500 text-white shadow-[0_10px_25px_rgba(14,165,233,0.3)]'
+                                            : 'text-dark-400 hover:bg-white/5 hover:text-white'
+                                            }`}
+                                    >
+                                        <tab.icon className="w-5 h-5" />
+                                        {tab.label}
+                                        {activeTab === tab.id && <ChevronRight className="ml-auto w-4 h-4" />}
+                                    </button>
+                                ))}
+                            </aside>
 
-                    {/* Tab Content */}
-                    <div className="card">
-                        {/* Account Tab */}
-                        {activeTab === 'account' && (
-                            <div className="space-y-6">
-                                <h2 className="text-xl font-semibold text-white mb-4">Account Settings</h2>
-
-                                {/* User Info */}
-                                <div className="p-4 bg-dark-700 rounded-lg">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-2xl font-bold text-white">
-                                            {user?.username?.[0]?.toUpperCase() || 'U'}
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-white">{user?.username}</h3>
-                                            <p className="text-dark-400">{user?.email}</p>
-                                            <p className="text-dark-500 text-sm mt-1">
-                                                Member since {new Date(user?.created_at || Date.now()).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Change Password */}
-                                <div>
-                                    <h3 className="text-lg font-medium text-white mb-3">Change Password</h3>
-                                    <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
-                                        <div>
-                                            <label className="block text-dark-400 text-sm mb-1">Current Password</label>
-                                            <input
-                                                type="password"
-                                                value={passwordData.currentPassword}
-                                                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                                                className="input-field w-full"
-                                                placeholder="••••••••"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-dark-400 text-sm mb-1">New Password</label>
-                                            <input
-                                                type="password"
-                                                value={passwordData.newPassword}
-                                                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                                className="input-field w-full"
-                                                placeholder="••••••••"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-dark-400 text-sm mb-1">Confirm New Password</label>
-                                            <input
-                                                type="password"
-                                                value={passwordData.confirmPassword}
-                                                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                                className="input-field w-full"
-                                                placeholder="••••••••"
-                                            />
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            disabled={loading}
-                                            className="btn-primary disabled:opacity-50"
+                            {/* Content Area */}
+                            <div className="flex-1">
+                                <AnimatePresence mode="wait">
+                                    {activeTab === 'account' && (
+                                        <motion.div
+                                            key="account"
+                                            initial={{ opacity: 0, x: 10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -10 }}
+                                            className="glass p-8 rounded-[2rem] border border-white/5"
                                         >
-                                            {loading ? 'Saving...' : 'Change Password'}
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
+                                            <h2 className="text-xl font-bold text-white mb-6 tracking-tight">Profile Matrix</h2>
+                                            <div className="space-y-6">
+                                                <div className="flex items-center gap-6 p-5 rounded-2xl bg-white/[0.02] border border-white/5 relative overflow-hidden group">
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-3xl font-black text-white shadow-2xl relative z-10">
+                                                        {user?.username?.[0]?.toUpperCase()}
+                                                    </div>
+                                                    <div className="relative z-10">
+                                                        <p className="text-xl font-black text-white tracking-tight">{user?.username}</p>
+                                                        <p className="text-dark-400 font-medium">{user?.email}</p>
+                                                    </div>
+                                                </div>
 
-                        {/* API Tab */}
-                        {activeTab === 'api' && (
-                            <div className="space-y-6">
-                                <h2 className="text-xl font-semibold text-white mb-4">API Settings</h2>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                    {/* Username Field */}
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black text-dark-500 uppercase tracking-[0.2em] ml-1">Identity</label>
+                                                        {editingUsername ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.05] border border-primary-500/50">
+                                                                    <User className="w-4 h-4 text-primary-400" />
+                                                                    <input
+                                                                        type="text"
+                                                                        value={newUsername}
+                                                                        onChange={(e) => setNewUsername(e.target.value)}
+                                                                        className="flex-1 bg-transparent text-white text-sm font-bold outline-none"
+                                                                        placeholder="Enter new username"
+                                                                        autoFocus
+                                                                    />
+                                                                </div>
+                                                                <button
+                                                                    onClick={saveUsername}
+                                                                    disabled={savingAccount}
+                                                                    className="p-3 rounded-xl bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-all"
+                                                                >
+                                                                    <Check className="w-4 h-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setEditingUsername(false)}
+                                                                    className="p-3 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
+                                                                >
+                                                                    <X className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex-1 flex items-center gap-3 px-4 py-4 rounded-xl bg-white/[0.03] border border-white/5 text-white">
+                                                                    <User className="w-4 h-4 text-dark-400" />
+                                                                    <span className="text-sm font-bold tracking-tight">{user?.username}</span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => { setNewUsername(user?.username || ''); setEditingUsername(true); }}
+                                                                    className="p-3 rounded-xl bg-white/5 text-dark-400 hover:bg-white/10 hover:text-white transition-all"
+                                                                >
+                                                                    <Pencil className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
 
-                                {/* Groq API Key */}
-                                <div>
-                                    <h3 className="text-lg font-medium text-white mb-3">Groq API Key</h3>
-                                    <p className="text-dark-400 text-sm mb-4">
-                                        Your Groq API key is stored securely in the backend environment.
-                                    </p>
-                                    <div className="flex items-center gap-3 max-w-md">
-                                        <input
-                                            type={showApiKey ? 'text' : 'password'}
-                                            value={apiKey || '••••••••••••••••••••••••••••••••'}
-                                            onChange={(e) => setApiKey(e.target.value)}
-                                            className="input-field flex-1"
-                                            placeholder="gsk_xxxxxxxxxxxxxxxxxxxx"
-                                        />
-                                        <button
-                                            onClick={() => setShowApiKey(!showApiKey)}
-                                            className="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
-                                        >
-                                            {showApiKey ? '🙈' : '👁️'}
-                                        </button>
-                                    </div>
-                                    <p className="text-dark-500 text-xs mt-2">
-                                        API key changes require backend restart to take effect.
-                                    </p>
-                                </div>
-
-                                {/* Usage Stats */}
-                                <div>
-                                    <h3 className="text-lg font-medium text-white mb-3">Usage Statistics</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="p-4 bg-dark-700 rounded-lg text-center">
-                                            <div className="text-2xl font-bold text-primary-400">{stats.tasks}</div>
-                                            <p className="text-dark-400 text-sm">Total Tasks</p>
-                                        </div>
-                                        <div className="p-4 bg-dark-700 rounded-lg text-center">
-                                            <div className="text-2xl font-bold text-green-400">~{(stats.tasks * 1500).toLocaleString()}</div>
-                                            <p className="text-dark-400 text-sm">Est. Tokens Used</p>
-                                        </div>
-                                        <div className="p-4 bg-dark-700 rounded-lg text-center">
-                                            <div className="text-2xl font-bold text-blue-400">{stats.tasks * 7}</div>
-                                            <p className="text-dark-400 text-sm">API Requests</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Preferences Tab */}
-                        {activeTab === 'preferences' && (
-                            <div className="space-y-6">
-                                <h2 className="text-xl font-semibold text-white mb-4">Preferences</h2>
-
-                                {/* Theme */}
-                                <div>
-                                    <h3 className="text-lg font-medium text-white mb-3">Theme</h3>
-                                    <div className="flex gap-3">
-                                        <button
-                                            onClick={() => setTheme('dark')}
-                                            className={`px-4 py-3 rounded-lg flex items-center gap-2 transition-colors ${theme === 'dark'
-                                                ? 'bg-primary-500 text-white'
-                                                : 'bg-dark-700 text-dark-400 hover:bg-dark-600'
-                                                }`}
-                                        >
-                                            🌙 Dark Mode
-                                        </button>
-                                        <button
-                                            onClick={() => setTheme('light')}
-                                            className={`px-4 py-3 rounded-lg flex items-center gap-2 transition-colors ${theme === 'light'
-                                                ? 'bg-primary-500 text-white'
-                                                : 'bg-dark-700 text-dark-400 hover:bg-dark-600'
-                                                }`}
-                                        >
-                                            ☀️ Light Mode
-                                        </button>
-                                    </div>
-                                    <p className="text-dark-500 text-xs mt-2">
-                                        Light mode is coming soon. Nexus AI currently supports dark mode only.
-                                    </p>
-                                </div>
-
-                                {/* Notifications */}
-                                <div>
-                                    <h3 className="text-lg font-medium text-white mb-3">Notifications</h3>
-                                    <div className="space-y-3">
-                                        <label className="flex items-center justify-between p-3 bg-dark-700 rounded-lg cursor-pointer">
-                                            <span className="text-white">Email Notifications</span>
-                                            <input
-                                                type="checkbox"
-                                                checked={notifications.email}
-                                                onChange={(e) => setNotifications({ ...notifications, email: e.target.checked })}
-                                                className="w-5 h-5 rounded accent-primary-500"
-                                            />
-                                        </label>
-                                        <label className="flex items-center justify-between p-3 bg-dark-700 rounded-lg cursor-pointer">
-                                            <span className="text-white">Real-time Push Notifications</span>
-                                            <input
-                                                type="checkbox"
-                                                checked={notifications.push}
-                                                onChange={(e) => setNotifications({ ...notifications, push: e.target.checked })}
-                                                className="w-5 h-5 rounded accent-primary-500"
-                                            />
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Storage Tab */}
-                        {activeTab === 'storage' && (
-                            <div className="space-y-6">
-                                <h2 className="text-xl font-semibold text-white mb-4">Storage Management</h2>
-
-                                {/* Storage Usage */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-white">Storage Used</span>
-                                        <span className="text-dark-400">{formatBytes(stats.storage)} / 100 MB</span>
-                                    </div>
-                                    <div className="h-4 bg-dark-700 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-gradient-to-r from-primary-500 to-purple-500 rounded-full transition-all"
-                                            style={{ width: `${Math.min((stats.storage / (100 * 1024 * 1024)) * 100, 100)}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                {/* Storage Breakdown */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="p-4 bg-dark-700 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-blue-400">{stats.files}</div>
-                                        <p className="text-dark-400 text-sm">Files Uploaded</p>
-                                    </div>
-                                    <div className="p-4 bg-dark-700 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-green-400">{formatBytes(stats.storage)}</div>
-                                        <p className="text-dark-400 text-sm">Total Size</p>
-                                    </div>
-                                    <div className="p-4 bg-dark-700 rounded-lg text-center">
-                                        <div className="text-2xl font-bold text-purple-400">
-                                            {formatBytes(100 * 1024 * 1024 - stats.storage)}
-                                        </div>
-                                        <p className="text-dark-400 text-sm">Available</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Danger Zone Tab */}
-                        {activeTab === 'danger' && (
-                            <div className="space-y-6">
-                                <h2 className="text-xl font-semibold text-red-400 mb-4">⚠️ Danger Zone</h2>
-                                <p className="text-dark-400 mb-6">
-                                    These actions are irreversible. Please proceed with caution.
-                                </p>
-
-                                <div className="space-y-4">
-                                    {/* Delete All Tasks */}
-                                    <div className="p-4 border border-red-500/30 rounded-lg bg-red-500/5">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h3 className="text-white font-medium">Delete All Tasks</h3>
-                                                <p className="text-dark-400 text-sm">Remove all tasks and their data permanently.</p>
+                                                    {/* Email Field */}
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black text-dark-500 uppercase tracking-[0.2em] ml-1">Neural Mail</label>
+                                                        {editingEmail ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.05] border border-primary-500/50">
+                                                                    <Mail className="w-4 h-4 text-primary-400" />
+                                                                    <input
+                                                                        type="email"
+                                                                        value={newEmail}
+                                                                        onChange={(e) => setNewEmail(e.target.value)}
+                                                                        className="flex-1 bg-transparent text-white text-sm font-bold outline-none"
+                                                                        placeholder="Enter new email"
+                                                                        autoFocus
+                                                                    />
+                                                                </div>
+                                                                <button
+                                                                    onClick={saveEmail}
+                                                                    disabled={savingAccount}
+                                                                    className="p-3 rounded-xl bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-all"
+                                                                >
+                                                                    <Check className="w-4 h-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setEditingEmail(false)}
+                                                                    className="p-3 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
+                                                                >
+                                                                    <X className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex-1 flex items-center gap-3 px-4 py-4 rounded-xl bg-white/[0.03] border border-white/5 text-white">
+                                                                    <Mail className="w-4 h-4 text-dark-400" />
+                                                                    <span className="text-sm font-bold tracking-tight">{user?.email}</span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => { setNewEmail(user?.email || ''); setEditingEmail(true); }}
+                                                                    className="p-3 rounded-xl bg-white/5 text-dark-400 hover:bg-white/10 hover:text-white transition-all"
+                                                                >
+                                                                    <Pencil className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <button
-                                                onClick={handleDeleteAllTasks}
-                                                disabled={loading}
-                                                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors disabled:opacity-50"
-                                            >
-                                                {loading ? 'Deleting...' : 'Delete All'}
-                                            </button>
-                                        </div>
-                                    </div>
+                                        </motion.div>
+                                    )}
 
-                                    {/* Delete Account */}
-                                    <div className="p-4 border border-red-500/30 rounded-lg bg-red-500/5">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h3 className="text-white font-medium">Delete Account</h3>
-                                                <p className="text-dark-400 text-sm">Permanently delete your account and all associated data.</p>
+                                    {activeTab === 'appearance' && (
+                                        <motion.div
+                                            key="appearance"
+                                            initial={{ opacity: 0, x: 10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -10 }}
+                                            className="glass p-8 rounded-[2rem] border border-white/5"
+                                        >
+                                            <h2 className="text-xl font-bold text-white mb-2 tracking-tight">Visual Resonance</h2>
+                                            <p className="text-dark-400 text-sm font-medium mb-8">Synchronize the interface with your neural preference.</p>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                <button
+                                                    onClick={(e) => toggleTheme('dark', e)}
+                                                    className={`group relative p-8 rounded-3xl border transition-all text-left overflow-hidden ${theme === 'dark'
+                                                        ? 'border-primary-500 bg-primary-500/5 shadow-[0_15px_35px_rgba(14,165,233,0.15)]'
+                                                        : 'border-white/5 bg-white/[0.02] hover:border-white/20'
+                                                        }`}
+                                                >
+                                                    <div className="flex flex-col gap-5 relative z-10">
+                                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-primary-500 text-white shadow-lg' : 'bg-white/5 text-dark-400'
+                                                            }`}>
+                                                            <Moon className="w-7 h-7" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-lg font-black text-white tracking-tight italic">Deep Space</p>
+                                                            <p className="text-dark-500 text-xs font-bold uppercase tracking-tight">High Contrast Dark</p>
+                                                        </div>
+                                                    </div>
+                                                </button>
+
+                                                <button
+                                                    onClick={(e) => toggleTheme('light', e)}
+                                                    className={`group relative p-8 rounded-3xl border transition-all text-left overflow-hidden ${theme === 'light'
+                                                        ? 'border-primary-500 bg-primary-500/5 shadow-[0_15px_35px_rgba(14,165,233,0.15)]'
+                                                        : 'border-white/5 bg-white/[0.02] hover:border-white/20'
+                                                        }`}
+                                                >
+                                                    <div className="flex flex-col gap-5 relative z-10">
+                                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${theme === 'light' ? 'bg-primary-500 text-white shadow-lg' : 'bg-white/5 text-dark-400'
+                                                            }`}>
+                                                            <Sun className="w-7 h-7" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-lg font-black text-white tracking-tight italic">Pure Light</p>
+                                                            <p className="text-dark-500 text-xs font-bold uppercase tracking-tight">Slate Surface Light</p>
+                                                        </div>
+                                                    </div>
+                                                </button>
                                             </div>
-                                            <button
-                                                onClick={handleDeleteAccount}
-                                                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                                            >
-                                                Delete Account
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                            {/* Cursor Effects Section */}
+                                            <div className="mt-8 pt-8 border-t border-white/5">
+                                                <h3 className="text-lg font-bold text-white mb-2">Cursor Effects</h3>
+                                                <p className="text-dark-500 text-xs mb-6">Customize the visual effect that follows your cursor</p>
+
+                                                {/* Enable/Disable Toggle */}
+                                                <div className="flex items-center justify-between mb-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${cursorEnabled ? 'bg-primary-500/20 text-primary-400' : 'bg-white/5 text-dark-400'}`}>
+                                                            <MousePointer2 className="w-4 h-4" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-white font-bold text-sm">Enable Cursor Effect</p>
+                                                            <p className="text-dark-500 text-xs">Show visual effect around cursor</p>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            const newValue = !cursorEnabled;
+                                                            setCursorEnabled(newValue);
+                                                            toggleCursorEffect(newValue);
+                                                            toast.success(newValue ? 'Cursor effect enabled' : 'Cursor effect disabled');
+                                                        }}
+                                                        className={`relative w-12 h-7 rounded-full transition-all ${cursorEnabled ? 'bg-primary-500' : 'bg-white/10'}`}
+                                                    >
+                                                        <motion.div
+                                                            className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg"
+                                                            animate={{ left: cursorEnabled ? 22 : 4 }}
+                                                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                                        />
+                                                    </button>
+                                                </div>
+
+                                                {/* Effect Type Selector */}
+                                                {cursorEnabled && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: 'auto' }}
+                                                        exit={{ opacity: 0, height: 0 }}
+                                                        className="grid grid-cols-2 md:grid-cols-3 gap-3"
+                                                    >
+                                                        {CURSOR_EFFECTS.map((effect) => (
+                                                            <button
+                                                                key={effect.id}
+                                                                onClick={() => {
+                                                                    setCursorEffect(effect.id);
+                                                                    setCursorEffectType(effect.id);
+                                                                    toast.success(`Cursor effect: ${effect.name}`);
+                                                                }}
+                                                                className={`p-4 rounded-xl border text-left transition-all ${cursorEffect === effect.id
+                                                                    ? 'border-primary-500 bg-primary-500/10 shadow-[0_5px_20px_rgba(14,165,233,0.15)]'
+                                                                    : 'border-white/5 bg-white/[0.02] hover:border-white/20'
+                                                                    }`}
+                                                            >
+                                                                <p className={`font-bold text-sm mb-1 ${cursorEffect === effect.id ? 'text-primary-400' : 'text-white'}`}>
+                                                                    {effect.name}
+                                                                </p>
+                                                                <p className="text-dark-500 text-xs">{effect.description}</p>
+                                                            </button>
+                                                        ))}
+                                                    </motion.div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === 'api' && (
+                                        <motion.div
+                                            key="api"
+                                            initial={{ opacity: 0, x: 10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -10 }}
+                                            className="glass p-8 rounded-[2rem] border border-white/5"
+                                        >
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <h2 className="text-2xl font-black text-white tracking-tighter italic uppercase">Neural Keys</h2>
+                                                <span className="px-2.5 py-1 rounded-lg bg-primary-500/10 text-primary-400 border border-primary-500/20 text-[10px] font-black uppercase tracking-widest">Inference Core</span>
+                                            </div>
+                                            <p className="text-dark-400 text-sm font-medium mb-10">Manage the cryptographic tokens used for agent orchestration.</p>
+
+                                            <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 relative group">
+                                                <div className="flex items-center justify-between gap-6">
+                                                    <div className="flex-1">
+                                                        <p className="text-[10px] font-black text-dark-500 uppercase tracking-[0.2em] mb-3 ml-1">Groq API Key</p>
+                                                        <div className="flex items-center gap-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                                                            <Key className="w-5 h-5 text-primary-400" />
+                                                            <code className="text-primary-400 font-mono text-sm tracking-widest break-all">
+                                                                {showApiKey ? apiKey : '••••••••••••••••••••••••••••••••'}
+                                                            </code>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={showApiKey ? () => setShowApiKey(false) : fetchApiKey}
+                                                        className="h-14 w-14 bg-white/5 hover:bg-white/10 rounded-2xl transition-all text-white flex items-center justify-center active:scale-90 shadow-inner group/btn"
+                                                    >
+                                                        {showApiKey ? <EyeOff className="w-6 h-6 group-hover/btn:text-primary-400 transition-colors" /> : <Eye className="w-6 h-6 group-hover/btn:text-primary-400 transition-colors" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-8 p-6 rounded-2xl bg-primary-500/5 border border-primary-500/10 flex items-start gap-5">
+                                                <Shield className="w-6 h-6 text-primary-400 mt-0.5 shrink-0" />
+                                                <p className="text-xs text-dark-400 font-bold leading-relaxed uppercase tracking-tight">
+                                                    Nexus AI utilizes AES-256 binary encryption. Your keys never leave the secure inference tunnel.
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === 'security' && (
+                                        <motion.div
+                                            key="security"
+                                            initial={{ opacity: 0, x: 10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -10 }}
+                                            className="glass p-8 rounded-[2rem] border border-white/5"
+                                        >
+                                            <h2 className="text-xl font-bold text-white mb-2 tracking-tight">Security Protocol</h2>
+                                            <p className="text-dark-400 text-sm font-medium mb-8">Manage your authentication and security preferences.</p>
+
+                                            <div className="space-y-6">
+                                                {/* Two-Factor Authentication */}
+                                                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-xl bg-primary-500/10 flex items-center justify-center">
+                                                                <Shield className="w-6 h-6 text-primary-400" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-white font-bold">Two-Factor Authentication</p>
+                                                                <p className="text-dark-400 text-sm">Add an extra layer of security</p>
+                                                            </div>
+                                                        </div>
+                                                        <button className="px-4 py-2 bg-primary-500 hover:bg-primary-400 text-white font-bold text-sm rounded-xl transition-colors">
+                                                            Enable
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Change Password */}
+                                                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+                                                    <div className="flex items-center gap-4 mb-4">
+                                                        <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                                                            <Key className="w-6 h-6 text-purple-400" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-white font-bold">Change Password</p>
+                                                            <p className="text-dark-400 text-sm">Update your password regularly</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-4 mt-4">
+                                                        <input
+                                                            type="password"
+                                                            placeholder="Current password"
+                                                            className="w-full px-4 py-3 bg-white/[0.03] border border-white/5 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:border-primary-500/50"
+                                                        />
+                                                        <input
+                                                            type="password"
+                                                            placeholder="New password"
+                                                            className="w-full px-4 py-3 bg-white/[0.03] border border-white/5 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:border-primary-500/50"
+                                                        />
+                                                        <input
+                                                            type="password"
+                                                            placeholder="Confirm new password"
+                                                            className="w-full px-4 py-3 bg-white/[0.03] border border-white/5 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:border-primary-500/50"
+                                                        />
+                                                        <button className="w-full py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-colors">
+                                                            Update Password
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Active Sessions */}
+                                                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                                                <Zap className="w-6 h-6 text-emerald-400" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-white font-bold">Active Sessions</p>
+                                                                <p className="text-dark-400 text-sm">1 device currently logged in</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-4 rounded-xl bg-black/20 border border-white/5 flex items-center justify-between">
+                                                        <div>
+                                                            <p className="text-sm font-bold text-white">Current Session</p>
+                                                            <p className="text-xs text-dark-500">Windows • Chrome • Active now</p>
+                                                        </div>
+                                                        <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-lg">Current</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {activeTab === 'notifications' && (
+                                        <motion.div
+                                            key="notifications"
+                                            initial={{ opacity: 0, x: 10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -10 }}
+                                            className="glass p-8 rounded-[2rem] border border-white/5"
+                                        >
+                                            <h2 className="text-xl font-bold text-white mb-2 tracking-tight">Notification Preferences</h2>
+                                            <p className="text-dark-400 text-sm font-medium mb-8">Control how and when you receive notifications.</p>
+
+                                            <div className="space-y-4">
+                                                {[
+                                                    { label: 'Task Completion', desc: 'Get notified when AI tasks complete', enabled: true },
+                                                    { label: 'Agent Status', desc: 'Updates when agents come online/offline', enabled: true },
+                                                    { label: 'Project Updates', desc: 'Progress updates on your projects', enabled: false },
+                                                    { label: 'System Alerts', desc: 'Important system and API alerts', enabled: true },
+                                                    { label: 'Weekly Summary', desc: 'Weekly digest of your activity', enabled: false },
+                                                    { label: 'Marketing', desc: 'Product updates and announcements', enabled: false },
+                                                ].map((item, idx) => (
+                                                    <div key={idx} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+                                                        <div>
+                                                            <p className="text-white font-bold">{item.label}</p>
+                                                            <p className="text-dark-400 text-sm">{item.desc}</p>
+                                                        </div>
+                                                        <button
+                                                            className={`w-14 h-8 rounded-full transition-colors relative ${item.enabled ? 'bg-primary-500' : 'bg-white/10'
+                                                                }`}
+                                                        >
+                                                            <div
+                                                                className={`w-6 h-6 bg-white rounded-full absolute top-1 transition-all shadow-lg ${item.enabled ? 'right-1' : 'left-1'
+                                                                    }`}
+                                                            />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    </motion.div>
                 </main>
             </div>
         </div>

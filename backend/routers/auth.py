@@ -12,7 +12,7 @@ from datetime import timedelta
 from database import get_db
 from auth import verify_password, get_password_hash, create_access_token
 from models.user import User
-from schemas.user import UserCreate, UserLogin, UserResponse, Token, PasswordUpdate
+from schemas.user import UserCreate, UserLogin, UserResponse, Token, PasswordUpdate, UserUpdate
 from dependencies import get_current_user
 from config import get_settings
 
@@ -154,6 +154,46 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 
 @router.put(
+    "/me",
+    response_model=UserResponse,
+    summary="Update current user",
+    description="Updates the authenticated user's username and/or email."
+)
+async def update_me(
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update username and/or email for the current user.
+    """
+    # Check if new username is unique
+    if data.username and data.username != current_user.username:
+        existing = db.query(User).filter(User.username == data.username).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken"
+            )
+        current_user.username = data.username
+    
+    # Check if new email is unique
+    if data.email and data.email != current_user.email:
+        existing = db.query(User).filter(User.email == data.email).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        current_user.email = data.email
+    
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    
+    return current_user
+
+@router.put(
     "/password",
     summary="Update current user's password",
     description="Updates the authenticated user's password. Requires verification of the current password."
@@ -179,3 +219,9 @@ async def update_password(
     db.commit()
     
     return {"message": "Password updated successfully"}
+@router.get("/settings/api-key")
+async def get_api_key(current_user: User = Depends(get_current_user)):
+    """
+    Get the Groq API key from environment for display in settings.
+    """
+    return {"api_key": settings.groq_api_key}

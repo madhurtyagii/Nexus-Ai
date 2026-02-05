@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="frontend/public/logo.png" width="120" />
+  <img src="frontend/public/logo2.png" width="140" />
 </p>
 
 <h1 align="center">Nexus AI</h1>
 
 <p align="center">
-  <strong>The Autonomous Multi-Agent Workspace</strong>
+  <strong>Intelligence v2.0 — The Autonomous Multi-Agent Workspace</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-2.0-blueviolet" alt="Version: 2.0" />
+  <img src="https://img.shields.io/badge/Version-2.1-blueviolet" alt="Version: 2.1" />
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python" alt="Python: 3.11+" />
   <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi" alt="FastAPI: 0.100+" />
@@ -61,22 +61,36 @@ npm run dev
 
 ---
 
-## ✨ v2.0 Features
+## ✨ v2.1 Features
 
-### Phase 1: Real-time & Interactivity
-- ⚡ **WebSocket Live Mirroring** - Instant task updates with visual "Live" indicator
+### 🎨 Premium UI/UX
+- 🌟 **Ultra-Premium Dashboard** - Glassmorphism with animated gradients
+- 🖱️ **Cursor Effects** - 6 customizable effects (Ring, Particles, Ribbon, Aurora, Stardust, Orbit)
+- 🌓 **Global Theme System** - Dark/Light mode with radial transitions
+- ⌨️ **Command Palette** - Ctrl+K for quick navigation
+- 🔔 **Real-time Toasts** - Beautiful notifications with react-hot-toast
+
+### ⚡ Real-time & Interactivity
+- 📡 **WebSocket Live Mirroring** - Instant task updates with visual "Live" indicator
 - 💬 **Direct Agent Chat** - Communicate directly with any agent
 - 📊 **Agent Metrics** - Performance stats and activity charts
+- 🎯 **Animated Components** - Framer Motion throughout
 
-### Phase 2: Intelligence & Workflow
+### 🧠 Intelligence & Workflow
 - 🧠 **RAG for Files** - Semantic search: "Ask Your Files" natural language queries
 - 🔀 **Visual Workflow Builder** - Drag-and-drop agent orchestration
 - 📤 **Export Engine** - PDF, Markdown, DOCX, JSON exports
 
-### Phase 3: Accessibility
+### 📱 Accessibility
 - 📱 **PWA Support** - Install as standalone mobile/desktop app
 - 🔽 **Mobile Bottom Nav** - Touch-friendly navigation
 - 💅 **Responsive Design** - Safe-area support for notched phones
+
+### ⚙️ Settings & Account
+- 👤 **Editable Profile** - Change username & email in Settings
+- 🔐 **Password Management** - Secure password updates
+- 🎨 **Appearance Controls** - Theme & cursor effect preferences
+- 🔑 **API Key Management** - View and manage API keys
 
 ---
 
@@ -112,11 +126,24 @@ npm run dev
 
 ---
 
+## 🎨 Design Highlights
+
+- **Glassmorphism** - Frosted glass effects with backdrop blur
+- **Animated Gradients** - Mesh backgrounds with subtle animations
+- **Neon Accents** - Cyan/purple color scheme with glow effects
+- **Spring Animations** - Smooth, physics-based transitions
+- **Dark Mode First** - Deep space theme with high contrast
+
+---
+
 ## 📖 Documentation
 - [📖 User Manual](USER_MANUAL.md)
 - [🏗️ Architecture](docs/ARCHITECTURE.md)
 - [🤖 Agents Guide](docs/AGENTS.md)
 - [🔌 API Reference](backend/docs/API_GUIDE.md)
+- [🔒 Security](SECURITY.md)
+- [📝 Changelog](CHANGELOG.md)
+- [🤝 Contributing](CONTRIBUTING.md)
 
 ---
 

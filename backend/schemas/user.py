@@ -11,7 +11,7 @@ from typing import Optional
 class UserCreate(BaseModel):
     """Schema for user registration"""
     email: EmailStr = Field(..., example="madhur.tyagi@nexus-ai.com")
-    username: str = Field(..., min_length=3, max_length=50, example="madhurtyagi")
+    username: str = Field(..., min_length=2, max_length=50, example="Madhur Tyagi")
     password: str = Field(..., min_length=6, max_length=100, example="securePassword123!")
 
 
@@ -48,3 +48,9 @@ class PasswordUpdate(BaseModel):
     """Schema for changing user password"""
     current_password: str
     new_password: str = Field(..., min_length=6, max_length=100)
+
+
+class UserUpdate(BaseModel):
+    """Schema for updating user profile"""
+    username: Optional[str] = Field(None, min_length=2, max_length=50)
+    email: Optional[EmailStr] = None

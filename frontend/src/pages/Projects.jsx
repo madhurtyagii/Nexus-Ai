@@ -1,16 +1,62 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api, { projectsAPI, workflowTemplatesAPI } from '../services/api';
-import './Projects.css';
+import {
+    FolderPlus,
+    Search,
+    Archive,
+    ArrowLeft,
+    Pin,
+    MoreVertical,
+    Calendar,
+    Clock,
+    CheckCircle2,
+    AlertCircle,
+    Loader2,
+    TrendingUp,
+    Layers,
+    Zap,
+    ChevronRight,
+    Plus,
+    FolderOpen,
+    Filter,
+    Sparkles,
+    X
+} from 'lucide-react';
+import Navbar from '../components/layout/Navbar';
+import Sidebar from '../components/layout/Sidebar';
+import { CardSkeleton, StatSkeleton } from '../components/common/Skeleton';
 
-function Projects() {
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.08, delayChildren: 0.1 }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        transition: { type: "spring", stiffness: 300, damping: 24 }
+    }
+};
+
+export default function Projects() {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [showArchived, setShowArchived] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [newProject, setNewProject] = useState({ name: '', description: '', priority: 'medium' });
+    const [creating, setCreating] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -39,456 +85,416 @@ function Projects() {
         }
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'completed': return 'status-completed';
-            case 'in_progress': return 'status-in-progress';
-            case 'failed': return 'status-failed';
-            case 'planning': return 'status-planning';
-            default: return 'status-default';
-        }
-    };
-
-    const getRiskColor = (risk) => {
-        switch (risk) {
-            case 'high': return 'risk-high';
-            case 'medium': return 'risk-medium';
-            case 'low': return 'risk-low';
-            default: return 'risk-default';
-        }
-    };
-
-    const formatDuration = (minutes) => {
-        if (!minutes) return '--';
-        if (minutes < 60) return `${minutes}m`;
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-    };
-
-    return (
-        <div className="projects-container">
-            <div className="projects-header">
-                <div className="header-left">
-                    <div className="flex items-center gap-4 mb-1">
-                        <button
-                            onClick={() => navigate('/dashboard')}
-                            className="bg-dark-700 hover:bg-dark-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-                            title="Back to Dashboard"
-                        >
-                            ←
-                        </button>
-                        <h1>📋 Projects</h1>
-                    </div>
-                    <p>Manage complex multi-phase AI projects</p>
-                </div>
-                <div className="header-actions">
-                    <div className="search-box">
-                        <input
-                            type="text"
-                            placeholder="Search projects..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        <span className="search-icon">🔍</span>
-                    </div>
-                    <button
-                        className={`archive-toggle-btn ${showArchived ? 'active' : ''}`}
-                        onClick={() => setShowArchived(!showArchived)}
-                        title={showArchived ? "Back to active projects" : "View archived projects"}
-                    >
-                        {showArchived ? '📁 Active' : '📜 Archived'}
-                    </button>
-                    <button
-                        className="create-project-btn"
-                        onClick={() => setShowCreateModal(true)}
-                    >
-                        <span>+</span> New Project
-                    </button>
-                </div>
-            </div>
-
-            {/* Dashboard Stats */}
-            {!loading && projects.length > 0 && !showArchived && (
-                <div className="stats-dashboard">
-                    <div className="stat-card">
-                        <span className="stat-icon">📁</span>
-                        <div className="stat-info">
-                            <span className="stat-label">Total Projects</span>
-                            <span className="stat-count">{projects.length}</span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <span className="stat-icon pulse">🚀</span>
-                        <div className="stat-info">
-                            <span className="stat-label">Active</span>
-                            <span className="stat-count">
-                                {projects.filter(p => p.status === 'in_progress').length}
-                            </span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <span className="stat-icon">⏳</span>
-                        <div className="stat-info">
-                            <span className="stat-label">Planning</span>
-                            <span className="stat-count">
-                                {projects.filter(p => p.status === 'planning').length}
-                            </span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <span className="stat-icon">✅</span>
-                        <div className="stat-info">
-                            <span className="stat-label">Completed</span>
-                            <span className="stat-count">
-                                {projects.filter(p => p.status === 'completed').length}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Filters */}
-            <div className="projects-filters">
-                {['all', 'planning', 'in_progress', 'completed', 'failed'].map((f) => (
-                    <button
-                        key={f}
-                        className={`filter-btn ${filter === f ? 'active' : ''}`}
-                        onClick={() => setFilter(f)}
-                    >
-                        {f === 'all' ? 'All' : f.replace('_', ' ')}
-                    </button>
-                ))}
-            </div>
-
-            {/* Projects Grid */}
-            {loading ? (
-                <div className="projects-loading">
-                    <div className="spinner"></div>
-                    <p>Loading projects...</p>
-                </div>
-            ) : projects.length === 0 ? (
-                <div className="no-projects">
-                    <div className="no-projects-icon">📁</div>
-                    <h3>No projects found</h3>
-                    <p>{searchTerm ? "Try a different search term" : "Create your first AI-powered project to get started"}</p>
-                    <button
-                        className="create-first-btn"
-                        onClick={() => setShowCreateModal(true)}
-                    >
-                        Create Project
-                    </button>
-                </div>
-            ) : (
-                <div className="projects-grid">
-                    {projects.map((project) => (
-                        <div
-                            key={project.id}
-                            className={`project-card ${project.is_archived ? 'archived' : ''} ${project.is_pinned ? 'pinned' : ''}`}
-                            onClick={() => navigate(`/projects/${project.id}`)}
-                        >
-                            <div className="project-card-header">
-                                <div className="project-title-area">
-                                    <button
-                                        className={`pin-btn ${project.is_pinned ? 'active' : ''}`}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            projectsAPI.pinProject(project.id, !project.is_pinned)
-                                                .then(() => {
-                                                    fetchProjects();
-                                                    toast.success(project.is_pinned ? 'Project unpinned' : 'Project pinned');
-                                                });
-                                        }}
-                                        title={project.is_pinned ? "Unpin project" : "Pin project"}
-                                    >
-                                        📌
-                                    </button>
-                                    <h3>{project.name}</h3>
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                                    <span className={`status-badge ${getStatusColor(project.status)}`}>
-                                        {project.status?.replace('_', ' ')}
-                                    </span>
-                                    <button
-                                        className="card-action-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            projectsAPI.archiveProject(project.id, !project.is_archived)
-                                                .then(() => {
-                                                    fetchProjects();
-                                                    toast.success(project.is_archived ? 'Project unarchived' : 'Project archived');
-                                                });
-                                        }}
-                                        title={project.is_archived ? "Unarchive" : "Archive"}
-                                    >
-                                        {project.is_archived ? '📤' : '📥'}
-                                    </button>
-                                    <button
-                                        className="card-action-btn delete"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (window.confirm('Are you sure you want to delete this project?')) {
-                                                projectsAPI.delete(project.id)
-                                                    .then(() => {
-                                                        fetchProjects();
-                                                        toast.success('Project deleted');
-                                                    })
-                                                    .catch(error => {
-                                                        console.error('Error deleting project:', error);
-                                                        toast.error('Failed to delete project');
-                                                    });
-                                            }
-                                        }}
-                                        title="Delete Project"
-                                    >
-                                        🗑️
-                                    </button>
-                                </div>
-                            </div>
-
-                            <p className="project-description">
-                                {project.description || 'No description'}
-                            </p>
-
-                            <div className="project-progress">
-                                <div className="progress-bar">
-                                    <div
-                                        className="progress-fill"
-                                        style={{ width: `${project.progress || 0}%` }}
-                                    ></div>
-                                </div>
-                                <span className="progress-text">{project.progress || 0}%</span>
-                            </div>
-
-                            <div className="project-meta">
-                                <div className="meta-item">
-                                    <span className="meta-label">Tasks</span>
-                                    <span className="meta-value">
-                                        {project.completed_tasks}/{project.total_tasks}
-                                    </span>
-                                </div>
-                                <div className="meta-item">
-                                    <span className="meta-label">Est. Time</span>
-                                    <span className="meta-value">
-                                        {formatDuration(project.estimated_minutes)}
-                                    </span>
-                                </div>
-                                {project.risk_level && (
-                                    <div className="meta-item">
-                                        <span className="meta-label">Risk</span>
-                                        <span className={`meta-value ${getRiskColor(project.risk_level)}`}>
-                                            {project.risk_level}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Create Project Modal */}
-            {showCreateModal && (
-                <CreateProjectModal
-                    onClose={() => setShowCreateModal(false)}
-                    onCreated={(project) => {
-                        setProjects([project, ...projects]);
-                        setShowCreateModal(false);
-                        navigate(`/projects/${project.id}`);
-                    }}
-                />
-            )}
-        </div>
-    );
-}
-
-function CreateProjectModal({ onClose, onCreated }) {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [complexity, setComplexity] = useState('auto');
-    const [creationMethod, setCreationMethod] = useState('template'); // 'template' or 'ai'
-    const [templates, setTemplates] = useState([]);
-    const [selectedTemplateId, setSelectedTemplateId] = useState(null);
-    const [loadingTemplates, setLoadingTemplates] = useState(false);
-    const [creating, setCreating] = useState(false);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        fetchTemplates();
-    }, []);
-
-    const fetchTemplates = async () => {
-        setLoadingTemplates(true);
-        try {
-            const response = await workflowTemplatesAPI.list();
-            setTemplates(response.data);
-            if (response.data.length > 0) {
-                setSelectedTemplateId(response.data[0].id);
-            }
-        } catch (err) {
-            console.error('Error fetching templates:', err);
-        } finally {
-            setLoadingTemplates(false);
-        }
-    };
-
-    const handleCreate = async (e) => {
+    const handleCreateProject = async (e) => {
         e.preventDefault();
-        if (!name.trim()) return;
-
+        if (!newProject.name.trim()) {
+            toast.error('Project name is required');
+            return;
+        }
         setCreating(true);
-        setError(null);
-
         try {
-            const payload = {
-                name: name.trim(),
-            };
-
-            if (creationMethod === 'ai') {
-                payload.description = description.trim() || null;
-                payload.complexity = complexity;
-            } else {
-                payload.template_id = selectedTemplateId;
-            }
-
-            const response = await api.post('/projects/', payload);
-            onCreated(response.data);
-            toast.success('Project created successfully');
-        } catch (err) {
-            setError(err.response?.data?.detail || 'Failed to create project');
+            const response = await projectsAPI.createProject(newProject);
+            toast.success('Project created successfully!');
+            setShowCreateModal(false);
+            setNewProject({ name: '', description: '', priority: 'medium' });
+            navigate(`/projects/${response.data.id}`);
+        } catch (error) {
+            toast.error('Failed to create project');
         } finally {
             setCreating(false);
         }
     };
 
+    const handlePinProject = async (e, project) => {
+        e.stopPropagation();
+        try {
+            await projectsAPI.pinProject(project.id, !project.is_pinned);
+            fetchProjects();
+            toast.success(project.is_pinned ? 'Project unpinned' : 'Project pinned');
+        } catch (error) {
+            toast.error('Failed to update project');
+        }
+    };
+
+    const getStatusConfig = (status) => {
+        const configs = {
+            completed: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: CheckCircle2, label: 'Completed' },
+            in_progress: { color: 'text-primary-400', bg: 'bg-primary-500/10', border: 'border-primary-500/20', icon: Loader2, label: 'In Progress' },
+            failed: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: AlertCircle, label: 'Failed' },
+            planning: { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Sparkles, label: 'Planning' },
+        };
+        return configs[status] || configs.planning;
+    };
+
+    const stats = [
+        { label: 'Total', value: projects.length, icon: Layers, color: 'text-primary-400' },
+        { label: 'Active', value: projects.filter(p => p.status === 'in_progress').length, icon: Zap, color: 'text-emerald-400' },
+        { label: 'Planning', value: projects.filter(p => p.status === 'planning').length, icon: Sparkles, color: 'text-amber-400' },
+        { label: 'Completed', value: projects.filter(p => p.status === 'completed').length, icon: CheckCircle2, color: 'text-purple-400' },
+    ];
+
+    const filters = [
+        { id: 'all', label: 'All' },
+        { id: 'planning', label: 'Planning' },
+        { id: 'in_progress', label: 'In Progress' },
+        { id: 'completed', label: 'Completed' },
+        { id: 'failed', label: 'Failed' },
+    ];
+
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>🚀 Create New Project</h2>
-                    <button className="close-btn" onClick={onClose}>&times;</button>
-                </div>
-
-                <form onSubmit={handleCreate}>
-                    <div className="form-tabs">
-                        <button
-                            type="button"
-                            className={`tab-btn ${creationMethod === 'template' ? 'active' : ''}`}
-                            onClick={() => setCreationMethod('template')}
-                        >
-                            📋 Use Template
-                        </button>
-                        <button
-                            type="button"
-                            className={`tab-btn ${creationMethod === 'ai' ? 'active' : ''}`}
-                            onClick={() => setCreationMethod('ai')}
-                        >
-                            🤖 AI Planning
-                        </button>
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="name">Project Name</label>
-                        <input
-                            type="text"
-                            id="name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g., AI-Powered Blog System"
-                            required
-                        />
-                    </div>
-
-                    {creationMethod === 'template' && (
-                        <div className="form-group">
-                            <label>Select Template</label>
-                            {loadingTemplates ? (
-                                <p className="loading-text">Loading templates...</p>
-                            ) : (
-                                <div className="templates-grid">
-                                    {templates.map((template) => (
-                                        <div
-                                            key={template.id}
-                                            className={`template-card-mini ${selectedTemplateId === template.id ? 'active' : ''}`}
-                                            onClick={() => setSelectedTemplateId(template.id)}
-                                        >
-                                            <div className="template-icon">{template.icon || '📁'}</div>
-                                            <div className="template-info">
-                                                <div className="template-name">{template.name}</div>
-                                                <div className="template-category">{template.category}</div>
-                                            </div>
-                                        </div>
-                                    ))}
+        <div className="min-h-screen bg-dark-900">
+            <Navbar />
+            <div className="flex">
+                <Sidebar />
+                <main className="flex-1 p-6 lg:p-10">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="max-w-7xl mx-auto"
+                    >
+                        {/* Header */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                            <div className="flex items-center gap-4">
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => navigate('/dashboard')}
+                                    className="w-10 h-10 glass rounded-xl flex items-center justify-center text-dark-400 hover:text-white transition-colors"
+                                >
+                                    <ArrowLeft className="w-5 h-5" />
+                                </motion.button>
+                                <div>
+                                    <h1 className="text-3xl font-black text-white tracking-tight">Projects</h1>
+                                    <p className="text-dark-400 font-medium">Manage multi-phase AI workflows</p>
                                 </div>
-                            )}
-                        </div>
-                    )}
+                            </div>
 
-                    {creationMethod === 'ai' && (
-                        <div className="form-group">
-                            <label htmlFor="description">Description (for AI Planning)</label>
-                            <textarea
-                                id="description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Describe what you want to build. The AI will automatically plan the project..."
-                                rows={4}
-                            />
-                            <span className="form-hint">
-                                Be descriptive! The ManagerAgent will create a detailed plan based on this.
-                            </span>
-                        </div>
-                    )}
+                            <div className="flex items-center gap-3">
+                                {/* Search */}
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-500" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search projects..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-64 pl-10 pr-4 py-2.5 bg-white/[0.03] border border-white/5 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:border-primary-500/50 transition-colors"
+                                    />
+                                </div>
 
-                    {creationMethod === 'ai' && (
-                        <div className="form-group">
-                            <label>Complexity</label>
-                            <div className="complexity-options">
-                                {[
-                                    { value: 'auto', label: '🤖 Auto-detect', desc: 'Let AI determine' },
-                                    { value: 'low', label: '🟢 Simple', desc: 'Quick tasks' },
-                                    { value: 'medium', label: '🟡 Medium', desc: 'Multi-step project' },
-                                    { value: 'high', label: '🔴 Complex', desc: 'Full workflow' }
-                                ].map((opt) => (
-                                    <button
-                                        key={opt.value}
-                                        type="button"
-                                        className={`complexity-btn ${complexity === opt.value ? 'active' : ''}`}
-                                        onClick={() => setComplexity(opt.value)}
-                                    >
-                                        <span className="complexity-label">{opt.label}</span>
-                                        <span className="complexity-desc">{opt.desc}</span>
-                                    </button>
-                                ))}
+                                {/* Archive Toggle */}
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setShowArchived(!showArchived)}
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border font-medium transition-all ${showArchived
+                                        ? 'bg-primary-500/10 border-primary-500/30 text-primary-400'
+                                        : 'bg-white/[0.03] border-white/5 text-dark-400 hover:text-white'
+                                        }`}
+                                >
+                                    <Archive className="w-4 h-4" />
+                                    <span className="text-sm">{showArchived ? 'Active' : 'Archived'}</span>
+                                </motion.button>
+
+                                {/* Create Button */}
+                                <motion.button
+                                    whileHover={{ scale: 1.02, boxShadow: "0 10px 30px rgba(14,165,233,0.3)" }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setShowCreateModal(true)}
+                                    className="flex items-center gap-2 bg-primary-500 hover:bg-primary-400 text-white font-bold px-5 py-2.5 rounded-xl transition-all"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span>New Project</span>
+                                </motion.button>
                             </div>
                         </div>
-                    )}
 
-                    {error && <div className="error-message">{error}</div>}
+                        {/* Stats */}
+                        {!loading && projects.length > 0 && !showArchived && (
+                            <motion.div
+                                variants={containerVariants}
+                                initial="hidden"
+                                animate="visible"
+                                className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+                            >
+                                {stats.map((stat) => (
+                                    <motion.div
+                                        key={stat.label}
+                                        variants={itemVariants}
+                                        className="glass p-5 rounded-2xl border border-white/5"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-dark-500 text-xs font-bold uppercase tracking-wider mb-1">{stat.label}</p>
+                                                <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
+                                            </div>
+                                            <stat.icon className={`w-8 h-8 ${stat.color} opacity-30`} />
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        )}
 
-                    <div className="modal-actions">
-                        <button type="button" className="btn-secondary" onClick={onClose}>
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="btn-primary"
-                            disabled={creating || !name.trim() || (creationMethod === 'template' && !selectedTemplateId)}
-                        >
-                            {creating ? (
-                                <>
-                                    <span className="mini-spinner"></span>
-                                    {creationMethod === 'ai' ? 'Planning...' : 'Creating...'}
-                                </>
-                            ) : (
-                                creationMethod === 'ai' ? 'Create & Plan' : 'Create Project'
-                            )}
-                        </button>
-                    </div>
-                </form>
+                        {/* Filters */}
+                        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2">
+                            {filters.map((f) => (
+                                <motion.button
+                                    key={f.id}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setFilter(f.id)}
+                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${filter === f.id
+                                        ? 'bg-primary-500 text-white shadow-[0_5px_20px_rgba(14,165,233,0.3)]'
+                                        : 'bg-white/[0.03] text-dark-400 hover:text-white border border-white/5'
+                                        }`}
+                                >
+                                    {f.label}
+                                </motion.button>
+                            ))}
+                        </div>
+
+                        {/* Content */}
+                        {loading ? (
+                            <div className="space-y-8">
+                                {/* Stats Skeleton */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {[1, 2, 3, 4].map((i) => (
+                                        <StatSkeleton key={i} />
+                                    ))}
+                                </div>
+                                {/* Cards Skeleton */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                                        <CardSkeleton key={i} />
+                                    ))}
+                                </div>
+                            </div>
+                        ) : projects.length === 0 ? (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="glass p-16 rounded-3xl border border-white/5 text-center"
+                            >
+                                <motion.div
+                                    animate={{ rotate: [0, 10, -10, 0] }}
+                                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                                    className="w-24 h-24 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8"
+                                >
+                                    <FolderOpen className="w-12 h-12 text-dark-500" />
+                                </motion.div>
+                                <h3 className="text-2xl font-black text-white mb-3">No projects found</h3>
+                                <p className="text-dark-400 mb-8 max-w-sm mx-auto">
+                                    {searchTerm ? "Try a different search term" : "Create your first AI-powered project to get started"}
+                                </p>
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setShowCreateModal(true)}
+                                    className="bg-primary-500 hover:bg-primary-400 text-white font-bold px-8 py-3 rounded-xl transition-all"
+                                >
+                                    Create Project
+                                </motion.button>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                variants={containerVariants}
+                                initial="hidden"
+                                animate="visible"
+                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+                            >
+                                {projects.map((project) => {
+                                    const statusConfig = getStatusConfig(project.status);
+                                    return (
+                                        <motion.div
+                                            key={project.id}
+                                            variants={itemVariants}
+                                            whileHover={{ y: -5, scale: 1.01 }}
+                                            onClick={() => navigate(`/projects/${project.id}`)}
+                                            className={`glass p-6 rounded-2xl border cursor-pointer group relative overflow-hidden ${project.is_pinned ? 'border-primary-500/30' : 'border-white/5'
+                                                }`}
+                                        >
+                                            {/* Hover gradient */}
+                                            <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                                            {/* Pin indicator */}
+                                            {project.is_pinned && (
+                                                <div className="absolute top-3 right-3">
+                                                    <Pin className="w-4 h-4 text-primary-400 fill-primary-400" />
+                                                </div>
+                                            )}
+
+                                            <div className="relative z-10">
+                                                {/* Status badge */}
+                                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${statusConfig.bg} ${statusConfig.border} border mb-4`}>
+                                                    <statusConfig.icon className={`w-3.5 h-3.5 ${statusConfig.color} ${project.status === 'in_progress' ? 'animate-spin' : ''}`} />
+                                                    <span className={`text-xs font-bold ${statusConfig.color}`}>{statusConfig.label}</span>
+                                                </div>
+
+                                                {/* Title & Description */}
+                                                <h3 className="text-lg font-bold text-white mb-2 group-hover:text-primary-400 transition-colors line-clamp-1">
+                                                    {project.name}
+                                                </h3>
+                                                <p className="text-dark-400 text-sm line-clamp-2 mb-4">
+                                                    {project.description || "No description"}
+                                                </p>
+
+                                                {/* Progress */}
+                                                {project.progress !== undefined && (
+                                                    <div className="mb-4">
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <span className="text-xs text-dark-500 font-medium">Progress</span>
+                                                            <span className="text-xs text-primary-400 font-bold">{project.progress}%</span>
+                                                        </div>
+                                                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                            <motion.div
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${project.progress}%` }}
+                                                                transition={{ duration: 1, ease: "easeOut" }}
+                                                                className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Footer */}
+                                                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                                                    <div className="flex items-center gap-3 text-dark-500 text-xs">
+                                                        <div className="flex items-center gap-1">
+                                                            <Calendar className="w-3.5 h-3.5" />
+                                                            <span>{new Date(project.created_at).toLocaleDateString()}</span>
+                                                        </div>
+                                                        {project.total_tasks > 0 && (
+                                                            <div className="flex items-center gap-1">
+                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                <span>{project.completed_tasks || 0}/{project.total_tasks}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.1 }}
+                                                        whileTap={{ scale: 0.9 }}
+                                                        onClick={(e) => handlePinProject(e, project)}
+                                                        className={`p-1.5 rounded-lg transition-colors ${project.is_pinned
+                                                            ? 'text-primary-400 bg-primary-500/10'
+                                                            : 'text-dark-500 hover:text-white hover:bg-white/5'
+                                                            }`}
+                                                    >
+                                                        <Pin className={`w-4 h-4 ${project.is_pinned ? 'fill-current' : ''}`} />
+                                                    </motion.button>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </motion.div>
+                        )}
+                    </motion.div>
+                </main>
             </div>
+
+            {/* Create Modal */}
+            <AnimatePresence>
+                {showCreateModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowCreateModal(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full max-w-lg glass rounded-3xl p-8 border border-white/10"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-black text-white">New Project</h2>
+                                <button
+                                    onClick={() => setShowCreateModal(false)}
+                                    className="p-2 text-dark-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleCreateProject} className="space-y-5">
+                                <div>
+                                    <label className="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-2">Project Name</label>
+                                    <input
+                                        type="text"
+                                        value={newProject.name}
+                                        onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                                        placeholder="e.g., AI Research Assistant"
+                                        className="w-full px-4 py-3 bg-white/[0.03] border border-white/5 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:border-primary-500/50 transition-colors"
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-2">Description</label>
+                                    <textarea
+                                        value={newProject.description}
+                                        onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                                        placeholder="Describe your project goals..."
+                                        rows={3}
+                                        className="w-full px-4 py-3 bg-white/[0.03] border border-white/5 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:border-primary-500/50 transition-colors resize-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-dark-400 uppercase tracking-wider mb-2">Priority</label>
+                                    <div className="flex gap-3">
+                                        {['low', 'medium', 'high'].map((p) => (
+                                            <button
+                                                key={p}
+                                                type="button"
+                                                onClick={() => setNewProject({ ...newProject, priority: p })}
+                                                className={`flex-1 py-2.5 rounded-xl font-bold text-sm capitalize transition-all ${newProject.priority === p
+                                                    ? 'bg-primary-500 text-white'
+                                                    : 'bg-white/[0.03] text-dark-400 hover:text-white border border-white/5'
+                                                    }`}
+                                            >
+                                                {p}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCreateModal(false)}
+                                        className="flex-1 py-3 bg-white/[0.03] text-dark-400 hover:text-white font-bold rounded-xl border border-white/5 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <motion.button
+                                        type="submit"
+                                        disabled={creating}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="flex-1 py-3 bg-primary-500 hover:bg-primary-400 text-white font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                    >
+                                        {creating ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Creating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <FolderPlus className="w-4 h-4" />
+                                                Create Project
+                                            </>
+                                        )}
+                                    </motion.button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
-
-export default Projects;
