@@ -96,6 +96,9 @@ export const filesAPI = {
     getMetadata: (id) => api.get(`/files/${id}`),
     download: (id) => api.get(`/files/${id}/download`, { responseType: 'blob' }),
     delete: (id) => api.delete(`/files/${id}`),
+    // RAG methods
+    index: (id) => api.post(`/files/${id}/index`),
+    query: (data) => api.post('/files/query', data),
 };
 
 // Workflow Templates API

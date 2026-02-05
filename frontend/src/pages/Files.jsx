@@ -12,6 +12,12 @@ export default function Files() {
     const [sortOrder, setSortOrder] = useState('newest');
     const [deleting, setDeleting] = useState(null);
     const [previewFile, setPreviewFile] = useState(null);
+    // RAG state
+    const [ragQuery, setRagQuery] = useState('');
+    const [ragResults, setRagResults] = useState([]);
+    const [ragLoading, setRagLoading] = useState(false);
+    const [indexing, setIndexing] = useState(null);
+    const [indexedFiles, setIndexedFiles] = useState(new Set());
 
     useEffect(() => {
         loadFiles();
@@ -59,6 +65,40 @@ export default function Files() {
             toast.error('Failed to delete file');
         } finally {
             setDeleting(null);
+        }
+    };
+
+    const handleIndex = async (fileId, e) => {
+        e.stopPropagation();
+        setIndexing(fileId);
+        try {
+            const response = await filesAPI.index(fileId);
+            if (response.data.status === 'indexed') {
+                toast.success(`Indexed! ${response.data.chunks_indexed} chunks`);
+                setIndexedFiles(prev => new Set([...prev, fileId]));
+            } else {
+                toast.error(response.data.message || 'Could not index file');
+            }
+        } catch (error) {
+            toast.error('Failed to index file');
+        } finally {
+            setIndexing(null);
+        }
+    };
+
+    const handleRagSearch = async () => {
+        if (!ragQuery.trim()) return;
+        setRagLoading(true);
+        try {
+            const response = await filesAPI.query({ query: ragQuery, limit: 5 });
+            setRagResults(response.data.results || []);
+            if (response.data.results?.length === 0) {
+                toast('No matches found. Try indexing more files.', { icon: '🔍' });
+            }
+        } catch (error) {
+            toast.error('Search failed');
+        } finally {
+            setRagLoading(false);
         }
     };
 
@@ -211,6 +251,45 @@ export default function Files() {
                         </div>
                     </div>
 
+                    {/* Ask Files - RAG Search */}
+                    <div className="card mb-6 bg-gradient-to-r from-purple-500/10 to-primary-500/10 border-purple-500/30">
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className="text-xl">🧠</span>
+                            <h3 className="text-lg font-semibold text-white">Ask Your Files</h3>
+                            <span className="text-xs text-dark-400">Semantic Search</span>
+                        </div>
+                        <div className="flex gap-3">
+                            <input
+                                type="text"
+                                value={ragQuery}
+                                onChange={(e) => setRagQuery(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleRagSearch()}
+                                placeholder="Ask anything about your indexed files..."
+                                className="flex-1 input-field bg-dark-800"
+                            />
+                            <button
+                                onClick={handleRagSearch}
+                                disabled={ragLoading || !ragQuery.trim()}
+                                className="px-5 py-2 bg-gradient-to-r from-purple-500 to-primary-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50"
+                            >
+                                {ragLoading ? '...' : 'Search'}
+                            </button>
+                        </div>
+                        {ragResults.length > 0 && (
+                            <div className="mt-4 space-y-2">
+                                {ragResults.map((result, idx) => (
+                                    <div key={idx} className="bg-dark-800 rounded-lg p-3 border border-dark-700">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-white font-medium">{result.filename}</span>
+                                            <span className="text-xs text-green-400">{(result.similarity * 100).toFixed(0)}% match</span>
+                                        </div>
+                                        <p className="text-sm text-dark-400 line-clamp-2">{result.content_snippet}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     {/* File List */}
                     {loading ? (
                         <div className="text-center py-12">
@@ -263,6 +342,16 @@ export default function Files() {
 
                                         {/* Actions */}
                                         <div className="flex items-center gap-2 flex-shrink-0">
+                                            <button
+                                                onClick={(e) => handleIndex(file.id, e)}
+                                                disabled={indexing === file.id || indexedFiles.has(file.id)}
+                                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${indexedFiles.has(file.id)
+                                                        ? 'bg-green-500/10 text-green-400 cursor-default'
+                                                        : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400'
+                                                    } disabled:opacity-50`}
+                                            >
+                                                {indexing === file.id ? '...' : indexedFiles.has(file.id) ? '✓ Indexed' : '📥 Index'}
+                                            </button>
                                             <button
                                                 onClick={(e) => handleDownload(file, e)}
                                                 className="px-3 py-1.5 text-sm bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
