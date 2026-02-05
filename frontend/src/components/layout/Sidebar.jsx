@@ -5,6 +5,7 @@ const navItems = [
     { path: '/tasks', label: 'Tasks', icon: '📋' },
     { path: '/agents', label: 'Agents', icon: '🤖' },
     { path: '/projects', label: 'Projects', icon: '📁' },
+    { path: '/workflow-builder', label: 'Workflow Builder', icon: '🔀' },
     { path: '/settings', label: 'Settings', icon: '⚙️' },
     { path: '/help', label: 'Help', icon: '❓' },
 ];

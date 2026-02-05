@@ -17,6 +17,7 @@ const Files = lazy(() => import('./pages/Files'));
 const Templates = lazy(() => import('./pages/Templates'));
 const Agents = lazy(() => import('./pages/Agents'));
 const Settings = lazy(() => import('./pages/Settings'));
+const WorkflowBuilder = lazy(() => import('./pages/WorkflowBuilder'));
 
 // Placeholder pages for routes we'll build later
 function PlaceholderPage({ title }) {
@@ -132,6 +133,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <Help />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/workflow-builder"
+                    element={
+                        <ProtectedRoute>
+                            <WorkflowBuilder />
                         </ProtectedRoute>
                     }
                 />
