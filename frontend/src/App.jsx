@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import React, { Suspense, lazy } from 'react';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import BottomNav from './components/layout/BottomNav';
 
 // Lazy load route components
 const Login = lazy(() => import('./pages/Login'));
@@ -52,6 +53,9 @@ function App() {
                 </div>
             </div>
         }>
+            {/* Mobile Bottom Navigation */}
+            {isAuthenticated && <BottomNav />}
+
             <Routes>
                 {/* Public Routes */}
                 <Route
