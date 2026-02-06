@@ -62,8 +62,9 @@ Always:
             tools=tools or []
         )
     
-    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Performs data analysis or visualization based on provided datasets.
+    async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Performs data analysis or visualization tasks.
+ed on provided datasets.
         
         Args:
             input_data: A dictionary containing:

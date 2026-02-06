@@ -82,6 +82,7 @@ async def upload_file(
         )
     
     # Register file in database
+    actual_size = os.path.getsize(file_path)
     db_file = FileModel(
         user_id=current_user.id,
         project_id=project_id,
@@ -89,7 +90,7 @@ async def upload_file(
         filename=unique_filename,
         original_filename=file.filename,
         file_path=file_path,
-        file_size=file_size,
+        file_size=actual_size,
         mime_type=file.content_type
     )
     
@@ -303,6 +304,86 @@ async def index_file_for_rag(
         "file_id": file_id,
         "filename": db_file.original_filename,
         "chunks_indexed": min(len(chunks), 20)
+    }
+
+
+class FileQueryRequest(BaseModel):
+    query: str
+    file_ids: Optional[List[int]] = None
+    limit: int = 5
+
+class FileChatRequest(BaseModel):
+    query: str
+    file_ids: Optional[List[int]] = None
+
+
+@router.post("/chat")
+async def chat_with_files(
+    request: FileChatRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Synthesized AI chat based on file context.
+    Uses RAG to find facts and LLM to form an agent-like response.
+    """
+    vector_store = get_vector_store()
+    from llm.llm_manager import llm_manager
+    
+    # 1. Retrieve Context
+    filters = {"user_id": current_user.id}
+    if request.file_ids:
+        filters["file_id"] = {"$in": request.file_ids}
+    
+    try:
+        results = vector_store.search_memory(
+            collection_name=FILE_CONTENT_COLLECTION,
+            query=request.query,
+            filters=filters,
+            limit=5
+        )
+    except Exception:
+        results = []
+
+    # 2. Build Context String
+    context_text = ""
+    sources = []
+    seen_files = set()
+    
+    for item in results:
+        f_id = item.get("metadata", {}).get("file_id")
+        f_name = item.get("metadata", {}).get("filename", "Unknown")
+        context_text += f"\n---\nSource: {f_name}\nContent: {item.get('content', '')}\n"
+        if f_id not in seen_files:
+            sources.append({"id": f_id, "name": f_name})
+            seen_files.add(f_id)
+
+    # 3. Synthesize with LLM
+    if not context_text:
+        system_prompt = "You are Nexus Intelligence. The user hasn't indexed any files yet or no matches found. Politely explain that you couldn't find relevant information in their uploaded files."
+        user_prompt = request.query
+    else:
+        system_prompt = (
+            "You are Nexus Intelligence, a high-fidelity AI assistant. "
+            "Analyze the provided context from the user's uploaded files and answer their question based ONLY on that context. "
+            "Be direct, intelligent, and professional. If the answer isn't in the files, say so. "
+            "Formatting: Use markdown (bold, lists, etc.) for clarity."
+        )
+        user_prompt = f"CONTEXT:\n{context_text}\n\nUSER QUESTION: {request.query}"
+
+    try:
+        answer = llm_manager.generate(user_prompt, system=system_prompt)
+    except Exception as e:
+        import logging
+        logging.error(f"LLM Generation failed: {e}")
+        answer = None
+    
+    return {
+        "answer": answer or (
+            "I'm sorry, I encountered an error while synthesizing an answer. "
+            "Please ensure your Groq API key is valid in Settings, or that your local Ollama server is running."
+        ),
+        "sources": sources
     }
 
 

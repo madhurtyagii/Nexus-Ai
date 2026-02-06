@@ -32,7 +32,7 @@ class QAFeedbackLoop:
         self.max_iterations = max_iterations
         self.quality_threshold = quality_threshold
     
-    def review_and_improve(
+    async def review_and_improve(
         self,
         content: str,
         content_type: str,
@@ -78,7 +78,7 @@ class QAFeedbackLoop:
             result["iterations"] = iteration + 1
             
             # Step 1: QA Review
-            qa_result = qa_agent.execute({
+            qa_result = await qa_agent.execute({
                 "content": current_content,
                 "content_type": content_type,
                 "original_task": original_task,
@@ -111,7 +111,7 @@ class QAFeedbackLoop:
             
             # Step 3: Improve content
             if improving_agent:
-                improved = self._improve_content(
+                improved = await self._improve_content(
                     agent=improving_agent,
                     content=current_content,
                     feedback=feedback,
@@ -207,7 +207,7 @@ class QAFeedbackLoop:
         
         return "\n".join(feedback_parts)
     
-    def _improve_content(
+    async def _improve_content(
         self,
         agent,
         content: str,
@@ -229,7 +229,7 @@ class QAFeedbackLoop:
 
 Provide an improved version that addresses all the feedback. Keep the same format and purpose, just make it better."""
 
-            result = agent.execute({
+            result = await agent.execute({
                 "user_prompt": improvement_prompt,
                 "content_type": content_type,
                 "improvement_mode": True
@@ -263,7 +263,7 @@ Provide an improved version that addresses all the feedback. Keep the same forma
             "significant_change": abs(length_change) > 100 or len(added) > 20 or len(removed) > 20
         }
     
-    def quick_review(
+    async def quick_review(
         self,
         content: str,
         content_type: str,
@@ -282,7 +282,7 @@ Provide an improved version that addresses all the feedback. Keep the same forma
                 "quality_score": 70
             }
         
-        return qa_agent.execute({
+        return await qa_agent.execute({
             "content": content,
             "content_type": content_type,
             "original_task": original_task

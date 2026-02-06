@@ -72,10 +72,8 @@ class BaseAgent(ABC):
         self._tool_map = {tool.name: tool for tool in self.tools}
     
     @abstractmethod
-    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Abstract method to perform the agent's primary task.
-        
-        This method must be overridden by specific agent implementations.
+    async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Main execution logic to be implemented by subclasses.
         
         Args:
             input_data: A dictionary containing task parameters and context.
@@ -148,9 +146,13 @@ class BaseAgent(ABC):
             context_str = "\n".join([f"{k}: {v}" for k, v in context.items()])
             full_prompt = f"Context:\n{context_str}\n\nTask: {prompt}"
         
+        # Call LLM directly (circuit breaker was async and caused issues)
+        if not self.llm:
+            self.log_action("llm_error", {"error": "LLM manager not initialized"})
+            return None
+        
         try:
-            response = llm_circuit_breaker.call(
-                self.llm.generate,
+            response = self.llm.generate(
                 prompt=full_prompt,
                 system=self.system_prompt,
                 use_cache=use_cache
@@ -163,8 +165,6 @@ class BaseAgent(ABC):
             return response
         except Exception as e:
             self.log_action("llm_error", {"error": str(e)})
-            if "Circuit Breaker" in str(e):
-                return f"Error: LLM service is temporarily unavailable due to multiple failures. Please try again later."
             return None
     
     def log_action(self, action: str, details: Dict[str, Any] = None):

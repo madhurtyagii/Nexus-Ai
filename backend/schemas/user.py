@@ -5,7 +5,7 @@ Pydantic models for user-related requests and responses
 
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 
 
 class UserCreate(BaseModel):
@@ -28,9 +28,13 @@ class UserResponse(BaseModel):
     username: str = Field(..., example="madhurtyagi")
     is_active: bool = Field(..., example=True)
     created_at: datetime
+    settings: Optional[Dict[str, Any]] = Field(default_factory=dict)
     
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat() + "Z" if v else None
+        }
 
 
 class Token(BaseModel):
@@ -54,3 +58,4 @@ class UserUpdate(BaseModel):
     """Schema for updating user profile"""
     username: Optional[str] = Field(None, min_length=2, max_length=50)
     email: Optional[EmailStr] = None
+    settings: Optional[Dict[str, Any]] = None

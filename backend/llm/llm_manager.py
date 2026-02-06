@@ -14,7 +14,7 @@ from llm.groq_client import GroqClient
 from redis_client import redis_client, set_cache, get_cache
 from config import get_settings
 
-settings = get_settings()
+# settings = get_settings() # Removed global settings to avoid stale cache
 
 
 class LLMManager:
@@ -33,7 +33,7 @@ class LLMManager:
     
     def __init__(
         self,
-        prefer_local: bool = True,
+        prefer_local: bool = False,
         cache_expiry: int = 3600
     ):
         """
@@ -43,10 +43,18 @@ class LLMManager:
             prefer_local: If True, try Ollama before Groq
             cache_expiry: Cache TTL in seconds (default 1 hour)
         """
-        self.ollama = OllamaClient()
-        self.groq = GroqClient()
         self.prefer_local = prefer_local
         self.cache_expiry = cache_expiry
+        
+        # Initialize clients dynamically using fresh settings
+        self.refresh_clients()
+        
+    def refresh_clients(self):
+        """Re-initialize clients with fresh settings."""
+        from config import get_settings
+        settings = get_settings()
+        self.ollama = OllamaClient(base_url=settings.ollama_base_url)
+        self.groq = GroqClient(api_key=settings.groq_api_key)
         
         # Track provider status
         self._ollama_available = None
@@ -79,6 +87,9 @@ class LLMManager:
         Returns:
             Optional[str]: The generated response text, or None if failed.
         """
+        # Always refresh clients before generation to ensure fresh API keys
+        self.refresh_clients()
+        
         # Check cache first
         if use_cache:
             cache_key = self._cache_key(prompt, system)

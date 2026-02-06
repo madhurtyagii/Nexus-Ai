@@ -40,7 +40,12 @@ class MemoryAgent(BaseAgent):
         >>> print(result["output"]["memories"])
     """
     
-    def __init__(self, llm_manager: LLMManager = None, db_session=None):
+    def __init__(
+        self, 
+        llm_manager: LLMManager = None, 
+        db_session=None,
+        tools: List[Any] = None
+    ):
         """Initialize Memory Agent."""
         super().__init__(
             name="MemoryAgent",
@@ -63,8 +68,9 @@ Always maintain accuracy - never fabricate memories.""",
         self.vector_store = get_vector_store()
         self.embedding_manager = get_embedding_manager()
     
-    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Performs specified memory operations like storage or retrieval.
+    async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Entry point for memory-related operations.
+ like storage or retrieval.
         
         Args:
             input_data: A dictionary containing:

@@ -8,9 +8,6 @@ import json
 from typing import Optional, List, Dict, Any
 from config import get_settings
 
-settings = get_settings()
-
-
 class GroqClient:
     """Client for interacting with Groq cloud LLM API."""
     
@@ -19,7 +16,7 @@ class GroqClient:
     def __init__(
         self, 
         api_key: str = None, 
-        default_model: str = "llama-3.3-70b-versatile",
+        default_model: str = "llama-3.1-8b-instant",
         timeout: float = 60.0
     ):
         """
@@ -30,7 +27,11 @@ class GroqClient:
             default_model: Default model to use
             timeout: Request timeout in seconds
         """
-        self.api_key = api_key or settings.groq_api_key
+        if api_key is None:
+            from config import get_settings
+            api_key = get_settings().groq_api_key
+            
+        self.api_key = api_key
         self.default_model = default_model
         self.timeout = timeout
         

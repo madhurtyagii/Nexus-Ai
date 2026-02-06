@@ -1,31 +1,13 @@
+.glass {
+    background: rgba(10, 15, 25, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
 .help-container {
-    animation: fadeIn 0.5s ease-out;
-}
-
-.help-card {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.help-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px -8px rgba(99, 102, 241, 0.2);
-    background-color: #1a2333;
-}
-
-.quick-tips {
-    position: relative;
-    overflow: hidden;
-}
-
-.quick-tips::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
-    z-index: 0;
+    animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes fadeIn {
@@ -40,8 +22,40 @@
     }
 }
 
+/* Custom scrollbar for content area if needed */
+.flex-1::-webkit-scrollbar {
+    width: 6px;
+}
+
+.flex-1::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.flex-1::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.flex-1::-webkit-scrollbar-thumb:hover {
+    background: rgba(14, 165, 233, 0.3);
+}
+
+@media (max-width: 1024px) {
+    aside {
+        flex-direction: row !important;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        width: 100% !important;
+    }
+
+    aside button {
+        flex-shrink: 0;
+        min-width: 200px;
+    }
+}
+
 @media (max-width: 768px) {
-    .help-header {
-        text-align: center;
+    .glass {
+        padding: 1.5rem !important;
     }
 }

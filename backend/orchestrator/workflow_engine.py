@@ -494,8 +494,69 @@ class WorkflowEngine:
                 if task_result.get("status") == "completed":
                     output = task_result.get("output", "")
                     if isinstance(output, dict):
+                        # Handle ResearchAgent structured output
+                        if "summary" in output and "key_findings" in output:
+                            summary = output.get("summary", "")
+                            
+                            # Handle nested/escaped JSON in summary
+                            if isinstance(summary, str) and summary.strip().startswith("{"):
+                                try:
+                                    import json
+                                    parsed = json.loads(summary.strip())
+                                    if isinstance(parsed, dict) and "summary" in parsed:
+                                        summary = parsed.get("summary", summary)
+                                except:
+                                    # Fallback: use regex to extract text after "summary":
+                                    import re
+                                    match = re.search(r'"summary"\s*:\s*"([^"]+)', summary)
+                                    if match:
+                                        # Get full value - might be multiline
+                                        start = summary.find('"summary"')
+                                        if start >= 0:
+                                            # Find the value after ":"
+                                            rest = summary[start:]
+                                            val_start = rest.find('": "') or rest.find('":"')
+                                            if val_start >= 0:
+                                                val_rest = rest[val_start + 4:]
+                                                # Find the closing quote (not escaped)
+                                                end = 0
+                                                for i, c in enumerate(val_rest):
+                                                    if c == '"' and (i == 0 or val_rest[i-1] != '\\'):
+                                                        end = i
+                                                        break
+                                                if end > 0:
+                                                    summary = val_rest[:end]
+                            elif isinstance(summary, dict):
+                                summary = summary.get("summary", str(summary))
+                            
+                            key_findings = output.get("key_findings", [])
+                            sources = output.get("sources", [])
+                            
+                            formatted = f"### Summary\n\n{summary}\n\n"
+                            
+                            if key_findings:
+                                formatted += "### Key Findings\n\n"
+                                for i, finding in enumerate(key_findings, 1):
+                                    if isinstance(finding, str):
+                                        formatted += f"{i}. {finding}\n"
+                                    else:
+                                        formatted += f"{i}. {str(finding)}\n"
+                                formatted += "\n"
+                            
+                            if sources:
+                                formatted += "### Sources\n\n"
+                                for source in sources[:5]:  # Limit to 5 sources
+                                    if isinstance(source, dict):
+                                        title = source.get("title", "Untitled")
+                                        url = source.get("url", "")
+                                        formatted += f"- [{title}]({url})\n"
+                                    else:
+                                        formatted += f"- {str(source)}\n"
+                            
+                            output = formatted
+                        
                         # Handle CodeAgent structured output
-                        if "code" in output and "language" in output:
+                        elif "code" in output and "language" in output:
                             lang = output.get("language", "")
                             code = output.get("code", "")
                             explanation = output.get("explanation", "")
@@ -507,13 +568,51 @@ class WorkflowEngine:
                         elif "body" in output:
                             output = output.get("body", "")
                         
+                        # Handle generic dict with output key
+                        elif "output" in output:
+                            inner = output.get("output", {})
+                            if isinstance(inner, dict):
+                                # Try to format it nicely
+                                output = self._format_dict_as_markdown(inner)
+                            else:
+                                output = str(inner)
+                        
                         # Fallback for other dicts
                         else:
-                            output = output.get("output", str(output))
+                            output = self._format_dict_as_markdown(output)
                     
                     combined.append(str(output))
         
         return "\n".join(combined)
+    
+    def _format_dict_as_markdown(self, data: Dict) -> str:
+        """Format a dictionary as readable markdown."""
+        lines = []
+        for key, value in data.items():
+            if key in ["execution_time", "agent", "status", "error"]:
+                continue  # Skip metadata
+            
+            # Format key as heading
+            formatted_key = key.replace("_", " ").title()
+            
+            if isinstance(value, list):
+                lines.append(f"### {formatted_key}\n")
+                for i, item in enumerate(value, 1):
+                    if isinstance(item, dict):
+                        lines.append(f"{i}. {item.get('title', item.get('name', str(item)))}")
+                    else:
+                        lines.append(f"{i}. {item}")
+                lines.append("")
+            elif isinstance(value, dict):
+                lines.append(f"### {formatted_key}\n")
+                lines.append(self._format_dict_as_markdown(value))
+            else:
+                if len(str(value)) > 100:
+                    lines.append(f"### {formatted_key}\n\n{value}\n")
+                else:
+                    lines.append(f"**{formatted_key}:** {value}\n")
+        
+        return "\n".join(lines)
     
     # Collaboration Patterns
     

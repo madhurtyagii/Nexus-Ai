@@ -187,6 +187,22 @@ async def update_me(
             )
         current_user.email = data.email
     
+    # Merge settings if provided
+    if data.settings is not None:
+        current_settings = current_user.settings or {}
+        if isinstance(current_settings, str):
+             import json
+             try:
+                 current_settings = json.loads(current_settings)
+             except:
+                 current_settings = {}
+        
+        # Deep merge/update
+        current_settings.update(data.settings)
+        current_user.settings = current_settings
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(current_user, "settings")
+
     db.add(current_user)
     db.commit()
     db.refresh(current_user)
@@ -219,7 +235,7 @@ async def update_password(
     db.commit()
     
     return {"message": "Password updated successfully"}
-@router.get("/settings/api-key")
+@router.get("/me/api-key")
 async def get_api_key(current_user: User = Depends(get_current_user)):
     """
     Get the Groq API key from environment for display in settings.

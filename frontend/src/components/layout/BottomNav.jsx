@@ -10,7 +10,7 @@ const navItems = [
     { path: '/tasks', label: 'Tasks', icon: '📋' },
     { path: '/agents', label: 'Agents', icon: '🤖' },
     { path: '/projects', label: 'Projects', icon: '📁' },
-    { path: '/files', label: 'Files', icon: '📄' },
+    { path: '/files', label: 'Ask Files', icon: '💬' },
 ];
 
 export default function BottomNav() {

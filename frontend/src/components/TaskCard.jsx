@@ -48,11 +48,18 @@ export default function TaskCard({ task, onClick }) {
 
     const formatDate = (dateString) => {
         if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-GB', {
+        let adjustedString = dateString;
+        if (typeof dateString === 'string' && !dateString.includes('Z') && !dateString.includes('+')) {
+            adjustedString = dateString + 'Z';
+        }
+        const date = new Date(adjustedString);
+        if (isNaN(date.getTime())) return dateString;
+
+        return date.toLocaleString(undefined, {
             day: 'numeric',
-            month: 'numeric',
-            year: 'numeric'
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
         });
     };
 

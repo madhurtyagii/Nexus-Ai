@@ -539,29 +539,47 @@ export default function Settings() {
 
                                             <div className="space-y-4">
                                                 {[
-                                                    { label: 'Task Completion', desc: 'Get notified when AI tasks complete', enabled: true },
-                                                    { label: 'Agent Status', desc: 'Updates when agents come online/offline', enabled: true },
-                                                    { label: 'Project Updates', desc: 'Progress updates on your projects', enabled: false },
-                                                    { label: 'System Alerts', desc: 'Important system and API alerts', enabled: true },
-                                                    { label: 'Weekly Summary', desc: 'Weekly digest of your activity', enabled: false },
-                                                    { label: 'Marketing', desc: 'Product updates and announcements', enabled: false },
-                                                ].map((item, idx) => (
-                                                    <div key={idx} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-                                                        <div>
-                                                            <p className="text-white font-bold">{item.label}</p>
-                                                            <p className="text-dark-400 text-sm">{item.desc}</p>
+                                                    { key: 'notify_task', label: 'Task Completion', desc: 'Get notified when AI tasks complete' },
+                                                    { key: 'notify_agent', label: 'Agent Status', desc: 'Updates when agents come online/offline' },
+                                                    { key: 'notify_project', label: 'Project Updates', desc: 'Progress updates on your projects' },
+                                                    { key: 'notify_system', label: 'System Alerts', desc: 'Important system and API alerts' },
+                                                    { key: 'notify_weekly', label: 'Weekly Summary', desc: 'Weekly digest of your activity' },
+                                                    { key: 'notify_marketing', label: 'Marketing', desc: 'Product updates and announcements' },
+                                                ].map((item) => {
+                                                    const isEnabled = user?.settings?.[item.key] ?? false;
+
+                                                    const handleToggle = async () => {
+                                                        const newValue = !isEnabled;
+                                                        try {
+                                                            await api.put('/auth/me', {
+                                                                settings: { [item.key]: newValue }
+                                                            });
+                                                            if (refreshUser) refreshUser();
+                                                            toast.success(`${item.label} ${newValue ? 'enabled' : 'disabled'}`);
+                                                        } catch (error) {
+                                                            toast.error('Failed to update setting');
+                                                        }
+                                                    };
+
+                                                    return (
+                                                        <div key={item.key} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+                                                            <div>
+                                                                <p className="text-white font-bold">{item.label}</p>
+                                                                <p className="text-dark-400 text-sm">{item.desc}</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={handleToggle}
+                                                                className={`w-14 h-8 rounded-full transition-colors relative ${isEnabled ? 'bg-primary-500' : 'bg-white/10'}`}
+                                                            >
+                                                                <motion.div
+                                                                    className="w-6 h-6 bg-white rounded-full absolute top-1 shadow-lg"
+                                                                    animate={{ left: isEnabled ? 28 : 4 }}
+                                                                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                                                />
+                                                            </button>
                                                         </div>
-                                                        <button
-                                                            className={`w-14 h-8 rounded-full transition-colors relative ${item.enabled ? 'bg-primary-500' : 'bg-white/10'
-                                                                }`}
-                                                        >
-                                                            <div
-                                                                className={`w-6 h-6 bg-white rounded-full absolute top-1 transition-all shadow-lg ${item.enabled ? 'right-1' : 'left-1'
-                                                                    }`}
-                                                            />
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         </motion.div>
                                     )}

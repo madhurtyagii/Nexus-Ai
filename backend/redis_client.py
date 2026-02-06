@@ -51,7 +51,7 @@ def set_cache(key: str, value: Any, expiry_seconds: int = 3600) -> bool:
         return False
 
 
-def get_cache(key: str) -> Optional[Any]:
+def get_cache(key: str) -> Optional[str]:
     """
     Retrieve data from Redis cache.
     
@@ -59,16 +59,10 @@ def get_cache(key: str) -> Optional[Any]:
         key: Cache key
         
     Returns:
-        Cached value or None if not found
+        Cached string or None if not found
     """
     try:
-        value = redis_client.get(key)
-        if value:
-            try:
-                return json.loads(value)
-            except json.JSONDecodeError:
-                return value
-        return None
+        return redis_client.get(key)
     except redis.RedisError:
         return None
 

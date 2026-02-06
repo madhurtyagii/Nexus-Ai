@@ -219,11 +219,13 @@ def _run_ai_planning(project_id: int, description: str, user_id: int):
         print(f"🤖 Starting AI planning for project {project_id}...")
         
         from agents.manager_agent import ManagerAgent
+        import asyncio
         manager = ManagerAgent()
-        plan_result = manager.execute({
+        # Run the async execute method from sync context
+        plan_result = asyncio.run(manager.execute({
             "project_description": description,
             "user_id": user_id
-        })
+        }))
         
         # Update project with AI-generated plan
         if plan_result and plan_result.get("phases"):
@@ -534,7 +536,7 @@ async def execute_project(
     
     # Update project status and clear previous output
     project.status = "in_progress"
-    project.started_at = datetime.utcnow()
+    project.started_at = datetime.now()  # Use local time for user-facing display
     project.completed_tasks = 0
     project.current_phase = 0
     project.output = None  # Clear previous output
@@ -642,7 +644,7 @@ async def replan_project(
         from agents.manager_agent import ManagerAgent
         
         manager = ManagerAgent()
-        plan_result = manager.execute({
+        plan_result = await manager.execute({
             "project_description": project.description or project.name,
             "user_id": current_user.id
         })
@@ -737,8 +739,12 @@ def _execute_project_workflow(project_id: int, execution_id: str, add_qa: bool =
         if not project:
             return
         
-        # Get workflow
-        workflow = project.workflow or {"phases": project.project_plan}
+        # Get workflow - CRITICAL: Always ensure phases are present from project_plan
+        base_workflow = project.workflow or {}
+        workflow = {
+            **base_workflow,
+            "phases": project.project_plan or []
+        }
         
         # 1. Create a Master Task for this execution
         # This is required because WorkflowEngine/Subtasks depend on a Task row
@@ -770,9 +776,18 @@ def _execute_project_workflow(project_id: int, execution_id: str, add_qa: bool =
         )
         
         # Update project with results
-        project.status = "completed" if result.get("status") == "completed" else "failed"
-        project.completed_at = datetime.utcnow()
-        project.completed_tasks = result.get("tasks_completed", 0)
+        # Only mark completed if actual work was done
+        tasks_completed = result.get("tasks_completed", 0)
+        if tasks_completed > 0 and result.get("status") == "completed":
+            project.status = "completed"
+        elif tasks_completed > 0:
+            project.status = "failed"
+        else:
+            project.status = "failed"
+            result["combined_output"] = "Execution failed: No tasks were executed. Check project plan."
+        
+        project.completed_at = datetime.now()  # Use local time for user-facing display
+        project.completed_tasks = tasks_completed
         project.output = result.get("combined_output", "")
         
         # KEY FIX: Sync execution results back to project_plan for UI visuals

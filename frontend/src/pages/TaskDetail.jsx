@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Navbar from '../components/layout/Navbar';
+import MarkdownRenderer from '../components/common/MarkdownRenderer';
 import { AgentActivityPanelPolling } from '../components/agents/AgentActivityPanel';
 import FileUpload from '../components/files/FileUpload';
 import FileManager from '../components/files/FileManager';
@@ -107,56 +108,88 @@ export default function TaskDetail() {
 
     const formatDate = (dateString) => {
         if (!dateString) return '';
-        return new Date(dateString).toLocaleString();
+        let adjustedString = dateString;
+        if (typeof dateString === 'string' && !dateString.includes('Z') && !dateString.includes('+')) {
+            adjustedString = dateString + 'Z';
+        }
+        const date = new Date(adjustedString);
+        if (isNaN(date.getTime())) return dateString;
+
+        // Browser correctly converts UTC string (from Z or offset) to local time
+        return date.toLocaleString();
     };
 
     const renderOutput = (output) => {
         if (!output) return null;
 
-        // Check if it's markdown-like content
-        if (typeof output === 'string') {
-            // Simple markdown rendering
-            const lines = output.split('\n');
+        // Helper: format a dictionary/object as Markdown
+        const formatDictAsMarkdown = (obj) => {
+            // ResearchAgent format
+            if (obj.summary && obj.key_findings) {
+                const summaryText = typeof obj.summary === 'object'
+                    ? (obj.summary.summary || obj.summary.text || JSON.stringify(obj.summary))
+                    : obj.summary;
 
-            return (
-                <div className="prose prose-invert max-w-none">
-                    {lines.map((line, i) => {
-                        if (line.startsWith('## ')) {
-                            return <h2 key={i} className="text-xl font-bold text-white mt-4 mb-2">{line.replace('## ', '')}</h2>;
-                        }
-                        if (line.startsWith('### ')) {
-                            return <h3 key={i} className="text-lg font-semibold text-slate-200 mt-3 mb-1">{line.replace('### ', '')}</h3>;
-                        }
-                        if (line.startsWith('- ')) {
-                            return <li key={i} className="text-slate-300 ml-4">{line.replace('- ', '')}</li>;
-                        }
-                        if (line.match(/^\[.+\]\(.+\)$/)) {
-                            // Markdown link
-                            const match = line.match(/^\[(.+)\]\((.+)\)$/);
-                            if (match) {
-                                return (
-                                    <a
-                                        key={i}
-                                        href={match[2]}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-purple-400 hover:text-purple-300 underline block"
-                                    >
-                                        🔗 {match[1]}
-                                    </a>
-                                );
-                            }
-                        }
-                        if (line.trim() === '---') {
-                            return <hr key={i} className="border-slate-700 my-4" />;
-                        }
-                        if (line.trim()) {
-                            return <p key={i} className="text-slate-300 leading-relaxed mb-2">{line}</p>;
-                        }
-                        return null;
-                    })}
-                </div>
-            );
+                const findings = Array.isArray(obj.key_findings)
+                    ? obj.key_findings.map(f => `- ${f}`).join('\n')
+                    : String(obj.key_findings);
+
+                return `### Summary\n${summaryText}\n\n### Key Findings\n${findings}`;
+            }
+
+            // Generic object formatting
+            return Object.entries(obj)
+                .filter(([key]) => !['status', 'agent_name', 'timestamp', 'execution_time_seconds',
+                    'tokens_used', 'confidence_score', 'query', 'researched_at'].includes(key))
+                .map(([key, value]) => {
+                    const cleanKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    if (Array.isArray(value)) {
+                        return `**${cleanKey}:**\n${value.map(v => `- ${v}`).join('\n')}`;
+                    }
+                    if (typeof value === 'object') {
+                        return `**${cleanKey}:** ${value?.summary || value?.text || '(complex data)'}`;
+                    }
+                    return `**${cleanKey}:** ${value}`;
+                })
+                .join('\n\n');
+        };
+
+        // If it's a string, check for embedded JSON and clean it up
+        if (typeof output === 'string') {
+            // Check if this string contains a JSON object anywhere
+            const jsonMatch = output.match(/\{\s*"(summary|key_findings|content|code|body)":/);
+
+            if (jsonMatch) {
+                // Try to extract and parse the JSON portion
+                try {
+                    // Find where the JSON starts
+                    const jsonStart = output.indexOf('{');
+                    const prefix = jsonStart > 0 ? output.substring(0, jsonStart).trim() : '';
+                    const jsonStr = output.substring(jsonStart);
+
+                    // Try to parse it
+                    const parsed = JSON.parse(jsonStr);
+                    const formatted = formatDictAsMarkdown(parsed);
+
+                    const finalContent = prefix ? `${prefix}\n\n${formatted}` : formatted;
+                    return <MarkdownRenderer content={finalContent} />;
+                } catch (e) {
+                    // If parsing fails, just render as-is
+                    return <MarkdownRenderer content={output} />;
+                }
+            }
+
+            return <MarkdownRenderer content={output} />;
+        }
+
+        // For actual objects, format as markdown
+        if (typeof output === 'object') {
+            try {
+                const markdown = formatDictAsMarkdown(output);
+                return <MarkdownRenderer content={markdown} />;
+            } catch (e) {
+                return <pre className="text-slate-300 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>;
+            }
         }
 
         return <pre className="text-slate-300 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>;

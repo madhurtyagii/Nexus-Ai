@@ -99,6 +99,7 @@ export const filesAPI = {
     // RAG methods
     index: (id) => api.post(`/files/${id}/index`),
     query: (data) => api.post('/files/query', data),
+    chat: (data) => api.post('/files/chat', data),
 };
 
 // Workflow Templates API

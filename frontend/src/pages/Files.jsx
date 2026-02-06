@@ -1,8 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { filesAPI } from '../services/api';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
+import MarkdownRenderer from '../components/common/MarkdownRenderer';
 import toast from 'react-hot-toast';
+import { Upload, Plus, FileUp, Loader2, Sparkles, MessageSquare, Bot, Search, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Files() {
     const [files, setFiles] = useState([]);
@@ -14,10 +17,13 @@ export default function Files() {
     const [previewFile, setPreviewFile] = useState(null);
     // RAG state
     const [ragQuery, setRagQuery] = useState('');
-    const [ragResults, setRagResults] = useState([]);
+    const [ragChatAnswer, setRagChatAnswer] = useState('');
+    const [ragSources, setRagSources] = useState([]);
     const [ragLoading, setRagLoading] = useState(false);
     const [indexing, setIndexing] = useState(null);
     const [indexedFiles, setIndexedFiles] = useState(new Set());
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         loadFiles();
@@ -31,6 +37,37 @@ export default function Files() {
             console.error('Failed to load files:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Simple validation
+        const maxSize = 100 * 1024 * 1024; // 100MB client limit (backend has its own)
+        if (file.size > maxSize) {
+            toast.error('File exceeds size limit.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        setUploading(true);
+        const toastId = toast.loading(`Uploading ${file.name}...`);
+
+        try {
+            await filesAPI.upload(formData);
+            toast.success('File uploaded successfully!', { id: toastId });
+            loadFiles(); // Refresh list
+        } catch (error) {
+            console.error('Upload failed:', error);
+            const detail = error.response?.data?.detail;
+            toast.error(detail || 'Failed to upload file.', { id: toastId });
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -89,14 +126,20 @@ export default function Files() {
     const handleRagSearch = async () => {
         if (!ragQuery.trim()) return;
         setRagLoading(true);
+        setRagChatAnswer('');
+        setRagSources([]);
+
         try {
-            const response = await filesAPI.query({ query: ragQuery, limit: 5 });
-            setRagResults(response.data.results || []);
-            if (response.data.results?.length === 0) {
-                toast('No matches found. Try indexing more files.', { icon: '🔍' });
+            const response = await filesAPI.chat({ query: ragQuery });
+            setRagChatAnswer(response.data.answer);
+            setRagSources(response.data.sources || []);
+
+            if (!response.data.answer || response.data.answer.includes("haven't indexed any files")) {
+                toast('No context found. Try indexing more files.', { icon: '🔍' });
             }
         } catch (error) {
-            toast.error('Search failed');
+            console.error('RAG Chat failed:', error);
+            toast.error('Nexus Intelligence is currently unavailable.');
         } finally {
             setRagLoading(false);
         }
@@ -197,9 +240,34 @@ export default function Files() {
                 <Sidebar />
                 <main className="flex-1 p-6 lg:p-8">
                     {/* Header */}
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-white mb-2">📁 Files</h1>
-                        <p className="text-dark-400">Manage all your uploaded files across projects.</p>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                        <div>
+                            <h1 className="text-3xl font-black text-white tracking-tight italic uppercase">
+                                📁 Files
+                            </h1>
+                            <p className="text-dark-400 font-medium">Manage all your uploaded files across projects.</p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleUpload}
+                                className="hidden"
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploading}
+                                className="flex items-center gap-2 bg-primary-500 hover:bg-primary-400 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-[0_10px_30px_rgba(14,165,233,0.3)] disabled:opacity-50"
+                            >
+                                {uploading ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <Upload className="w-5 h-5" />
+                                )}
+                                <span>{uploading ? 'Uploading...' : 'Upload File'}</span>
+                            </button>
+                        </div>
                     </div>
 
                     {/* Storage Bar */}
@@ -251,43 +319,103 @@ export default function Files() {
                         </div>
                     </div>
 
-                    {/* Ask Files - RAG Search */}
-                    <div className="card mb-6 bg-gradient-to-r from-purple-500/10 to-primary-500/10 border-purple-500/30">
-                        <div className="flex items-center gap-2 mb-3">
-                            <span className="text-xl">🧠</span>
-                            <h3 className="text-lg font-semibold text-white">Ask Your Files</h3>
-                            <span className="text-xs text-dark-400">Semantic Search</span>
-                        </div>
-                        <div className="flex gap-3">
-                            <input
-                                type="text"
-                                value={ragQuery}
-                                onChange={(e) => setRagQuery(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleRagSearch()}
-                                placeholder="Ask anything about your indexed files..."
-                                className="flex-1 input-field bg-dark-800"
-                            />
-                            <button
-                                onClick={handleRagSearch}
-                                disabled={ragLoading || !ragQuery.trim()}
-                                className="px-5 py-2 bg-gradient-to-r from-purple-500 to-primary-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50"
-                            >
-                                {ragLoading ? '...' : 'Search'}
-                            </button>
-                        </div>
-                        {ragResults.length > 0 && (
-                            <div className="mt-4 space-y-2">
-                                {ragResults.map((result, idx) => (
-                                    <div key={idx} className="bg-dark-800 rounded-lg p-3 border border-dark-700">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="text-white font-medium">{result.filename}</span>
-                                            <span className="text-xs text-green-400">{(result.similarity * 100).toFixed(0)}% match</span>
-                                        </div>
-                                        <p className="text-sm text-dark-400 line-clamp-2">{result.content_snippet}</p>
+                    {/* Nexus Intelligence - RAG Chat */}
+                    <div className="card mb-6 overflow-hidden border-primary-500/20 shadow-[0_0_50px_rgba(14,165,233,0.1)]">
+                        <div className="bg-gradient-to-r from-primary-500/10 via-purple-500/10 to-transparent p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/30">
+                                        <Bot className="w-6 h-6 text-white" />
                                     </div>
-                                ))}
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                            Nexus Intelligence
+                                            <span className="bg-primary-500/20 text-primary-400 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest font-black">RAG v2.0</span>
+                                        </h3>
+                                        <p className="text-dark-400 text-sm">Ask anything about your indexed files.</p>
+                                    </div>
+                                </div>
+                                <div className="hidden md:flex items-center gap-2 text-xs text-dark-500">
+                                    <Sparkles className="w-3 h-3 text-yellow-500" />
+                                    <span>Powered by Context Synthesis</span>
+                                </div>
                             </div>
-                        )}
+
+                            <div className="relative group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-500 group-focus-within:text-primary-400 transition-colors" />
+                                <input
+                                    type="text"
+                                    value={ragQuery}
+                                    onChange={(e) => setRagQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleRagSearch()}
+                                    placeholder="Type your question (e.g., 'Summarize the roadmap PDF'...)"
+                                    className="w-full bg-dark-900/50 border border-dark-700 focus:border-primary-500 pl-12 pr-32 py-4 rounded-2xl text-white font-medium transition-all"
+                                />
+                                <button
+                                    onClick={handleRagSearch}
+                                    disabled={ragLoading || !ragQuery.trim()}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-primary-500 hover:bg-primary-400 text-white rounded-xl font-bold transition-all shadow-lg shadow-primary-500/20 disabled:opacity-50"
+                                >
+                                    {ragLoading ? (
+                                        <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                                    ) : (
+                                        'Ask Nexus'
+                                    )}
+                                </button>
+                            </div>
+
+                            <AnimatePresence mode="wait">
+                                {ragLoading && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="mt-6 flex items-start gap-4"
+                                    >
+                                        <div className="w-8 h-8 rounded-lg bg-dark-800 flex items-center justify-center">
+                                            <Bot className="w-4 h-4 text-primary-500 animate-pulse" />
+                                        </div>
+                                        <div className="flex-1 space-y-2">
+                                            <div className="h-4 bg-dark-800 rounded w-1/4 animate-pulse"></div>
+                                            <div className="h-4 bg-dark-800 rounded w-3/4 animate-pulse"></div>
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {ragChatAnswer && !ragLoading && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="mt-6 space-y-4"
+                                    >
+                                        <div className="flex items-start gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center flex-shrink-0">
+                                                <Bot className="w-6 h-6 text-primary-500" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="prose prose-invert max-w-none">
+                                                    <MarkdownRenderer content={ragChatAnswer} />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {ragSources.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 ml-14">
+                                                {ragSources.map((source) => (
+                                                    <div
+                                                        key={source.id}
+                                                        className="flex items-center gap-1.5 bg-dark-800/80 border border-dark-700 px-3 py-1 rounded-full text-[10px] text-dark-400 font-bold uppercase tracking-wider"
+                                                    >
+                                                        <Info className="w-3 h-3 text-primary-500" />
+                                                        {source.name}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     </div>
 
                     {/* File List */}
@@ -305,8 +433,17 @@ export default function Files() {
                             <p className="text-dark-400">
                                 {searchQuery || typeFilter !== 'all'
                                     ? 'Try adjusting your filters.'
-                                    : 'Upload files from a project to see them here.'}
+                                    : 'Upload files to see them here.'}
                             </p>
+                            {!searchQuery && typeFilter === 'all' && (
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="mt-6 flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white font-bold px-6 py-3 rounded-xl border border-white/10 transition-all mx-auto"
+                                >
+                                    <Upload className="w-5 h-5" />
+                                    <span>Upload First File</span>
+                                </button>
+                            )}
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -346,8 +483,8 @@ export default function Files() {
                                                 onClick={(e) => handleIndex(file.id, e)}
                                                 disabled={indexing === file.id || indexedFiles.has(file.id)}
                                                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${indexedFiles.has(file.id)
-                                                        ? 'bg-green-500/10 text-green-400 cursor-default'
-                                                        : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400'
+                                                    ? 'bg-green-500/10 text-green-400 cursor-default'
+                                                    : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400'
                                                     } disabled:opacity-50`}
                                             >
                                                 {indexing === file.id ? '...' : indexedFiles.has(file.id) ? '✓ Indexed' : '📥 Index'}

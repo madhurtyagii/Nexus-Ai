@@ -22,7 +22,7 @@ const pages = [
     { name: 'Projects', path: '/projects', icon: FolderKanban, description: 'Multi-phase projects' },
     { name: 'Agents', path: '/agents', icon: Users, description: 'AI agent fleet' },
     { name: 'Workflow Builder', path: '/workflow-builder', icon: GitBranch, description: 'Visual automation' },
-    { name: 'Files', path: '/files', icon: FileText, description: 'File management' },
+    { name: 'Ask Your Files', path: '/files', icon: Sparkles, description: 'Nexus Intelligence Chat' },
     { name: 'Settings', path: '/settings', icon: Settings, description: 'Configuration' },
     { name: 'Help', path: '/help', icon: HelpCircle, description: 'Documentation' },
 ];
@@ -137,14 +137,14 @@ export default function CommandPalette() {
                                         key={page.path}
                                         onClick={() => handleSelect(page.path)}
                                         className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all group ${index === selectedIndex
-                                                ? 'bg-primary-500/10 text-white'
-                                                : 'text-dark-300 hover:bg-white/5 hover:text-white'
+                                            ? 'bg-primary-500/10 text-white'
+                                            : 'text-dark-300 hover:bg-white/5 hover:text-white'
                                             }`}
                                         whileHover={{ x: 4 }}
                                     >
                                         <div className={`p-2 rounded-lg transition-colors ${index === selectedIndex
-                                                ? 'bg-primary-500/20 text-primary-400'
-                                                : 'bg-white/5 text-dark-400 group-hover:text-white'
+                                            ? 'bg-primary-500/20 text-primary-400'
+                                            : 'bg-white/5 text-dark-400 group-hover:text-white'
                                             }`}>
                                             <page.icon className="w-5 h-5" />
                                         </div>

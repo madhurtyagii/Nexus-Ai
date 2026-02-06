@@ -5,22 +5,128 @@ ChromaDB wrapper for storing and retrieving memories using embeddings
 
 import os
 import uuid
+import json
+import numpy as np
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-# --- Pydantic v2 Compatibility Handle ---
+from logging_config import get_logger
+logger = get_logger(__name__)
+
+# --- modern ChromaDB Handle ---
 CHROMADB_AVAILABLE = False
 try:
     import chromadb
-    from chromadb.config import Settings
+    from chromadb.config import Settings as ChromaSettings
     CHROMADB_AVAILABLE = True
-except Exception:
-    # We will log this later if needed, but for now we just want to NOT crash
+except Exception as e:
+    import traceback
+    logger.error(f"❌ Failed to import chromadb:\n{traceback.format_exc()}")
     chromadb = None
-    Settings = None
+    ChromaSettings = None
 
-from logging_config import get_logger
-logger = get_logger(__name__)
+class ResilientNumpyStore:
+    """
+    A lightweight, persistent vector store using Numpy for similarity 
+    and JSON for storage. Isolated by collection.
+    """
+    def __init__(self, persist_directory: str):
+        self.persist_directory = persist_directory
+        self.data_file = os.path.join(persist_directory, "resilient_storage.json")
+        self.embeddings_file = os.path.join(persist_directory, "resilient_embeddings.npy")
+        self.collections_data = {} # {collection_name: [memories]}
+        self.collections_embeddings = {} # {collection_name: [embeddings]}
+        self._load()
+
+    def _load(self):
+        if os.path.exists(self.data_file):
+            try:
+                with open(self.data_file, "r") as f:
+                    full_data = json.load(f)
+                    
+                # New format is a dict of collections
+                if isinstance(full_data, dict):
+                    self.collections_data = full_data
+                    
+                    # Also load embeddings if dict
+                    if os.path.exists(self.embeddings_file):
+                        try:
+                            raw_emb = np.load(self.embeddings_file, allow_pickle=True).item()
+                            if isinstance(raw_emb, dict):
+                                self.collections_embeddings = raw_emb
+                        except Exception:
+                            logger.warning("Could not load embeddings dict, initializing fresh.")
+                else:
+                    # Legacy format was a list - WIPE IT (it was test data)
+                    logger.info("🗑️ Legacy resilient storage detected. Wiping for fresh start.")
+                    self.collections_data = {}
+                    self.collections_embeddings = {}
+                
+                logger.info(f"💾 Loaded collections: {list(self.collections_data.keys())}")
+            except Exception as e:
+                logger.error(f"Failed to load resilient storage: {e}")
+
+    def _save(self):
+        try:
+            os.makedirs(self.persist_directory, exist_ok=True)
+            with open(self.data_file, "w") as f:
+                json.dump(self.collections_data, f)
+            np.save(self.embeddings_file, np.array(self.collections_embeddings))
+        except Exception as e:
+            logger.error(f"Failed to save resilient storage: {e}")
+
+    def add(self, collection_name: str, content: str, metadata: dict, memory_id: str, embedding: List[float]):
+        if collection_name not in self.collections_data:
+            self.collections_data[collection_name] = []
+            self.collections_embeddings[collection_name] = []
+            
+        self.collections_data[collection_name].append({
+            "id": memory_id,
+            "content": content,
+            "metadata": metadata
+        })
+        self.collections_embeddings[collection_name].append(embedding)
+        self._save()
+
+    def search(self, collection_name: str, query_embedding: List[float], limit: int, filters: dict = None) -> List[dict]:
+        mems = self.collections_data.get(collection_name, [])
+        embs = self.collections_embeddings.get(collection_name, [])
+        
+        if not embs or not mems:
+            return []
+        
+        embeddings_array = np.array(embs)
+        query_array = np.array(query_embedding)
+        
+        norms = np.linalg.norm(embeddings_array, axis=1)
+        query_norm = np.linalg.norm(query_array)
+        
+        if query_norm == 0: return []
+            
+        similarities = np.dot(embeddings_array, query_array) / (norms * query_norm + 1e-9)
+        indices = np.argsort(similarities)[::-1]
+        
+        results = []
+        for idx in indices:
+            memory = mems[idx]
+            if filters:
+                match = True
+                for k, v in filters.items():
+                    if isinstance(v, dict) and "$in" in v:
+                        if memory["metadata"].get(k) not in v["$in"]:
+                            match = False; break
+                    elif memory["metadata"].get(k) != v:
+                        match = False; break
+                if not match: continue
+
+            results.append({
+                "id": memory["id"],
+                "content": memory["content"],
+                "metadata": memory["metadata"],
+                "distance": float(1.0 - similarities[idx])
+            })
+            if len(results) >= limit: break
+        return results
 
 class VectorStore:
     """
@@ -36,118 +142,77 @@ class VectorStore:
     TASK_CONTEXT = "task_context"
     
     def __init__(self, persist_directory: str = None):
-        """Initialize ChromaDB client or in-memory fallback."""
-        self.persist_directory = persist_directory or os.getenv(
-            "CHROMADB_DIR", "./data/chromadb"
-        )
+        """Initialize ChromaDB client or resilient fallback."""
+        raw_dir = persist_directory or os.getenv("CHROMADB_DIR", "./data/chromadb")
+        self.persist_directory = os.path.abspath(raw_dir)
         self._collections = {}
-        self._fallback_storage = {}
+        self.resilient_store = ResilientNumpyStore(self.persist_directory)
         
         if CHROMADB_AVAILABLE:
             try:
                 os.makedirs(self.persist_directory, exist_ok=True)
                 self.client = chromadb.PersistentClient(
                     path=self.persist_directory,
-                    settings=Settings(anonymized_telemetry=False, allow_reset=True)
+                    settings=ChromaSettings(anonymized_telemetry=False, allow_reset=True)
                 )
                 logger.info(f"✅ VectorStore initialized with ChromaDB at: {self.persist_directory}")
             except Exception as e:
-                logger.warning(f"⚠️ ChromaDB failed to init: {e}. Using fallback.")
+                logger.warning(f"⚠️ ChromaDB failed to init: {e}. Using Resilient Storage.")
                 self.client = None
         else:
             self.client = None
-            logger.warning("🧱 VectorStore running in fallback (in-memory) mode.")
+            logger.warning("🛡️ VectorStore using Resilient Numpy Storage (Persistence Active)")
     
-    def init_collection(
-        self, 
-        collection_name: str, 
-        metadata: Dict[str, Any] = None
-    ) -> chromadb.Collection:
-        """
-        Initialize or get an existing collection.
-        
-        Args:
-            collection_name: Name of the collection
-            metadata: Optional metadata for the collection
-            
-        Returns:
-            ChromaDB Collection object
-        """
-        if collection_name in self._collections:
-            return self._collections[collection_name]
-        
+    def init_collection(self, collection_name: str, metadata: Dict[str, Any] = None):
+        if not self.client: return None
+        if collection_name in self._collections: return self._collections[collection_name]
         try:
-            # Get or create collection
             collection = self.client.get_or_create_collection(
                 name=collection_name,
                 metadata=metadata or {"created_at": datetime.utcnow().isoformat()}
             )
-            
             self._collections[collection_name] = collection
-            logger.info(f"Collection '{collection_name}' initialized with {collection.count()} documents")
-            
             return collection
-            
-        except Exception as e:
-            logger.error(f"Failed to initialize collection '{collection_name}': {e}")
-            raise
+        except Exception:
+            return None
+
+    def _get_embedding(self, text: str) -> List[float]:
+        # Simple content-aware fallback embedding logic.
+        # Not a real model, but prevents all chunks from being identical.
+        import hashlib
+        h = hashlib.md5(text.encode()).digest()
+        # Convert hash to a 1536-dim vector by repetition and normalization
+        vec = []
+        for i in range(1536):
+            # Use hash bytes and a bit of position-based math
+            val = h[i % len(h)] * (1 + (i % 17))
+            vec.append(float(val % 100) / 100.0)
+        return vec
     
-    def add_memory(
-        self,
-        collection_name: str,
-        content: str,
-        metadata: Dict[str, Any],
-        memory_id: str = None,
-        embedding: List[float] = None
-    ) -> str:
-        """
-        Add a memory to a collection.
-        
-        Args:
-            collection_name: Target collection name
-            content: Text content to store
-            metadata: Metadata dict (user_id, task_id, timestamp, agent_name, memory_type)
-            memory_id: Optional unique ID (generated if not provided)
-            embedding: Optional pre-computed embedding
-            
-        Returns:
-            Memory ID
-        """
-        collection = self.init_collection(collection_name)
-        
-        # Generate ID if not provided
-        if not memory_id:
-            memory_id = str(uuid.uuid4())
-        
-        # Add timestamp if not in metadata
+    def add_memory(self, collection_name: str, content: str, metadata: Dict[str, Any], memory_id: str = None, embedding: List[float] = None) -> str:
+        memory_id = memory_id or str(uuid.uuid4())
+        metadata = self._clean_metadata(metadata)
         if "timestamp" not in metadata:
             metadata["timestamp"] = datetime.utcnow().isoformat()
-        
-        # Ensure all metadata values are valid types (str, int, float, bool)
-        clean_metadata = self._clean_metadata(metadata)
-        
-        try:
-            if embedding:
-                collection.add(
-                    documents=[content],
-                    embeddings=[embedding],
-                    metadatas=[clean_metadata],
-                    ids=[memory_id]
-                )
-            else:
-                # Let ChromaDB generate embedding using default model
-                collection.add(
-                    documents=[content],
-                    metadatas=[clean_metadata],
-                    ids=[memory_id]
-                )
             
-            logger.debug(f"Added memory '{memory_id}' to collection '{collection_name}'")
-            return memory_id
-            
-        except Exception as e:
-            logger.error(f"Failed to add memory to '{collection_name}': {e}")
-            raise
+        # 1. Try Resilient Storage (always backup)
+        emb = embedding or self._get_embedding(content)
+        self.resilient_store.add(collection_name, content, metadata, memory_id, emb)
+
+        # 2. Try ChromaDB
+        collection = self.init_collection(collection_name)
+        if collection:
+            try:
+                collection.add(
+                    documents=[content], 
+                    metadatas=[metadata], 
+                    ids=[memory_id], 
+                    embeddings=[embedding] if embedding else None
+                )
+            except Exception as e:
+                logger.error(f"ChromaDB add failed: {e}")
+        
+        return memory_id
 
     def add_memories_batch(
         self,
@@ -199,63 +264,34 @@ class VectorStore:
             logger.error(f"Batch add to '{collection_name}' failed: {e}")
             raise
     
-    def search_memory(
-        self,
-        collection_name: str,
-        query: str,
-        filters: Dict[str, Any] = None,
-        limit: int = 10,
-        query_embedding: List[float] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Search for similar memories in a collection.
-        
-        Args:
-            collection_name: Collection to search
-            query: Search query text
-            filters: Metadata filters (ChromaDB where clause)
-            limit: Maximum results to return
-            query_embedding: Optional pre-computed query embedding
-            
-        Returns:
-            List of matching memories with id, content, metadata, distance
-        """
+    def search_memory(self, collection_name: str, query: str, filters: Dict[str, Any] = None, limit: int = 10, query_embedding: List[float] = None) -> List[Dict[str, Any]]:
+        # 1. Try ChromaDB first if available
         collection = self.init_collection(collection_name)
-        
-        if collection.count() == 0:
-            return []
-        
-        try:
-            if query_embedding:
+        if collection:
+            try:
                 results = collection.query(
-                    query_embeddings=[query_embedding],
-                    n_results=min(limit, collection.count()),
+                    query_texts=[query] if not query_embedding else None,
+                    query_embeddings=[query_embedding] if query_embedding else None,
+                    n_results=min(limit, collection.count() or 1),
                     where=filters
                 )
-            else:
-                results = collection.query(
-                    query_texts=[query],
-                    n_results=min(limit, collection.count()),
-                    where=filters
-                )
-            
-            # Parse results into structured format
-            memories = []
-            if results and results['ids'] and len(results['ids']) > 0:
-                for i, memory_id in enumerate(results['ids'][0]):
-                    memories.append({
-                        "id": memory_id,
-                        "content": results['documents'][0][i] if results['documents'] else "",
-                        "metadata": results['metadatas'][0][i] if results['metadatas'] else {},
-                        "distance": results['distances'][0][i] if results['distances'] else 0.0
-                    })
-            
-            logger.debug(f"Found {len(memories)} memories in '{collection_name}' for query")
-            return memories
-            
-        except Exception as e:
-            logger.error(f"Search failed in '{collection_name}': {e}")
-            return []
+                memories = []
+                if results and results['ids'] and len(results['ids']) > 0:
+                    for i, m_id in enumerate(results['ids'][0]):
+                        memories.append({
+                            "id": m_id,
+                            "content": results['documents'][0][i],
+                            "metadata": results['metadatas'][0][i],
+                            "distance": results['distances'][0][i] if 'distances' in results else 0.0
+                        })
+                    if memories:
+                        return memories
+            except Exception as e:
+                logger.error(f"ChromaDB search failed: {e}. Falling back.")
+
+        # 2. Fallback to Resilient Storage
+        emb = query_embedding or self._get_embedding(query)
+        return self.resilient_store.search(collection_name, emb, limit, filters)
     
     def delete_memory(self, collection_name: str, memory_id: str) -> bool:
         """

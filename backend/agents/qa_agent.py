@@ -81,7 +81,7 @@ Rate on a 0-100 scale where:
         self.quality_threshold = 70  # Minimum score to pass
         self.max_retry_suggestions = 3
     
-    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Main execution entry point for performing a QA review.
         
         Args:
@@ -269,7 +269,7 @@ Format each suggestion as a clear instruction."""
         try:
             response = llm_manager.generate(
                 prompt=prompt,
-                system_prompt="You are a helpful assistant providing specific fixes for quality issues.",
+                system= "You are a helpful assistant providing specific fixes for quality issues.",
                 temperature=0.3
             )
             
@@ -317,7 +317,7 @@ MISSING: [list missing aspects or "None"]"""
         try:
             response = llm_manager.generate(
                 prompt=prompt,
-                system_prompt="You are evaluating task completion. Be accurate and fair.",
+                system= "You are evaluating task completion. Be accurate and fair.",
                 temperature=0.2
             )
             

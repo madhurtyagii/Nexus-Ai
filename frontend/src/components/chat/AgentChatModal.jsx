@@ -7,6 +7,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWebSocket, EventType } from '../../hooks/useWebSocket';
 import api from '../../services/api';
+import MarkdownRenderer from '../common/MarkdownRenderer';
 
 export default function AgentChatModal({ isOpen, onClose, agent }) {
     const { token } = useAuth();
@@ -64,10 +65,19 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
         setIsLoading(true);
 
         try {
-            // Send via REST API as fallback (WebSocket response will arrive async)
+            // Build conversation history for context (exclude system messages)
+            const history = messages
+                .filter(m => m.role === 'user' || m.role === 'agent')
+                .map(m => ({
+                    role: m.role,
+                    content: m.content
+                }));
+
+            // Send via REST API with history for context
             const response = await api.post('/agents/chat', {
                 agent_name: agent?.name,
-                message: userMessage
+                message: userMessage,
+                history: history  // Include conversation history
             });
 
             // Handle direct REST response if no WebSocket
@@ -140,13 +150,17 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                         >
                             <div
                                 className={`max-w-[80%] px-4 py-2.5 rounded-2xl ${msg.role === 'user'
-                                        ? 'bg-primary-500 text-white rounded-br-sm'
-                                        : msg.role === 'system'
-                                            ? 'bg-dark-700/50 text-dark-400 text-sm italic'
-                                            : 'bg-dark-700 text-white rounded-bl-sm'
+                                    ? 'bg-primary-500 text-white rounded-br-sm'
+                                    : msg.role === 'system'
+                                        ? 'bg-dark-700/50 text-dark-400 text-sm italic'
+                                        : 'bg-dark-700 text-white rounded-bl-sm'
                                     }`}
                             >
-                                <p className="whitespace-pre-wrap">{msg.content}</p>
+                                {msg.role === 'agent' ? (
+                                    <MarkdownRenderer content={msg.content} />
+                                ) : (
+                                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                                )}
                             </div>
                         </div>
                     ))}

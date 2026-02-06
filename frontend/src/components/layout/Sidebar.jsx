@@ -10,7 +10,8 @@ import {
     HelpCircle,
     Activity,
     Database,
-    Users
+    Users,
+    MessageSquareQuote
 } from 'lucide-react';
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
     { path: '/tasks', label: 'Tasks', icon: ClipboardList },
     { path: '/agents', label: 'Agents', icon: UserCircle2 },
     { path: '/projects', label: 'Projects', icon: FolderTree },
+    { path: '/files', label: 'Ask Your Files', icon: MessageSquareQuote },
     { path: '/workflow-builder', label: 'Workflow Builder', icon: GitBranch },
     { path: '/settings', label: 'Settings', icon: Settings },
     { path: '/help', label: 'Help', icon: HelpCircle },

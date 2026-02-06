@@ -69,8 +69,9 @@ Always:
             tools=tools or []
         )
     
-    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Performs a writing or editing task based on the user's request.
+    async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generates or improves content based on instructions.
+er's request.
         
         Args:
             input_data: A dictionary containing:

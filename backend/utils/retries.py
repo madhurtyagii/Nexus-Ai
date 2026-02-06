@@ -6,6 +6,7 @@ with exponential backoff, useful for handling transient network issues.
 import asyncio
 import functools
 import logging
+import time
 from typing import Type, Union, Tuple, Callable, Any
 
 logger = logging.getLogger(__name__)
@@ -32,28 +33,38 @@ def retry(
         Callable: The decorated function with retry logic injected.
     """
     def decorator(func: Callable):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            _tries, _delay = tries, delay
-            while _tries > 1:
-                try:
-                    if asyncio.iscoroutinefunction(func):
+        if asyncio.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                _tries, _delay = tries, delay
+                while _tries > 1:
+                    try:
                         return await func(*args, **kwargs)
-                    else:
-                        return func(*args, **kwargs)
-                except exceptions as e:
-                    _tries -= 1
-                    logger.warning(
-                        f"Retry: {func.__name__} failed with {type(e).__name__}: {e}. "
-                        f"Retrying in {_delay}s... ({_tries} tries left)"
-                    )
-                    await asyncio.sleep(_delay)
-                    _delay = min(_delay * backoff, max_delay)
-            
-            # Final attempt
-            if asyncio.iscoroutinefunction(func):
+                    except exceptions as e:
+                        _tries -= 1
+                        logger.warning(
+                            f"Retry: {func.__name__} failed with {type(e).__name__}: {e}. "
+                            f"Retrying in {_delay}s... ({_tries} tries left)"
+                        )
+                        await asyncio.sleep(_delay)
+                        _delay = min(_delay * backoff, max_delay)
                 return await func(*args, **kwargs)
-            else:
+            return async_wrapper
+        else:
+            @functools.wraps(func)
+            def sync_wrapper(*args, **kwargs):
+                _tries, _delay = tries, delay
+                while _tries > 1:
+                    try:
+                        return func(*args, **kwargs)
+                    except exceptions as e:
+                        _tries -= 1
+                        logger.warning(
+                            f"Retry: {func.__name__} failed with {type(e).__name__}: {e}. "
+                            f"Retrying in {_delay}s... ({_tries} tries left)"
+                        )
+                        time.sleep(_delay)
+                        _delay = min(_delay * backoff, max_delay)
                 return func(*args, **kwargs)
-        return wrapper
+            return sync_wrapper
     return decorator

@@ -51,10 +51,9 @@ class Settings(BaseSettings):
         extra = "ignore"
 
 
-@lru_cache()
 def get_settings() -> Settings:
     """
-    Get cached settings instance.
-    Uses lru_cache to avoid reading .env file on every request.
+    Get settings instance.
+    Reads .env file on every call to ensure fresh configuration in development.
     """
     return Settings()

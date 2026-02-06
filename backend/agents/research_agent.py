@@ -64,41 +64,36 @@ Format your responses clearly with sections and bullet points when appropriate."
         self.max_search_results = 5
         self.max_scrape_pages = 3
     
-    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Performs a comprehensive research task based on the provided query.
-        
-        Args:
-            input_data: A dictionary containing:
-                - query (str): The specific research topic.
-                - original_prompt (str): Fallback if 'query' is missing.
-                
-        Returns:
-            dict: Research findings including 'summary', 'key_findings', 
-                'sources', and 'confidence_score'.
-        """
+    async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        print(f"DEBUG: ResearchAgent.execute called with: {input_data}")
         self.start_execution()
         
         try:
-            # Extract query
-            query = input_data.get("query") or input_data.get("original_prompt", "")
+            # Extract query - check multiple possible keys
+            query = (
+                input_data.get("query") or 
+                input_data.get("prompt") or 
+                input_data.get("task") or 
+                input_data.get("user_prompt") or 
+                input_data.get("task_description") or 
+                input_data.get("original_prompt", "")
+            )
             
             if not query:
                 return self.format_output(None, status="error", error="No research query provided")
+
+            # Run basic research workflow
+            results = await self._research_workflow(query)
             
-            self.log_action("research_started", {"query": query[:100]})
-            
-            # Run research workflow
-            result = self._research_workflow(query)
-            
-            self.end_execution()
-            return self.format_output(result)
+            self.end_execution() # Ensure end_execution is called before returning
+            return self.format_output(results)
             
         except Exception as e:
             self.log_action("research_error", {"error": str(e)})
             self.end_execution()
             return self.format_output(None, status="error", error=str(e))
     
-    def _research_workflow(self, query: str) -> Dict[str, Any]:
+    async def _research_workflow(self, query: str) -> Dict[str, Any]:
         """Coordinates the sequential steps of the research process.
         
         Args:
@@ -114,7 +109,7 @@ Format your responses clearly with sections and bullet points when appropriate."
         # Step 2: Execute searches
         all_results = []
         for sq in search_queries:
-            result = self.use_tool("web_search", query=sq, num_results=self.max_search_results)
+            result = await self.use_tool("web_search", query=sq, num_results=self.max_search_results)
             if result.get("success") and result.get("data"):
                 all_results.extend(result["data"])
         
@@ -135,7 +130,7 @@ Format your responses clearly with sections and bullet points when appropriate."
             if not url:
                 continue
                 
-            result = self.use_tool("web_scraper", url=url, extract_type="text")
+            result = await self.use_tool("web_scraper", url=url, extract_type="text")
             if result.get("success") and result.get("data"):
                 scraped_content.append({
                     "url": url,
@@ -286,16 +281,43 @@ Be accurate and cite information from the sources. If sources are insufficient, 
         if response:
             try:
                 # Parse JSON response
-                if "```" in response:
-                    response = response.split("```")[1]
-                    if response.startswith("json"):
-                        response = response[4:]
+                clean_response = response.strip()
+                if "```" in clean_response:
+                    # Extract from markdown code block
+                    parts = clean_response.split("```")
+                    if len(parts) >= 2:
+                        clean_response = parts[1]
+                        if clean_response.startswith("json"):
+                            clean_response = clean_response[4:]
                 
-                return json.loads(response.strip())
-            except:
-                # If JSON parsing fails, return raw response
+                clean_response = clean_response.strip()
+                parsed = json.loads(clean_response)
+                return parsed
+            except Exception as e:
+                # If JSON parsing fails, try to extract summary using regex
+                import re
+                
+                # Try to find summary content
+                summary_match = re.search(r'"summary"\s*:\s*"((?:[^"\\]|\\.)*)(?:"|$)', response, re.DOTALL)
+                if summary_match:
+                    summary_text = summary_match.group(1)
+                    # Unescape common JSON escapes
+                    summary_text = summary_text.replace('\\n', ' ').replace('\\"', '"').replace('\\/', '/')
+                    
+                    # Try to find key_findings
+                    findings = []
+                    findings_match = re.findall(r'"([^"]+)"(?=\s*[,\]])', response)
+                    # Filter to get only finding-like strings (longer than 20 chars)
+                    findings = [f for f in findings_match if len(f) > 20 and 'summary' not in f.lower()][:5]
+                    
+                    return {
+                        "summary": summary_text,
+                        "key_findings": findings
+                    }
+                
+                # Final fallback: return raw response cleaned up
                 return {
-                    "summary": response,
+                    "summary": response.replace('{', '').replace('}', '').replace('"', '').strip()[:1000],
                     "key_findings": []
                 }
         

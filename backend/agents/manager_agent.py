@@ -55,11 +55,13 @@ Your responsibilities:
 
 Think strategically. Plan thoroughly. Optimize for efficiency and quality."""
 
-    def __init__(self):
+    def __init__(self, llm_manager=None, db_session=None):
         super().__init__(
             name="ManagerAgent",
             role="Project planning and agent coordination",
-            system_prompt=self.SYSTEM_PROMPT
+            system_prompt=self.SYSTEM_PROMPT,
+            llm_manager=llm_manager,
+            db_session=db_session
         )
         
         # Attach planning tools
@@ -71,8 +73,9 @@ Think strategically. Plan thoroughly. Optimize for efficiency and quality."""
         self.max_project_duration = 60 * 60  # 1 hour in seconds
         self.complexity_threshold = 0.7  # Above this, use detailed planning
     
-    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Orchestrates comprehensive project planning for complex requests.
+    async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Orchestrates multi-agent workflows.
+ive project planning for complex requests.
         
         Args:
             input_data: A dictionary containing:

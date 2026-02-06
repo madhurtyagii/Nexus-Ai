@@ -8,9 +8,6 @@ import json
 from typing import Optional, Generator, List, Dict, Any
 from config import get_settings
 
-settings = get_settings()
-
-
 class OllamaClient:
     """Client for interacting with local Ollama LLM server."""
     
@@ -18,7 +15,7 @@ class OllamaClient:
         self, 
         base_url: str = None, 
         default_model: str = "llama3.1",
-        timeout: float = 120.0
+        timeout: float = 10.0
     ):
         """
         Initialize Ollama client.
@@ -28,7 +25,12 @@ class OllamaClient:
             default_model: Default model to use
             timeout: Request timeout in seconds
         """
-        self.base_url = base_url or settings.ollama_base_url
+        if base_url is None:
+            from config import get_settings
+            base_url = get_settings().ollama_base_url
+            
+        self.base_url = base_url
+        self.default_model = default_model
         self.default_model = default_model
         self.timeout = timeout
     

@@ -70,7 +70,7 @@ When returning code, use markdown code blocks with the language specified."""
             tools=tools or []
         )
     
-    def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Main execution entry point for all code-related tasks.
         
         Detects the intent (generate, debug, review, explain) from the 
@@ -112,14 +112,20 @@ When returning code, use markdown code blocks with the language specified."""
             # Determine task type
             task_lower = task.lower()
             
+            print(f"🔍 CodeAgent.execute: task_lower[:200] = {task_lower[:200]}")
+            
             if any(word in task_lower for word in ["fix", "debug", "error", "bug", "issue"]):
+                print("🔍 CodeAgent: Taking DEBUG path")
                 result = self._debug_code(task, input_data.get("code", ""))
             elif any(word in task_lower for word in ["review", "check", "analyze", "audit"]):
+                print("🔍 CodeAgent: Taking REVIEW path")
                 result = self._review_code(task, input_data.get("code", ""))
             elif any(word in task_lower for word in ["explain", "what does", "how does"]):
+                print("🔍 CodeAgent: Taking EXPLAIN path")
                 result = self._explain_code(task, input_data.get("code", ""))
             else:
                 # Default: generate code
+                print("🔍 CodeAgent: Taking GENERATE path")
                 result = self._generate_code(task)
             
             self.end_execution()
@@ -141,20 +147,58 @@ When returning code, use markdown code blocks with the language specified."""
         """
         self.log_action("generating_code", {"task": task[:100]})
         
-        # Detect language from task
+        # Detect language from task - prioritize explicit mentions
         language = self._detect_language(task)
         
-        prompt = f"""Generate {language} code for the following task:
+        # Extract just the core task, removing any code from conversation history
+        core_task = task
+        original_task_description = ""
+        
+        if "Current request:" in task:
+            current_request = task.split("Current request:")[-1].strip()
+            if "Note:" in current_request:
+                current_request = current_request.split("Note:")[0].strip()
+            
+            # Check if this is a "write the same in X" type request
+            if any(phrase in current_request.lower() for phrase in ["same", "that in", "it in", "convert", "rewrite"]):
+                # Try to find what the original task was about
+                if "Previous conversation:" in task:
+                    prev_part = task.split("Previous conversation:")[1].split("Current request:")[0]
+                    # Look for the first user message which usually contains the task
+                    if "User:" in prev_part:
+                        first_user_msg = prev_part.split("User:")[1].split("Assistant:")[0].strip()
+                        # This is likely "write a simple calculator" or similar
+                        original_task_description = first_user_msg
+                
+                # Build a clean prompt without the actual code
+                if original_task_description:
+                    core_task = f"{original_task_description} (in {language.upper()})"
+                else:
+                    core_task = current_request
+            else:
+                core_task = current_request
+        
+        print(f"🔧 CodeAgent: Detected language: {language}, Core task: {core_task[:100]}")
+        
+        prompt = f"""You are a code generator. Generate ONLY {language.upper()} code.
 
-{task}
+TASK: {core_task}
 
-Requirements:
-1. Write clean, well-documented code
-2. Include proper error handling
-3. Add docstrings/comments explaining the code
-4. Make it production-ready
+IMPORTANT INSTRUCTIONS:
+1. Return EXACTLY ONE code block with complete, working {language.upper()} code
+2. Start with a 1-2 sentence explanation, then the code block
+3. The code must be complete and runnable - not fragments
+4. Use proper {language.upper()} syntax and best practices
+5. Include comments inside the code
 
-Return the code in a markdown code block with the language specified."""
+FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+Brief explanation of what this code does.
+
+```{language}
+// Your complete code here
+```
+
+DO NOT use multiple code blocks. DO NOT use inline code. Return ONE complete code block."""
 
         response = self.generate_response(prompt, use_cache=False)
         
@@ -439,22 +483,55 @@ Fix the code. Return ONLY the fixed code in a markdown code block."""
     def _detect_language(self, text: str) -> str:
         """
         Detect programming language from task description.
+        When conversation history is present, ONLY analyze the current request.
         """
-        text_lower = text.lower()
+        # If there's conversation context, extract ONLY the current request
+        current_text = text
+        if "Current request:" in text:
+            current_text = text.split("Current request:")[-1].strip()
+            # Remove any trailing context notes
+            if "Note:" in current_text:
+                current_text = current_text.split("Note:")[0].strip()
         
-        for lang in self.SUPPORTED_LANGUAGES:
-            if lang in text_lower:
-                return lang
+        text_lower = current_text.lower()
         
-        # Check for language-specific keywords
-        if any(kw in text_lower for kw in ['javascript', 'js', 'node']):
-            return "javascript"
-        if any(kw in text_lower for kw in ['typescript', 'ts']):
-            return "typescript"
-        if any(kw in text_lower for kw in ['c++', 'cpp']):
-            return "cpp"
+        # Language patterns - check these in the CURRENT REQUEST ONLY
+        language_keywords = {
+            'cpp': ['c++', 'cpp', 'c plus plus'],
+            'python': ['python', 'py '],
+            'javascript': ['javascript', 'js ', ' js', 'node'],
+            'typescript': ['typescript', 'ts '],
+            'java': [' java ', 'java code', 'in java'],
+            'go': [' go ', 'golang', 'in go'],
+            'rust': ['rust ', ' rust', 'in rust'],
+            'ruby': ['ruby'],
+            'php': ['php'],
+            'swift': ['swift'],
+            'kotlin': ['kotlin'],
+            'csharp': ['c#', 'csharp', 'c sharp'],
+            'sql': ['sql'],
+            'bash': ['bash', 'shell'],
+            'html': ['html'],
+            'css': ['css'],
+        }
         
-        # Default to Python
+        # Check for each language in the current request
+        for lang, keywords in language_keywords.items():
+            for keyword in keywords:
+                if keyword in text_lower:
+                    return lang
+        
+        # If no match in current request and there's previous context, 
+        # try to infer from the FULL text but prioritize explicit mentions
+        if "Current request:" in text:
+            full_text = text.lower()
+            # Still check for explicit "in [language]" patterns in the request
+            for lang, keywords in language_keywords.items():
+                for keyword in keywords:
+                    if keyword in current_text.lower():
+                        return lang
+        
+        # Default to Python only if nothing else found
         return "python"
     
     def _extract_issues(self, text: str) -> List[str]:

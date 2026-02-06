@@ -2,6 +2,46 @@ import React from 'react';
 import './ActivityFeed.css';
 
 /**
+ * Format timestamp as relative time for recent events
+ */
+const formatRelativeTime = (timestamp) => {
+    const now = new Date();
+    const eventTime = new Date(timestamp);
+    const diffMs = now - eventTime;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    // If less than 1 minute ago
+    if (diffMins < 1) {
+        return 'Just now';
+    }
+
+    // If less than 1 hour ago
+    if (diffMins < 60) {
+        return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    }
+
+    // If less than 24 hours ago
+    if (diffHours < 24) {
+        return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    }
+
+    // If less than 7 days ago
+    if (diffDays < 7) {
+        return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    }
+
+    // For older events, show full date
+    return eventTime.toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
+
+/**
  * ActivityFeed Component
  * 
  * Combines project lifecycle events (creation, start, completion) and 
@@ -94,12 +134,7 @@ const ActivityFeed = ({ project, tasks = [] }) => {
                         <div className="activity-header">
                             <span className="activity-title">{event.title}</span>
                             <span className="activity-time">
-                                {new Date(event.timestamp).toLocaleString([], {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}
+                                {formatRelativeTime(event.timestamp)}
                             </span>
                         </div>
                         <p className="activity-desc">{event.description}</p>
@@ -111,3 +146,4 @@ const ActivityFeed = ({ project, tasks = [] }) => {
 };
 
 export default ActivityFeed;
+

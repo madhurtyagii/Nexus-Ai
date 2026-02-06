@@ -5,6 +5,7 @@ import api, { projectsAPI, exportsAPI } from '../services/api';
 import { ProjectTimeline, PhaseAccordion, ActivityFeed } from '../components/projects';
 import FileUpload from '../components/files/FileUpload';
 import FileManager from '../components/files/FileManager';
+import MarkdownRenderer from '../components/common/MarkdownRenderer';
 import './ProjectDetail.css';
 
 function ProjectDetail() {
@@ -401,7 +402,7 @@ function ProjectDetail() {
                 <div className="project-output">
                     <h2>📄 Output</h2>
                     <div className="output-content">
-                        <pre>{project.output}</pre>
+                        <MarkdownRenderer content={project.output} />
                     </div>
                 </div>
             )}

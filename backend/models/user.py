@@ -5,7 +5,7 @@ and establishing relationships with tasks, projects, and files.
 """
 
 from __future__ import annotations
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON
 
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -36,6 +36,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    settings = Column(JSON, default=lambda: {})
     
     # Relationships
     tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")

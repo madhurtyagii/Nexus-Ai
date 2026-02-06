@@ -43,9 +43,11 @@ class File(Base):
             "user_id": self.user_id,
             "project_id": self.project_id,
             "task_id": self.task_id,
-            "filename": self.filename,
-            "original_filename": self.original_filename,
+            "filename": self.original_filename, # Use original name for UI display
+            "stored_filename": self.filename,
+            "size": self.file_size, # Frontend expects 'size'
             "file_size": self.file_size,
             "mime_type": self.mime_type,
-            "uploaded_at": self.uploaded_at.isoformat() if self.uploaded_at else None
+            "uploaded_at": self.uploaded_at.isoformat() if self.uploaded_at else None,
+            "created_at": self.uploaded_at.isoformat() if self.uploaded_at else None # Frontend expects 'created_at'
         }

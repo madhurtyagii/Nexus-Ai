@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { tasksAPI } from '../services/api';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
+import MarkdownRenderer from '../components/common/MarkdownRenderer';
 import toast from 'react-hot-toast';
 
 export default function Tasks() {
@@ -203,13 +204,17 @@ export default function Tasks() {
                                                     {getStatusIcon(task.status)} {task.status.replace('_', ' ')}
                                                 </span>
                                                 <span className="text-dark-500">
-                                                    {new Date(task.created_at).toLocaleDateString('en-US', {
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                        year: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
+                                                    {(() => {
+                                                        if (!task.created_at) return '';
+                                                        let dateStr = task.created_at;
+                                                        if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
+                                                            dateStr += 'Z';
+                                                        }
+                                                        const date = new Date(dateStr);
+                                                        if (isNaN(date.getTime())) return task.created_at;
+
+                                                        return date.toLocaleString();
+                                                    })()}
                                                 </span>
                                             </div>
                                             {task.status === 'in_progress' && (
@@ -297,14 +302,21 @@ export default function Tasks() {
                             <div className="mb-4">
                                 <label className="text-dark-400 text-sm">Created</label>
                                 <p className="text-white mt-1">
-                                    {new Date(selectedTask.created_at).toLocaleString()}
+                                    {(() => {
+                                        if (!selectedTask.created_at) return '';
+                                        let dateStr = selectedTask.created_at;
+                                        if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
+                                            dateStr += 'Z';
+                                        }
+                                        return new Date(dateStr).toLocaleString();
+                                    })()}
                                 </p>
                             </div>
                             {selectedTask.output && (
                                 <div className="mb-4">
                                     <label className="text-dark-400 text-sm">Output</label>
-                                    <div className="mt-2 p-4 bg-dark-900 rounded-lg border border-dark-700 whitespace-pre-wrap text-sm text-dark-200 max-h-60 overflow-y-auto">
-                                        {selectedTask.output}
+                                    <div className="mt-2 p-4 bg-dark-900 rounded-lg border border-dark-700 max-h-60 overflow-y-auto">
+                                        <MarkdownRenderer content={selectedTask.output} />
                                     </div>
                                 </div>
                             )}

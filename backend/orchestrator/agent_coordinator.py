@@ -158,7 +158,7 @@ class AgentCoordinator:
         
         return workflow
     
-    def execute_workflow(self, workflow_id: str) -> Dict[str, Any]:
+    async def execute_workflow(self, workflow_id: str) -> Dict[str, Any]:
         """
         Execute a workflow synchronously.
         
@@ -192,7 +192,7 @@ class AgentCoordinator:
             
             # Execute ready steps
             for step in ready_steps:
-                self._execute_step(workflow, step)
+                await self._execute_step(workflow, step)
         
         # Finalize workflow
         if workflow.is_complete():
@@ -212,7 +212,7 @@ class AgentCoordinator:
         
         return workflow.to_dict()
     
-    def _execute_step(self, workflow: Workflow, step: WorkflowStep):
+    async def _execute_step(self, workflow: Workflow, step: WorkflowStep):
         """Execute a single workflow step."""
         step.status = "in_progress"
         step.started_at = datetime.utcnow().isoformat()
@@ -230,7 +230,7 @@ class AgentCoordinator:
             
             # Create and execute agent
             agent = self.factory.create_agent(step.agent_name)
-            result = agent.execute(input_data)
+            result = await agent.execute(input_data)
             
             # Store output
             step.output = result
@@ -267,7 +267,7 @@ class AgentCoordinator:
     
     # Predefined Workflow Templates
     
-    def research_and_report(
+    async def research_and_report(
         self,
         topic: str,
         include_code_examples: bool = False
@@ -324,9 +324,9 @@ class AgentCoordinator:
             steps=steps
         )
         
-        return self.execute_workflow(workflow.workflow_id)
+        return await self.execute_workflow(workflow.workflow_id)
     
-    def analyze_and_visualize(
+    async def analyze_and_visualize(
         self,
         data: Any,
         question: str = None
@@ -368,9 +368,9 @@ class AgentCoordinator:
             steps=steps
         )
         
-        return self.execute_workflow(workflow.workflow_id)
+        return await self.execute_workflow(workflow.workflow_id)
     
-    def code_review_and_document(
+    async def code_review_and_document(
         self,
         code: str,
         language: str = "python"
@@ -422,7 +422,7 @@ class AgentCoordinator:
             steps=steps
         )
         
-        return self.execute_workflow(workflow.workflow_id)
+        return await self.execute_workflow(workflow.workflow_id)
     
     def get_workflow_status(self, workflow_id: str) -> Optional[Dict[str, Any]]:
         """Get the status of a workflow."""

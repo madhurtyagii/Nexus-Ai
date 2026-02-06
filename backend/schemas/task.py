@@ -40,6 +40,10 @@ class SubtaskResponse(BaseModel):
     
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat() + "Z" if v else None
+        }
+
 
 
 class TaskResponse(BaseModel):
@@ -56,6 +60,10 @@ class TaskResponse(BaseModel):
     
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat() + "Z" if v else None
+        }
+
 
 
 class TaskWithSubtasksResponse(TaskResponse):

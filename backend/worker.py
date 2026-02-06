@@ -80,6 +80,7 @@ class Worker:
         self.logger.info(f"📋 Registered agents: {AgentFactory.get_available_agents()}")
         self.logger.info(f"🔧 Registered tools: {[t['name'] for t in self.tool_registry.list_tools()]}")
         
+        import asyncio
         while self.running:
             try:
                 # Try to get a subtask from queue
@@ -91,7 +92,9 @@ class Worker:
                 
                 # Process the subtask
                 self.logger.info(f"📥 Picked up subtask {subtask_id}")
-                self.process_subtask(subtask_id)
+                # Use asyncio.run or similar if not already in a loop, 
+                # but worker.py should ideally be run in an event loop
+                asyncio.run(self.process_subtask(subtask_id))
                 
             except KeyboardInterrupt:
                 self.logger.info("⚠️ Received interrupt signal")
@@ -103,7 +106,7 @@ class Worker:
         self.shutdown()
     
     @retry(exceptions=(DatabaseError, AgentError), tries=3, delay=1)
-    def process_subtask(self, subtask_id: int) -> bool:
+    async def process_subtask(self, subtask_id: int) -> bool:
         """
         Process a single subtask.
         
@@ -171,7 +174,7 @@ class Worker:
                     self.logger.warning("⚠️ No previous completed subtask found to inject content from")
             # END FIX
 
-            output = self.execute_agent(
+            output = await self.execute_agent(
                 subtask.assigned_agent,
                 input_data,
                 db
@@ -258,7 +261,7 @@ class Worker:
         finally:
             db.close()
     
-    def execute_agent(
+    async def execute_agent(
         self, 
         agent_name: str, 
         input_data: Dict[str, Any],
@@ -283,7 +286,7 @@ class Worker:
             self.logger.info(f"🔄 Agent {agent_name} starting execution...")
             
             # Execute the agent
-            result = agent.execute(input_data)
+            result = await agent.execute(input_data)
             
             self.logger.info(f"✅ Agent {agent_name} completed with status: {result.get('status')}")
             
@@ -417,9 +420,15 @@ Be concise but thorough."""
                     if isinstance(output, dict):
                         formatted = f"## {agent} Results\n\n"
                         
+                        # Helper: unwrap a value that might be a dict or string
+                        def unwrap_text(val):
+                            if isinstance(val, dict):
+                                return val.get("summary") or val.get("text") or val.get("content") or str(val)
+                            return str(val) if val else ""
+                        
                         # Content-based outputs (blog, documentation, email, etc.)
                         if "content" in output:
-                            formatted += output.get("content", "")
+                            formatted += unwrap_text(output.get("content"))
                         elif "body" in output:
                             # Email format
                             subject = output.get("subject", "")
@@ -427,40 +436,60 @@ Be concise but thorough."""
                                 formatted += f"**Subject:** {subject}\n\n"
                             formatted += output.get("body", "")
                         elif "documentation" in output:
-                            formatted += output.get("documentation", "")
+                            formatted += unwrap_text(output.get("documentation"))
                         elif "tutorial" in output:
-                            formatted += output.get("tutorial", "")
+                            formatted += unwrap_text(output.get("tutorial"))
                         elif "readme" in output:
-                            formatted += output.get("readme", "")
-                        elif "summary" in output:
-                            # Research format
-                            formatted += output.get("summary", "")
-                            key_findings = output.get("key_findings", [])
-                            sources = output.get("sources", [])
+                            formatted += unwrap_text(output.get("readme"))
+                        elif "summary" in output or "key_findings" in output:
+                            # Research format - the most common case for ResearchAgent
+                            summary_val = output.get("summary", "")
+                            summary_text = unwrap_text(summary_val)
+                            formatted += summary_text
                             
-                            if key_findings:
+                            key_findings = output.get("key_findings", [])
+                            if key_findings and isinstance(key_findings, list):
                                 formatted += "\n\n### Key Findings:\n"
                                 for finding in key_findings:
-                                    formatted += f"- {finding}\n"
+                                    finding_text = unwrap_text(finding) if isinstance(finding, dict) else str(finding)
+                                    formatted += f"- {finding_text}\n"
                             
-                            if sources:
+                            sources = output.get("sources", [])
+                            if sources and isinstance(sources, list):
                                 formatted += "\n\n### Sources:\n"
-                                for src in sources[:3]:
-                                    formatted += f"- [{src.get('title', 'Link')}]({src.get('url', '')})\n"
+                                for src in sources[:5]:
+                                    if isinstance(src, dict):
+                                        formatted += f"- [{src.get('title', 'Link')}]({src.get('url', '')})\n"
+                                    else:
+                                        formatted += f"- {src}\n"
                         elif "code" in output:
                             # Code format
                             lang = output.get("language", "")
-                            formatted += f"```{lang}\n{output.get('code', '')}\n```"
+                            code_text = output.get("code", "")
+                            explanation = output.get("explanation") or output.get("description", "")
+                            if explanation:
+                                formatted += f"{unwrap_text(explanation)}\n\n"
+                            formatted += f"```{lang}\n{code_text}\n```"
                         else:
-                            # Fallback: show all key-value pairs
+                            # Universal Fallback: format each key-value pair as Markdown
                             for k, v in output.items():
-                                if k not in ["word_count", "estimated_read_time", "sections", "tags"]:
-                                    if isinstance(v, str) and len(v) > 50:
-                                        formatted += f"\n\n### {k.replace('_', ' ').title()}\n{v}"
-                                    elif isinstance(v, list):
-                                        formatted += f"\n\n### {k.replace('_', ' ').title()}\n"
-                                        for item in v[:10]:
-                                            formatted += f"- {item}\n"
+                                # Skip metadata/internal fields
+                                if k in ["status", "agent_name", "execution_time_seconds", "tokens_used", 
+                                         "timestamp", "word_count", "estimated_read_time", "sections", 
+                                         "tags", "researched_at", "confidence_score", "query"]:
+                                    continue
+                                
+                                clean_key = k.replace("_", " ").title()
+                                
+                                if isinstance(v, str) and v:
+                                    formatted += f"\n\n### {clean_key}\n{v}"
+                                elif isinstance(v, list) and v:
+                                    formatted += f"\n\n### {clean_key}\n"
+                                    for item in v[:15]:
+                                        item_text = unwrap_text(item) if isinstance(item, dict) else str(item)
+                                        formatted += f"- {item_text}\n"
+                                elif isinstance(v, dict):
+                                    formatted += f"\n\n### {clean_key}\n{unwrap_text(v)}"
                         
                         combined_output.append(formatted)
                     elif output:

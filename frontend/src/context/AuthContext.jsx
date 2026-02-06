@@ -98,6 +98,16 @@ export function AuthProvider({ children }) {
         setUser(null);
     };
 
+    const refreshUser = async () => {
+        try {
+            const response = await api.get('/auth/me');
+            setUser(response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to refresh user:', error);
+        }
+    };
+
     const value = {
         user,
         token,
@@ -105,7 +115,8 @@ export function AuthProvider({ children }) {
         isAuthenticated: !!token,
         login,
         signup,
-        logout
+        logout,
+        refreshUser
     };
 
     return (

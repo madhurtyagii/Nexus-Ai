@@ -339,7 +339,7 @@ export default function Dashboard() {
                                                 <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${getStatusColor(task.status)}`}>
                                                     {task.status}
                                                 </span>
-                                                <span className="text-[10px] font-bold text-dark-500">#{task.id.slice(-6)}</span>
+                                                <span className="text-[10px] font-bold text-dark-500">#{String(task.id).slice(-6)}</span>
                                             </div>
                                             <p className="text-sm font-bold text-dark-100 group-hover:text-white transition-colors line-clamp-2">
                                                 {task.user_prompt}
