@@ -1,5 +1,12 @@
 # 🎨 Nexus AI Frontend
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-✅_Complete-success" alt="Status: Complete" />
+  <img src="https://img.shields.io/badge/React-18.x-61DAFB?logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-5.x-646CFF?logo=vite" alt="Vite" />
+  <img src="https://img.shields.io/badge/PWA-Installable-8b5cf6" alt="PWA" />
+</p>
+
 A premium, reactive dashboard for orchestrating an AI workforce. Built with React 18 and Vite.
 
 ---
@@ -11,7 +18,7 @@ http://localhost:5173
 
 ---
 
-## ✨ v2.1 Features
+## ✨ Features
 
 ### 🎨 Premium UI
 - 🌟 **Glassmorphism Design** - Frosted glass effects with backdrop blur
@@ -39,7 +46,7 @@ http://localhost:5173
 - 👤 **Editable Profile** - Change username & email
 - 🎨 **Appearance** - Theme & cursor effect preferences
 - 🔐 **Security** - Password management
-- 🔑 **API Keys** - View and manage keys
+- 🔑 **API Keys** - Groq/Ollama provider switching
 
 ---
 
@@ -50,9 +57,9 @@ http://localhost:5173
 | **Dashboard** | Command center with Quick Actions, Live status |
 | **Tasks** | Searchable task list with real-time updates |
 | **Agents** | 7 AI agents with stats and direct chat |
-| **Projects** | Project management with phases |
+| **Projects** | Project management with multi-phase execution |
 | **Files** | File browser with RAG indexing |
-| **Workflow Builder** | Visual agent orchestration |
+| **Chat** | RAG-powered chat with your documents |
 | **Settings** | Account, API keys, appearance preferences |
 
 ---
@@ -69,9 +76,38 @@ Expects backend at `http://localhost:8000`.
 ---
 
 ## 🛠️ Tech Stack
-- **Framework**: React 18 (Vite)
-- **Styling**: Tailwind CSS + Custom Glassmorphism
-- **State**: React Hooks + Context
-- **Animation**: Framer Motion
-- **Icons**: Lucide React
-- **PWA**: Service Worker + Manifest
+
+| Component | Technology |
+|-----------|------------|
+| Framework | React 18 (Vite) |
+| Styling | Custom CSS + Glassmorphism |
+| State | React Hooks + Context |
+| Animation | Framer Motion |
+| Icons | Lucide React |
+| PWA | Service Worker + Manifest |
+| Markdown | React Markdown + Syntax Highlighter |
+
+---
+
+## 📁 Project Structure
+
+```
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── common/       # MarkdownRenderer, Skeleton, etc.
+│   │   ├── layout/       # Navbar, Sidebar
+│   │   ├── projects/     # PhaseAccordion, Timeline, ActivityFeed
+│   │   └── files/        # FileUpload, FileManager
+│   ├── pages/            # Route pages
+│   ├── context/          # AuthContext, ThemeContext
+│   ├── services/         # API client
+│   └── styles/           # Global CSS
+└── public/               # Static assets
+```
+
+---
+
+<p align="center">
+  <strong>🎉 Project Completed — February 2026</strong>
+</p>
