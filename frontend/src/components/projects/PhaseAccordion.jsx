@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ExpandableOutput from '../common/ExpandableOutput';
 import './PhaseAccordion.css';
 
 /**
@@ -18,6 +19,7 @@ function PhaseAccordion({ phases, currentPhase, onTaskClick }) {
         // Expand current phase by default
         return currentPhase ? [currentPhase] : [1];
     });
+    const [expandedTask, setExpandedTask] = useState(null);
 
     const togglePhase = (phaseNumber) => {
         setExpandedPhases(prev =>
@@ -27,6 +29,11 @@ function PhaseAccordion({ phases, currentPhase, onTaskClick }) {
         );
     };
 
+    const toggleTaskOutput = (taskKey, e) => {
+        e.stopPropagation();
+        setExpandedTask(prev => prev === taskKey ? null : taskKey);
+    };
+
     const getPhaseStatus = (phaseNumber) => {
         if (!currentPhase) return 'pending';
         if (phaseNumber < currentPhase) return 'completed';
@@ -34,10 +41,17 @@ function PhaseAccordion({ phases, currentPhase, onTaskClick }) {
         return 'pending';
     };
 
-    const getTaskStatus = (task, phaseStatus) => {
-        if (task.status) return task.status;
-        if (phaseStatus === 'completed') return 'completed';
-        return 'pending';
+    const getTaskDisplayStatus = (task, phaseStatus) => {
+        const rawStatus = task.status || (phaseStatus === 'completed' ? 'completed' : 'pending');
+        const agent = (task.assigned_agent || '').toLowerCase();
+
+        // QA SILENCE: If a QA task failed, show it as "reviewing" — not ❌
+        // The backend retries QA silently; user should only see pass or in-review
+        if (rawStatus === 'failed' && agent.includes('qa')) {
+            return 'in_progress';
+        }
+
+        return rawStatus;
     };
 
     if (!phases || phases.length === 0) {
@@ -89,31 +103,58 @@ function PhaseAccordion({ phases, currentPhase, onTaskClick }) {
                             {phase.tasks && phase.tasks.length > 0 ? (
                                 <div className="tasks-list">
                                     {phase.tasks.map((task, taskIndex) => {
-                                        const taskStatus = getTaskStatus(task, status);
+                                        const taskStatus = getTaskDisplayStatus(task, status);
+                                        const taskKey = `${phaseNumber}-${taskIndex}`;
+                                        const hasOutput = task.output && task.output.length > 0;
 
                                         return (
-                                            <div
-                                                key={taskIndex}
-                                                className={`task-row ${taskStatus}`}
-                                                onClick={() => onTaskClick && onTaskClick(task)}
-                                            >
-                                                <span className={`task-status-icon ${taskStatus}`}>
-                                                    {taskStatus === 'completed' ? '✓' :
-                                                        taskStatus === 'in_progress' ? '●' :
-                                                            taskStatus === 'failed' ? '✗' : '○'}
-                                                </span>
-
-                                                <div className="task-details">
-                                                    <span className="task-id">{task.task_id}</span>
-                                                    <span className="task-description">
-                                                        {task.description || 'No description'}
+                                            <div key={taskIndex} className="task-row-wrapper">
+                                                <div
+                                                    className={`task-row ${taskStatus}`}
+                                                    onClick={(e) => {
+                                                        if (hasOutput) {
+                                                            toggleTaskOutput(taskKey, e);
+                                                        } else if (onTaskClick) {
+                                                            onTaskClick(task);
+                                                        }
+                                                    }}
+                                                >
+                                                    <span className={`task-status-icon ${taskStatus}`}>
+                                                        {taskStatus === 'completed' ? '✓' :
+                                                            taskStatus === 'in_progress' ? '●' :
+                                                                taskStatus === 'failed' ? '✗' : '○'}
                                                     </span>
+
+                                                    <div className="task-details">
+                                                        <span className="task-id">{task.task_id}</span>
+                                                        <span className="task-description">
+                                                            {task.description || 'No description'}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="task-meta">
+                                                        <span className="agent-badge">{task.assigned_agent}</span>
+                                                        <div className="task-meta-row">
+                                                            <span className="estimated-time">{task.estimated_time || '--'}</span>
+                                                            {hasOutput && (
+                                                                <span className={`task-expand-icon ${expandedTask === taskKey ? 'open' : ''}`}>
+                                                                    ▾
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
 
-                                                <div className="task-meta">
-                                                    <span className="agent-badge">{task.assigned_agent}</span>
-                                                    <span className="estimated-time">{task.estimated_time || '--'}</span>
-                                                </div>
+                                                {/* Expandable Task Output */}
+                                                {hasOutput && expandedTask === taskKey && (
+                                                    <div className="task-output-panel">
+                                                        <ExpandableOutput
+                                                            content={task.output}
+                                                            title={`${task.task_id} — ${task.assigned_agent}`}
+                                                            collapsedHeight={200}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     })}

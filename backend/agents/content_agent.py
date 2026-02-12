@@ -89,6 +89,9 @@ er's request.
             # Extract parameters
             topic = (
                 input_data.get("topic") or 
+                input_data.get("task") or 
+                input_data.get("user_prompt") or 
+                input_data.get("task_description") or 
                 input_data.get("prompt") or 
                 input_data.get("original_prompt", "")
             )

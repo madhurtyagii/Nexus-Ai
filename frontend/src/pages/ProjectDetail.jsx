@@ -6,6 +6,7 @@ import { ProjectTimeline, PhaseAccordion, ActivityFeed } from '../components/pro
 import FileUpload from '../components/files/FileUpload';
 import FileManager from '../components/files/FileManager';
 import MarkdownRenderer from '../components/common/MarkdownRenderer';
+import ExpandableOutput from '../components/common/ExpandableOutput';
 import './ProjectDetail.css';
 
 function ProjectDetail() {
@@ -401,9 +402,11 @@ function ProjectDetail() {
             {project.output && (
                 <div className="project-output">
                     <h2>📄 Output</h2>
-                    <div className="output-content">
-                        <MarkdownRenderer content={project.output} />
-                    </div>
+                    <ExpandableOutput
+                        content={project.output}
+                        title={project.name || 'Project Output'}
+                        collapsedHeight={350}
+                    />
                 </div>
             )}
         </div>

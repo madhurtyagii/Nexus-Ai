@@ -164,9 +164,12 @@ h6 {
   color: #f8fafc !important;
 }
 
-:root.light .text-dark-100,
+:root.light .text-dark-100 {
+  color: #0f172a !important;
+}
+
 :root.light .text-dark-200 {
-  color: #e2e8f0 !important;
+  color: #1e293b !important;
 }
 
 :root.light .text-dark-300 {
@@ -187,16 +190,68 @@ h6 {
 
 /* Light Mode Background Fixes */
 :root.light .bg-dark-900,
-:root.light .bg-dark-950 {
+:root.light .bg-dark-950,
+:root.light .bg-slate-900,
+:root.light .bg-slate-950 {
   background-color: #f8fafc !important;
 }
 
-:root.light .bg-dark-800 {
+:root.light .bg-dark-800,
+:root.light .bg-slate-800 {
   background-color: #f1f5f9 !important;
 }
 
-:root.light .bg-dark-700 {
+:root.light .bg-dark-700,
+:root.light .bg-slate-700 {
   background-color: #e2e8f0 !important;
+}
+
+:root.light .bg-slate-900\/50,
+:root.light .bg-slate-800\/50 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+:root.light .text-slate-400,
+:root.light .text-dark-400 {
+  color: #64748b !important;
+}
+
+:root.light .text-slate-300,
+:root.light .text-dark-300 {
+  color: #475569 !important;
+}
+
+:root.light .text-slate-200,
+:root.light .text-dark-200 {
+  color: #1e293b !important;
+}
+
+/* Light Mode Gradient Neutralizers */
+:root.light .bg-gradient-to-br,
+:root.light .bg-gradient-to-r,
+:root.light .bg-gradient-to-tr {
+  background-image: none !important;
+  background-color: var(--bg-primary) !important;
+}
+
+/* Specific slate gradient colors for light mode */
+:root.light .from-slate-900,
+:root.light .from-slate-950,
+:root.light .from-dark-900,
+:root.light .from-dark-950 {
+  --tw-gradient-from: #f8fafc !important;
+}
+
+:root.light .via-slate-800,
+:root.light .via-dark-800 {
+  --tw-gradient-stops: var(--tw-gradient-from), #f1f5f9, var(--tw-gradient-to) !important;
+}
+
+:root.light .to-slate-900,
+:root.light .to-slate-950,
+:root.light .to-dark-900,
+:root.light .to-dark-950 {
+  --tw-gradient-to: #f8fafc !important;
 }
 
 /* Light Mode Border Fixes */

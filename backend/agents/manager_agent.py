@@ -158,7 +158,7 @@ Format your response with these exact labels."""
         try:
             response = llm_manager.generate(
                 prompt=prompt,
-                system_prompt="You are a project analyst. Be accurate and realistic.",
+                system="You are a project analyst. Be accurate and realistic.",
                 temperature=0.3
             )
             

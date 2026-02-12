@@ -120,7 +120,27 @@
 
 .status-planning {
     background: rgba(147, 197, 253, 0.2);
-    color: #93c5fd;
+    color: #3b82f6;
+}
+
+:root.light .status-completed {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+}
+
+:root.light .status-in_progress {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+}
+
+:root.light .status-failed {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+}
+
+:root.light .status-planning {
+    background: rgba(59, 130, 246, 0.15);
+    color: #2563eb;
 }
 
 .header-actions {
@@ -310,7 +330,7 @@
 
 .stat-label {
     font-size: 0.75rem;
-    color: var(--text-tertiary, #777);
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -484,7 +504,6 @@
     background: var(--bg-tertiary, #2a2a3a);
     border-radius: 8px;
     padding: 1rem;
-    max-height: 400px;
     overflow-y: auto;
 }
 

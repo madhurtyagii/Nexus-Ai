@@ -15,38 +15,39 @@ class ProjectPlannerTool(BaseTool):
     Uses LLM to intelligently decompose project requirements.
     """
     
-    PLANNING_PROMPT = """Break down this project into phases and tasks.
+    PLANNING_PROMPT = """You are a Principal Software Architect. Your goal is to break down the provided project description into a PROFESSIONAL, PRODUCTION-READY plan.
 
 Project Description:
 {project_description}
 
 Available Agents:
-- ResearchAgent: Web research, information gathering
-- CodeAgent: Code generation, programming tasks
-- ContentAgent: Writing, documentation, content creation
-- DataAgent: Data analysis, visualization, statistics
-- QAAgent: Quality assurance, validation, review
-- ManagerAgent: Project coordination (use sparingly)
+- ResearchAgent: Deep technical research, competitor analysis, API discovery.
+- CodeAgent: Core logic implementation, system architecture, database schema, frontend components.
+- ContentAgent: Professional documentation, marketing copy, README, technical guides.
+- DataAgent: Database modeling, data processing, visualization, analytics.
+- QAAgent: Rigorous code review, security audit, unit/integration test validation.
 
-Create a detailed project plan with:
-1. Multiple phases (Research, Design, Implementation, etc.)
-2. Specific tasks within each phase
-3. Which agent should handle each task
-4. Estimated time for each task
-5. Dependencies between tasks
+PLANNING RULES (CRITICAL):
+1. **NO PLACEHOLDERS**: Never use generic examples like "BankAccount" or "ToDoList" unless the user specifically asked for them.
+2. **DEPTH**: For complex projects, create AT LEAST 4-5 PHASES (e.g., Analysis, System Modeling, Implementation Part 1, Implementation Part 2, Final Synthesis & QA).
+3. **SPECIFICITY**: Tasks must reference the actual project name and specific technical components (e.g., "Implement JWT Auth for [Project Name]" instead of "Implement Auth").
+4. **SEQUENTIAL LOGIC**: Research must feed into Design, Design into Code, and Code into QA.
+5. **AGENT SYNERGY**: Use ResearchAgent to find best practices before CodeAgent starts. Use ContentAgent to document the actual code produced.
 
-Format your response EXACTLY like this:
+Format your response EXACTLY as follows:
 PHASES:
 
-PHASE 1: [Phase Name]
-- Task 1.1: [Description] | Agent: [AgentName] | Time: [X minutes] | Dependencies: [none or task IDs]
-- Task 1.2: [Description] | Agent: [AgentName] | Time: [X minutes] | Dependencies: [1.1]
+PHASE 1: Technical Analysis & Research
+- Task 1.1: [Specific research goal for {project_description}] | Agent: ResearchAgent | Time: 15 minutes | Dependencies: none
+- Task 1.2: [System architecture design description] | Agent: ManagerAgent | Time: 10 minutes | Dependencies: 1.1
 
 PHASE 2: [Phase Name]
-- Task 2.1: [Description] | Agent: [AgentName] | Time: [X minutes] | Dependencies: [1.2]
+- Task 2.1: [Specific implementation step] | Agent: CodeAgent | Time: 20 minutes | Dependencies: 1.2
 
-CRITICAL_PATH: [comma-separated task IDs that must complete in sequence]
-TOTAL_TIME: [X minutes]
+[Continue with remaining phases...]
+
+CRITICAL_PATH: [comma-separated task IDs]
+TOTAL_TIME: [estimated minutes]
 """
 
     def __init__(self):
@@ -72,9 +73,12 @@ TOTAL_TIME: [X minutes]
         try:
             response = llm_manager.generate(
                 prompt=prompt,
-                system_prompt="You are a project planning expert. Create detailed, actionable plans.",
+                system="You are a project planning expert. Create detailed, actionable plans.",
                 temperature=0.4
             )
+            
+            print(f"DEBUG: Raw LLM Response length: {len(response) if response else 0}")
+            # print(f"DEBUG: Raw LLM Response: {response}") # Too long for logs usually, but good for debug
             
             return self._parse_project_plan(response, project_description)
             

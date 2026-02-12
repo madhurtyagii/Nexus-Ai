@@ -135,7 +135,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-dark-900 selection:bg-primary-500/30">
+        <div className="min-h-screen bg-primary selection:bg-primary-500/30">
             <Navbar />
 
             <div className="flex">

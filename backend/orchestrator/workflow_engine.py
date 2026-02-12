@@ -47,7 +47,8 @@ class WorkflowEngine:
         self, 
         workflow: Dict[str, Any], 
         task_id: int,
-        user_id: int = None
+        user_id: int = None,
+        silent_retry: bool = False
     ) -> Dict[str, Any]:
         """
         Execute a complete workflow.
@@ -56,6 +57,7 @@ class WorkflowEngine:
             workflow: Workflow definition with phases and tasks
             task_id: Parent task ID
             user_id: User ID for tracking
+            silent_retry: If True, suppress failure events to UI
             
         Returns:
             Workflow execution results
@@ -64,7 +66,8 @@ class WorkflowEngine:
         self.active_workflows[workflow_id] = {
             "status": "running",
             "started_at": datetime.now(),
-            "task_id": task_id
+            "task_id": task_id,
+            "silent": silent_retry
         }
         
         results = {
@@ -85,7 +88,8 @@ class WorkflowEngine:
                     phase=phase,
                     task_id=task_id,
                     workflow_id=workflow_id,
-                    previous_outputs=results.get("phase_results", [])
+                    previous_outputs=results.get("phase_results", []),
+                    silent=silent_retry
                 )
                 
                 results["phase_results"].append(phase_result)
@@ -115,7 +119,8 @@ class WorkflowEngine:
                             phase=phase,
                             task_id=task_id,
                             workflow_id=workflow_id,
-                            previous_outputs=results.get("phase_results", [])
+                            previous_outputs=results.get("phase_results", []),
+                            silent=silent_retry
                         )
                         results["phase_results"][-1] = phase_result
                 
@@ -155,7 +160,8 @@ class WorkflowEngine:
         phase: Dict[str, Any], 
         task_id: int,
         workflow_id: str,
-        previous_outputs: List[Dict] = None
+        previous_outputs: List[Dict] = None,
+        silent: bool = False
     ) -> Dict[str, Any]:
         """
         Execute a single phase of the workflow.
@@ -186,14 +192,16 @@ class WorkflowEngine:
                 task_results = self._execute_parallel_tasks(
                     tasks=tasks,
                     task_id=task_id,
-                    dependency_outputs=dependency_outputs
+                    dependency_outputs=dependency_outputs,
+                    silent=silent
                 )
             else:
                 # Execute tasks sequentially
                 task_results = self._execute_sequential_tasks(
                     tasks=tasks,
                     task_id=task_id,
-                    dependency_outputs=dependency_outputs
+                    dependency_outputs=dependency_outputs,
+                    silent=silent
                 )
             
             phase_result["task_results"] = task_results
@@ -217,7 +225,8 @@ class WorkflowEngine:
         self,
         tasks: List[Dict],
         task_id: int,
-        dependency_outputs: Dict[str, Any]
+        dependency_outputs: Dict[str, Any],
+        silent: bool = False
     ) -> List[Dict[str, Any]]:
         """Execute multiple tasks in parallel using thread pool."""
         results = []
@@ -248,7 +257,8 @@ class WorkflowEngine:
                     task,
                     task.get("assigned_agent", "ContentAgent"),
                     deps_output,
-                    task_id
+                    task_id,
+                    silent
                 )
                 future_to_task[future] = task
             
@@ -273,7 +283,8 @@ class WorkflowEngine:
         self,
         tasks: List[Dict],
         task_id: int,
-        dependency_outputs: Dict[str, Any]
+        dependency_outputs: Dict[str, Any],
+        silent: bool = False
     ) -> List[Dict[str, Any]]:
         """Execute tasks one by one in sequence."""
         results = []
@@ -300,7 +311,8 @@ class WorkflowEngine:
                 task=task,
                 agent_name=task.get("assigned_agent", "ContentAgent"),
                 dependency_outputs=deps_output,
-                parent_task_id=task_id
+                parent_task_id=task_id,
+                silent=silent
             )
             
             results.append(result)
@@ -320,7 +332,8 @@ class WorkflowEngine:
         task: Dict[str, Any],
         agent_name: str,
         dependency_outputs: Dict[str, Any],
-        parent_task_id: int
+        parent_task_id: int,
+        silent: bool = False
     ) -> Dict[str, Any]:
         """
         Execute a single task by dispatching to the Redis queue and waiting for results.
@@ -337,35 +350,71 @@ class WorkflowEngine:
                 # Check if subtask already exists (recovery)
                 # For simplicity in this implementation, we create a new one
                 
+                task_description = task.get("description", "")
                 input_data = {
-                    "task": task.get("description", ""),
-                    "prompt": task.get("description", ""),
-                    "user_prompt": task.get("description", ""),
-                    "task_description": task.get("description", ""),
+                    "task": task_description,
+                    "prompt": task_description,
+                    "user_prompt": task_description,
+                    "task_description": task_description,
                     "dependency_outputs": dependency_outputs,
                     "parent_task_id": parent_task_id,
-                    "workflow_task_id": task_id
+                    "workflow_task_id": task_id,
+                    "silent_retry": silent
                 }
                 
-                print(f"!!! DEBUG: input_data keys created: {list(input_data.keys())} !!!")
-                print(f"!!! DEBUG: dependency_outputs present: {bool(dependency_outputs)} !!!")
+                # Inject original_task from parent task for QA context
+                try:
+                    parent_task = db.query(Task).filter(Task.id == parent_task_id).first()
+                    if parent_task and parent_task.user_prompt:
+                        input_data["original_task"] = parent_task.user_prompt
+                except Exception:
+                    pass
                 
                 # Special handling for QAAgent content injection
-                if agent_name == "QAAgent" and dependency_outputs:
-                    # Join all dependency outputs as content
+                if agent_name == "QAAgent":
                     content_parts = []
-                    for dep_id, dep_out in dependency_outputs.items():
-                        if isinstance(dep_out, dict):
-                             # Try to extract actual content/code if structured
-                             if "code" in dep_out:
-                                 dep_out = dep_out.get("code")
-                             elif "output" in dep_out:
-                                 dep_out = dep_out.get("output")
-                             else:
-                                 dep_out = str(dep_out)
-                        content_parts.append(str(dep_out))
-                    input_data["content"] = "\n\n".join(content_parts)
-                    input_data["content_type"] = "general"
+                    has_code = False
+                    
+                    if dependency_outputs:
+                        for dep_id, dep_out in dependency_outputs.items():
+                            if isinstance(dep_out, dict):
+                                if "code" in dep_out:
+                                    dep_out = dep_out.get("code")
+                                    has_code = True
+                                elif "content" in dep_out:
+                                    dep_out = dep_out.get("content")
+                                elif "output" in dep_out:
+                                    dep_out = dep_out.get("output")
+                                elif "body" in dep_out:
+                                    dep_out = dep_out.get("subject", "") + "\n\n" + dep_out.get("body", "")
+                                elif "summary" in dep_out:
+                                    dep_out = dep_out.get("summary")
+                                else:
+                                    dep_out = str(dep_out)
+                            if dep_out:
+                                content_parts.append(str(dep_out))
+                    
+                    # Also check for any completed subtasks if no dependency outputs
+                    if not content_parts:
+                        try:
+                            completed_subtasks = db.query(Subtask).filter(
+                                Subtask.task_id == parent_task_id,
+                                Subtask.status == TaskStatus.COMPLETED.value,
+                                Subtask.assigned_agent != "QAAgent"
+                            ).all()
+                            for st in completed_subtasks:
+                                if st.output_data:
+                                    out = st.output_data.get("output", "")
+                                    if isinstance(out, dict):
+                                        out = out.get("code") or out.get("content") or out.get("summary") or str(out)
+                                    if out:
+                                        content_parts.append(f"--- {st.assigned_agent} ---\n{str(out)}")
+                        except Exception:
+                            pass
+                    
+                    # Fallback to task description if still empty
+                    input_data["content"] = "\n\n".join(content_parts) if content_parts else f"Task output for: {task_description}"
+                    input_data["content_type"] = "code" if has_code else "general"
 
                 subtask = Subtask(
                     task_id=parent_task_id,
@@ -475,57 +524,54 @@ class WorkflowEngine:
         if is_critical:
             return {"action": "abort", "reason": f"Critical phase failed: {error}"}
         
-        # Non-critical phases can be skipped
-        if "qa" in phase_name.lower() or "optional" in phase_name.lower():
-            return {"action": "skip", "reason": "Non-critical phase, continuing"}
+        # QA phases should retry, not skip — QA is important for quality
+        if "qa" in phase_name.lower():
+            return {"action": "retry", "reason": "Retrying QA phase"}
+        
+        # Optional phases can be skipped
+        if "optional" in phase_name.lower():
+            return {"action": "skip", "reason": "Optional phase, continuing"}
         
         # Default: retry once
         return {"action": "retry", "reason": "Retrying failed phase"}
     
     def _combine_outputs(self, phase_results: List[Dict]) -> str:
-        """Combine all phase outputs into a single result."""
-        combined = []
+        """Combine all phase outputs into a single result with QA at the end."""
+        main_blocks = []
+        qa_blocks = []
         
         for phase in phase_results:
             phase_name = phase.get("phase_name", "Phase")
-            combined.append(f"\n## {phase_name}\n")
+            current_phase_blocks = []
             
             for task_result in phase.get("task_results", []):
                 if task_result.get("status") == "completed":
-                    output = task_result.get("output", "")
+                    # Filter and categorize output
+                    agent_name = str(task_result.get("agent") or task_result.get("assigned_agent", ""))
+                    output_val = task_result.get("output", "")
+                    output_str = str(output_val)
+                    
+                    # Silence failed QA reports entirely
+                    if "QAAgent" in agent_name and "QA Review - FAILED" in output_str:
+                        continue
+                        
+                    output = output_val
                     if isinstance(output, dict):
-                        # Handle ResearchAgent structured output
+                        # Handle structured outputs (ResearchAgent, CodeAgent, ContentAgent)
                         if "summary" in output and "key_findings" in output:
                             summary = output.get("summary", "")
-                            
-                            # Handle nested/escaped JSON in summary
+                            # ... (keep existing nested JSON/regex parsing logic for summary)
+                            import json
+                            import re
                             if isinstance(summary, str) and summary.strip().startswith("{"):
                                 try:
-                                    import json
                                     parsed = json.loads(summary.strip())
                                     if isinstance(parsed, dict) and "summary" in parsed:
                                         summary = parsed.get("summary", summary)
                                 except:
-                                    # Fallback: use regex to extract text after "summary":
-                                    import re
                                     match = re.search(r'"summary"\s*:\s*"([^"]+)', summary)
                                     if match:
-                                        # Get full value - might be multiline
-                                        start = summary.find('"summary"')
-                                        if start >= 0:
-                                            # Find the value after ":"
-                                            rest = summary[start:]
-                                            val_start = rest.find('": "') or rest.find('":"')
-                                            if val_start >= 0:
-                                                val_rest = rest[val_start + 4:]
-                                                # Find the closing quote (not escaped)
-                                                end = 0
-                                                for i, c in enumerate(val_rest):
-                                                    if c == '"' and (i == 0 or val_rest[i-1] != '\\'):
-                                                        end = i
-                                                        break
-                                                if end > 0:
-                                                    summary = val_rest[:end]
+                                        summary = match.group(1)
                             elif isinstance(summary, dict):
                                 summary = summary.get("summary", str(summary))
                             
@@ -533,56 +579,50 @@ class WorkflowEngine:
                             sources = output.get("sources", [])
                             
                             formatted = f"### Summary\n\n{summary}\n\n"
-                            
                             if key_findings:
                                 formatted += "### Key Findings\n\n"
-                                for i, finding in enumerate(key_findings, 1):
-                                    if isinstance(finding, str):
-                                        formatted += f"{i}. {finding}\n"
-                                    else:
-                                        formatted += f"{i}. {str(finding)}\n"
+                                for i, fnd in enumerate(key_findings, 1):
+                                    formatted += f"{i}. {str(fnd)}\n"
                                 formatted += "\n"
                             
                             if sources:
                                 formatted += "### Sources\n\n"
-                                for source in sources[:5]:  # Limit to 5 sources
-                                    if isinstance(source, dict):
-                                        title = source.get("title", "Untitled")
-                                        url = source.get("url", "")
-                                        formatted += f"- [{title}]({url})\n"
+                                for src in sources[:5]:
+                                    if isinstance(src, dict):
+                                        formatted += f"- [{src.get('title', 'Link')}]({src.get('url', '')})\n"
                                     else:
-                                        formatted += f"- {str(source)}\n"
-                            
+                                        formatted += f"- {str(src)}\n"
                             output = formatted
                         
-                        # Handle CodeAgent structured output
                         elif "code" in output and "language" in output:
-                            lang = output.get("language", "")
-                            code = output.get("code", "")
-                            explanation = output.get("explanation", "")
-                            output = f"### Code ({lang})\n\n```{lang}\n{code}\n```\n\n**Explanation:** {explanation}"
+                            output = f"### Code ({output.get('language')})\n\n```{output.get('language')}\n{output.get('code')}\n```\n\n**Explanation:** {output.get('explanation')}"
                         
-                        # Handle ContentAgent structured output
                         elif "content" in output:
-                            output = output.get("content", "")
+                            output = output.get("content")
                         elif "body" in output:
-                            output = output.get("body", "")
-                        
-                        # Handle generic dict with output key
+                            output = output.get("body")
                         elif "output" in output:
-                            inner = output.get("output", {})
-                            if isinstance(inner, dict):
-                                # Try to format it nicely
-                                output = self._format_dict_as_markdown(inner)
-                            else:
-                                output = str(inner)
-                        
-                        # Fallback for other dicts
+                            inner = output.get("output")
+                            output = self._format_dict_as_markdown(inner) if isinstance(inner, dict) else str(inner)
                         else:
                             output = self._format_dict_as_markdown(output)
                     
-                    combined.append(str(output))
+                    # Sort into buckets
+                    if "QAAgent" in agent_name:
+                        qa_blocks.append(str(output))
+                    else:
+                        current_phase_blocks.append(str(output))
+            
+            if current_phase_blocks:
+                main_blocks.append(f"\n## {phase_name}\n")
+                main_blocks.extend(current_phase_blocks)
         
+        # Combine everything: content first, then all QA reports at the very end
+        combined = main_blocks
+        if qa_blocks:
+            combined.append("\n## Quality Assurance Reviews\n")
+            combined.extend(qa_blocks)
+            
         return "\n".join(combined)
     
     def _format_dict_as_markdown(self, data: Dict) -> str:

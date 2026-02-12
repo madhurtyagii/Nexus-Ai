@@ -379,7 +379,7 @@ List any standards not met."""
 
                 response = llm_manager.generate(
                     prompt=prompt,
-                    system_prompt="You are comparing content against quality standards.",
+                    system="You are comparing content against quality standards.",
                     temperature=0.3
                 )
                 

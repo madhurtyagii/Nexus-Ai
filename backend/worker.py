@@ -150,28 +150,59 @@ class Worker:
             
             # START FIX: Inject content for QAAgent if missing
             if subtask.assigned_agent == "QAAgent" and "content" not in input_data:
-                self.logger.info(f"🔧 QAAgent missing content, attempting to fetch from previous subtask...")
-                # Find most recent completed sibling subtask
-                prev_subtask = db.query(Subtask).filter(
+                self.logger.info(f"🔧 QAAgent missing content, attempting to fetch from completed sibling subtasks...")
+                # Find ALL completed sibling subtasks for this parent task
+                prev_subtasks = db.query(Subtask).filter(
                     Subtask.task_id == subtask.task_id,
                     Subtask.id < subtask_id,
                     Subtask.status == TaskStatus.COMPLETED.value
-                ).order_by(Subtask.id.desc()).first()
+                ).order_by(Subtask.id.asc()).all()
                 
-                if prev_subtask and prev_subtask.output_data:
-                    self.logger.info(f"✅ Found previous subtask {prev_subtask.id} ({prev_subtask.assigned_agent})")
-                    output_content = prev_subtask.output_data.get("output", "")
-                    if isinstance(output_content, dict):
-                         if "code" in output_content: output_content = output_content["code"]
-                         elif "content" in output_content: output_content = output_content["content"]
-                         else: output_content = str(output_content)
+                if prev_subtasks:
+                    content_parts = []
+                    has_code = False
+                    for prev in prev_subtasks:
+                        if prev.output_data:
+                            self.logger.info(f"✅ Collecting output from subtask {prev.id} ({prev.assigned_agent})")
+                            output_content = prev.output_data.get("output", "")
+                            if isinstance(output_content, dict):
+                                if "code" in output_content:
+                                    output_content = output_content["code"]
+                                    has_code = True
+                                elif "content" in output_content:
+                                    output_content = output_content["content"]
+                                elif "body" in output_content:
+                                    output_content = output_content.get("subject", "") + "\n\n" + output_content.get("body", "")
+                                elif "summary" in output_content:
+                                    output_content = output_content.get("summary", "")
+                                else:
+                                    output_content = str(output_content)
+                            if output_content:
+                                content_parts.append(f"--- Output from {prev.assigned_agent} ---\n{str(output_content)}")
+                            if prev.assigned_agent == "CodeAgent":
+                                has_code = True
                     
-                    input_data = dict(input_data) # Create copy to modify
-                    input_data["content"] = str(output_content)
-                    input_data["content_type"] = "code" if prev_subtask.assigned_agent == "CodeAgent" else "general"
-                    self.logger.info(f"💉 Injected content (len={len(input_data['content'])}) into QAAgent input")
-                else:
-                    self.logger.warning("⚠️ No previous completed subtask found to inject content from")
+                    input_data = dict(input_data)  # Create copy to modify
+                    input_data["content"] = "\n\n".join(content_parts) if content_parts else "No content available from previous agents"
+                    input_data["content_type"] = "code" if has_code else "general"
+                    
+                    # Inject original_task from parent task
+                    parent_task = db.query(Task).filter(Task.id == subtask.task_id).first()
+                    if parent_task and parent_task.user_prompt:
+                        input_data["original_task"] = parent_task.user_prompt
+                        # Add premium quality instruction
+                        quality_warning = f"\n\nCRITICAL QUALITY DIRECTIVE:\nYou are working on a high-stakes PROJECT: '{parent_task.user_prompt}'.\nDO NOT use generic placeholders (like 'BankAccount' or 'example').\nDO NOT produce boilerplate. Implement REAL logic specifically for this project.\nProfessional, production-grade output is MANDATORY."
+                        input_data["content"] = input_data.get("content", "") + quality_warning
+                    
+                    self.logger.info(f"💉 Injected content and quality directive into QAAgent")
+            
+            # Inject quality directive for ALL agents if they have original_task
+            if "original_task" in input_data and subtask.assigned_agent != "QAAgent":
+                quality_warning = f"\n\n[QUALITY DIRECTIVE]: You are implementing a part of project: '{input_data['original_task']}'. DO NOT use generic placeholders or example code. Provide specialized, production-ready implementation."
+                if isinstance(input_data.get("instruction"), str):
+                    input_data["instruction"] += quality_warning
+                elif "prompt" in input_data:
+                    input_data["prompt"] += quality_warning
             # END FIX
 
             output = await self.execute_agent(
@@ -189,8 +220,15 @@ class Worker:
                 is_failure = True
             
             if is_failure:
-                subtask.status = TaskStatus.FAILED.value
-                subtask.error_message = output.get("output", "Agent execution failed")
+                # If silent_retry is on, don't mark as FAILED to avoid UI red badges
+                agent_error = output.get("error") or output.get("output", "Agent execution failed")
+                if input_data.get("silent_retry"):
+                    subtask.status = TaskStatus.IN_PROGRESS.value  # Keep it "In Progress" or "Processing"
+                    subtask.error_message = f"Silent Retry Attempt: {agent_error}"
+                    self.logger.info(f"🤐 Silent failure for {subtask.assigned_agent}, keeping status as IN_PROGRESS")
+                else:
+                    subtask.status = TaskStatus.FAILED.value
+                    subtask.error_message = agent_error
                 self.logger.warning(f"❌ Agent {subtask.assigned_agent} returned error: {subtask.error_message}")
             else:
                 subtask.status = TaskStatus.COMPLETED.value
@@ -246,12 +284,17 @@ class Worker:
             # Mark as failed (will retry if retries < max)
             self.queue.mark_failed(subtask_id, str(e))
             
-            # Update database
+            # Update database — respect silent_retry to avoid UI red badges
             try:
                 subtask = db.query(Subtask).filter(Subtask.id == subtask_id).first()
                 if subtask:
-                    subtask.status = TaskStatus.FAILED.value
-                    subtask.error_message = str(e)
+                    if input_data.get("silent_retry"):
+                        subtask.status = TaskStatus.IN_PROGRESS.value
+                        subtask.error_message = f"Silent Retry: {str(e)}"
+                        self.logger.info(f"🤐 Silent exception for {subtask.assigned_agent}, keeping IN_PROGRESS")
+                    else:
+                        subtask.status = TaskStatus.FAILED.value
+                        subtask.error_message = str(e)
                     db.commit()
             except:
                 pass

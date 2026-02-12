@@ -14,7 +14,7 @@ import uuid
 from database import get_db
 from models.user import User
 from models.project import Project
-from models.task import Task
+from models.task import Task, Subtask
 from models.workflow_template import WorkflowTemplate
 from schemas.project_schemas import (
     ProjectCreate, ProjectUpdate, ProjectResponse, ProjectDetail,
@@ -746,48 +746,114 @@ def _execute_project_workflow(project_id: int, execution_id: str, add_qa: bool =
             "phases": project.project_plan or []
         }
         
-        # 1. Create a Master Task for this execution
-        # This is required because WorkflowEngine/Subtasks depend on a Task row
-        master_task = Task(
-            user_id=project.user_id,
-            project_id=project_id,
-            user_prompt=f"Project Execution: {project.name}",
-            status="in_progress"
-        )
-        db.add(master_task)
-        db.commit()
-        db.refresh(master_task)
+        # 1. Reuse or Create a Master Task for this execution
+        # We reuse the same task for the same project to avoid duplicate activity rows
+        master_task = db.query(Task).filter(
+            Task.project_id == project_id,
+            Task.user_prompt.like(f"Project Execution: {project.name}")
+        ).order_by(Task.created_at.desc()).first()
+        
+        if master_task:
+            print(f"🔄 Reusing Master Task {master_task.id} for project {project_id}")
+            master_task.status = "in_progress"
+            master_task.output = None
+            master_task.completed_at = None
+            master_task.created_at = datetime.now() # Update timestamp to appear fresh
+            
+            # Clear old subtasks and messages before starting fresh execution
+            # This ensures only the CURRENT execution history is shown in UI
+            db.query(Subtask).filter(Subtask.task_id == master_task.id).delete()
+            
+            # We also try to clear AgentMessages if they exist
+            try:
+                from models.agent import AgentMessage
+                db.query(AgentMessage).filter(AgentMessage.task_id == master_task.id).delete()
+            except Exception:
+                pass
+                
+            db.commit()
+        else:
+            print(f"🆕 Creating new Master Task for project {project_id}")
+            master_task = Task(
+                user_id=project.user_id,
+                project_id=project_id,
+                user_prompt=f"Project Execution: {project.name}",
+                status="in_progress"
+            )
+            db.add(master_task)
+            db.commit()
+            db.refresh(master_task)
         
         # Add QA checkpoints if requested
-        # DISABLED: This was causing duplicate/unknown tasks and stuck progress
-        # if add_qa:
-        #     try:
-        #         workflow = add_qa_checkpoints_v2(workflow)
-        #     except ImportError:
-        #          print("!!! FATAL: add_qa_checkpoints_v2 not found - Code mismatch !!!")
-        #          pass
+        if add_qa:
+            try:
+                workflow = add_qa_checkpoints_v2(workflow)
+                print(f"✅ QA checkpoints added to workflow")
+            except Exception as e:
+                print(f"⚠️ Could not add QA checkpoints: {e}")
         
-        # Execute workflow
-        engine = WorkflowEngine(db_session=db)
-        result = engine.execute_workflow(
-            workflow=workflow,
-            task_id=master_task.id,
-            user_id=project.user_id
-        )
+        # Execute workflow with QA retry loop
+        # If QA fails, re-run the entire workflow (max 5 retries as requested)
+        MAX_QA_RETRIES = 5
+        final_result = None
         
-        # Update project with results
-        # Only mark completed if actual work was done
-        tasks_completed = result.get("tasks_completed", 0)
-        if tasks_completed > 0 and result.get("status") == "completed":
-            project.status = "completed"
-        elif tasks_completed > 0:
-            project.status = "failed"
-        else:
-            project.status = "failed"
-            result["combined_output"] = "Execution failed: No tasks were executed. Check project plan."
+        for attempt in range(1 + MAX_QA_RETRIES):
+            # Silent retry: don't show FAIL in UI for first 4 attempts
+            is_silent = (attempt < MAX_QA_RETRIES)
+            
+            if attempt > 0:
+                print(f"🔄 QA retry attempt {attempt}/{MAX_QA_RETRIES} - re-executing workflow")
+                
+                # IMPORTANT: Clear subtasks before each retry so the UI only shows latest attempt
+                db.query(Subtask).filter(Subtask.task_id == master_task.id).delete()
+                try:
+                    from models.agent import AgentMessage
+                    db.query(AgentMessage).filter(AgentMessage.task_id == master_task.id).delete()
+                except Exception:
+                    pass
+                db.commit()
+                
+                # Reset the workflow's qa_checkpoints_added flag so it can be re-added
+                workflow.pop("qa_checkpoints_added", None)
+                if add_qa:
+                    try:
+                        workflow = add_qa_checkpoints_v2(workflow)
+                    except Exception:
+                        pass
+            
+            engine = WorkflowEngine(db_session=db)
+            result = engine.execute_workflow(
+                workflow=workflow,
+                task_id=master_task.id,
+                user_id=project.user_id,
+                silent_retry=is_silent
+            )
+            
+            final_result = result
+            
+            # Check if QA tasks passed
+            qa_failed = False
+            for phase_res in result.get("phase_results", []):
+                for task_res in phase_res.get("task_results", []):
+                    agent = task_res.get("agent", "")
+                    status = task_res.get("status", "")
+                    if agent == "QAAgent" and status == "failed":
+                        qa_failed = True
+                        break
+                if qa_failed:
+                    break
+            
+            if not qa_failed:
+                print(f"✅ QA passed on attempt {attempt + 1}")
+                break
+            elif attempt < MAX_QA_RETRIES:
+                print(f"❌ QA failed on attempt {attempt + 1}, will retry...")
+            else:
+                print(f"❌ QA failed after {MAX_QA_RETRIES + 1} attempts, proceeding with best result")
         
-        project.completed_at = datetime.now()  # Use local time for user-facing display
-        project.completed_tasks = tasks_completed
+        result = final_result
+        
+        project.completed_at = datetime.now()
         project.output = result.get("combined_output", "")
         
         # KEY FIX: Sync execution results back to project_plan for UI visuals
@@ -800,8 +866,12 @@ def _execute_project_workflow(project_id: int, execution_id: str, add_qa: bool =
         new_plan = []
         real_total_tasks = 0
         real_completed_tasks = 0
+        workflow_failed = False
         
         for i, phase_res in enumerate(phase_results):
+            if phase_res.get("status") == "failed":
+                workflow_failed = True
+                
             phase_name = phase_res.get("phase_name", f"Phase {i+1}")
             phase_tasks = []
             
@@ -811,6 +881,8 @@ def _execute_project_workflow(project_id: int, execution_id: str, add_qa: bool =
                 status = task_res.get("status", "pending")
                 if status == "completed":
                     real_completed_tasks += 1
+                else:
+                    workflow_failed = True # Any non-completed task means workflow didn't truly finish
                     
                 phase_tasks.append({
                     "task_id": task_res.get("task_id", f"{i+1}.{j+1}"),
@@ -834,6 +906,17 @@ def _execute_project_workflow(project_id: int, execution_id: str, add_qa: bool =
             project.total_tasks = real_total_tasks
             project.completed_tasks = real_completed_tasks
             project.total_phases = len(new_plan)
+        
+        # 4. Determine project status from ACTUAL task outcomes and phase success
+        if real_total_tasks == 0:
+            project.status = "failed"
+            project.output = "Execution failed: No tasks were executed. Check project plan."
+        elif real_completed_tasks == real_total_tasks and not workflow_failed:
+            # ALL tasks passed AND no phase failures — true completion
+            project.status = "completed"
+        else:
+            # Some tasks failed or workflow was aborted/skipped — mark as failed so user sees the issue
+            project.status = "failed"
         
         # Sync master task status
         master_task.status = project.status

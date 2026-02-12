@@ -122,7 +122,7 @@ IMPROVEMENT_SCORE: X/10 (how much better is the preferred version)
         try:
             response = llm_manager.generate(
                 prompt=prompt,
-                system_prompt="You are a quality assurance expert who evaluates content thoroughly and fairly.",
+                system="You are a quality assurance expert who evaluates content thoroughly and fairly.",
                 temperature=0.3  # Lower temperature for consistent evaluation
             )
             

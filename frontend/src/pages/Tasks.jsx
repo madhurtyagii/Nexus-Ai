@@ -4,6 +4,7 @@ import { tasksAPI } from '../services/api';
 import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
 import MarkdownRenderer from '../components/common/MarkdownRenderer';
+import ExpandableOutput from '../components/common/ExpandableOutput';
 import toast from 'react-hot-toast';
 
 export default function Tasks() {
@@ -110,7 +111,7 @@ export default function Tasks() {
     ];
 
     return (
-        <div className="min-h-screen bg-dark-900">
+        <div className="min-h-screen bg-primary">
             <Navbar />
             <div className="flex">
                 <Sidebar />
@@ -120,7 +121,7 @@ export default function Tasks() {
                         <div className="flex items-center gap-4 mb-2">
                             <button
                                 onClick={() => navigate('/dashboard')}
-                                className="bg-dark-700 hover:bg-dark-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                                className="bg-dark-800 hover:bg-dark-700 text-dark-50 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
                                 title="Back to Dashboard"
                             >
                                 ←
@@ -315,8 +316,12 @@ export default function Tasks() {
                             {selectedTask.output && (
                                 <div className="mb-4">
                                     <label className="text-dark-400 text-sm">Output</label>
-                                    <div className="mt-2 p-4 bg-dark-900 rounded-lg border border-dark-700 max-h-60 overflow-y-auto">
-                                        <MarkdownRenderer content={selectedTask.output} />
+                                    <div className="mt-2">
+                                        <ExpandableOutput
+                                            content={selectedTask.output}
+                                            title="Task Output"
+                                            collapsedHeight={250}
+                                        />
                                     </div>
                                 </div>
                             )}

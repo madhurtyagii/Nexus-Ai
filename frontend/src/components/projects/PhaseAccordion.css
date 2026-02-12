@@ -223,3 +223,46 @@
     font-size: 0.8rem;
     color: var(--text-secondary, #a0a0a0);
 }
+
+/* Task Row Wrapper */
+.task-row-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Task Expand Icon */
+.task-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.task-expand-icon {
+    font-size: 0.65rem;
+    color: var(--text-tertiary, #777);
+    transition: transform 0.25s ease;
+}
+
+.task-expand-icon.open {
+    transform: rotate(180deg);
+    color: var(--primary, #667eea);
+}
+
+/* Task Output Panel */
+.task-output-panel {
+    margin: 0 0 0.5rem;
+    padding: 0.5rem 0.5rem 0.5rem 2.5rem;
+    animation: slideDown 0.25s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+
+    to {
+        opacity: 1;
+        max-height: 600px;
+    }
+}

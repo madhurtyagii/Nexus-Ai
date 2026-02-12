@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Navbar from '../components/layout/Navbar';
 import MarkdownRenderer from '../components/common/MarkdownRenderer';
+import ExpandableOutput from '../components/common/ExpandableOutput';
 import { AgentActivityPanelPolling } from '../components/agents/AgentActivityPanel';
 import FileUpload from '../components/files/FileUpload';
 import FileManager from '../components/files/FileManager';
@@ -188,16 +189,16 @@ export default function TaskDetail() {
                 const markdown = formatDictAsMarkdown(output);
                 return <MarkdownRenderer content={markdown} />;
             } catch (e) {
-                return <pre className="text-slate-300 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>;
+                return <pre className="text-dark-200 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>;
             }
         }
 
-        return <pre className="text-slate-300 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>;
+        return <pre className="text-dark-200 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>;
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            <div className="min-h-screen bg-primary">
                 <Navbar />
                 <div className="flex items-center justify-center h-96">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
@@ -208,7 +209,7 @@ export default function TaskDetail() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            <div className="min-h-screen bg-primary">
                 <Navbar />
                 <div className="max-w-4xl mx-auto px-6 py-8">
                     <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
@@ -226,7 +227,7 @@ export default function TaskDetail() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="min-h-screen bg-primary">
             <Navbar />
 
             <div className="max-w-4xl mx-auto px-6 py-8">
@@ -242,7 +243,7 @@ export default function TaskDetail() {
                 </button>
 
                 {/* Header */}
-                <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-6">
+                <div className="bg-card backdrop-blur-sm border border-white/5 rounded-xl p-6 mb-6">
                     <div className="flex items-start justify-between mb-4">
                         <h1 className="text-xl font-bold text-white leading-relaxed flex-1">
                             {task?.user_prompt}
@@ -285,13 +286,13 @@ export default function TaskDetail() {
 
                 {/* Subtasks */}
                 {task?.subtasks && task.subtasks.length > 0 && (
-                    <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-6">
+                    <div className="bg-card backdrop-blur-sm border border-white/5 rounded-xl p-6 mb-6">
                         <h2 className="text-lg font-semibold text-white mb-4">Subtasks</h2>
                         <div className="space-y-3">
                             {task.subtasks.map((subtask) => (
                                 <div
                                     key={subtask.id}
-                                    className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg"
+                                    className="flex items-center justify-between p-3 bg-dark-800/30 rounded-lg"
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className={`w-2 h-2 rounded-full ${subtask.status === 'completed' ? 'bg-emerald-500' :
@@ -299,7 +300,7 @@ export default function TaskDetail() {
                                                 subtask.status === 'failed' ? 'bg-red-500' :
                                                     'bg-yellow-500'
                                             }`} />
-                                        <span className="text-slate-300 font-medium">{subtask.assigned_agent}</span>
+                                        <span className="text-dark-200 font-medium">{subtask.assigned_agent}</span>
                                     </div>
                                     <span className={`text-xs px-2 py-1 rounded ${getStatusColor(subtask.status)}`}>
                                         {subtask.status}
@@ -321,7 +322,7 @@ export default function TaskDetail() {
                 )}
 
                 {/* File Management */}
-                <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-6">
+                <div className="bg-card backdrop-blur-sm border border-white/5 rounded-xl p-6 mb-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-white">📁 Files</h2>
                         <FileUpload
@@ -334,11 +335,13 @@ export default function TaskDetail() {
 
                 {/* Output */}
                 {task?.output && (
-                    <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-6">
+                    <div className="bg-card backdrop-blur-sm border border-white/5 rounded-xl p-6 mb-6">
                         <h2 className="text-lg font-semibold text-white mb-4">Output</h2>
-                        <div className="bg-slate-900/50 rounded-lg p-4">
-                            {renderOutput(task.output)}
-                        </div>
+                        <ExpandableOutput
+                            content={typeof task.output === 'object' ? JSON.stringify(task.output, null, 2) : task.output}
+                            title="Task Output"
+                            collapsedHeight={300}
+                        />
                     </div>
                 )}
 
