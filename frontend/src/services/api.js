@@ -4,7 +4,7 @@ import { setupErrorInterceptors } from '../utils/errorHandler';
 
 // Create axios instance with base configuration
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -111,6 +111,13 @@ export const workflowTemplatesAPI = {
 // Exports API
 export const exportsAPI = {
     exportProject: (id, format) => api.get(`/exports/project/${id}?format=${format}`, { responseType: 'blob' }),
+};
+
+// Voice API
+export const voiceAPI = {
+    transcribe: (formData) => api.post('/voice/transcribe', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
 };
 
 export default api;

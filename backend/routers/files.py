@@ -217,13 +217,15 @@ class FileQueryResult(BaseModel):
     similarity: float
 
 
-def extract_text_from_file(file_path: str, mime_type: str) -> str:
-    """Extract text content from various file types."""
+async def extract_text_from_file_async(file_path: str, mime_type: str, db_session = None) -> str:
+    """Extract text content from various file types, including image descriptions."""
     try:
+        # 1. Standard text files
         if mime_type in ["text/plain", "text/csv", "application/json"]:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 return f.read()[:10000]  # Limit to 10k chars
         
+        # 2. PDF Files
         elif mime_type == "application/pdf":
             try:
                 import PyPDF2
@@ -236,6 +238,7 @@ def extract_text_from_file(file_path: str, mime_type: str) -> str:
             except ImportError:
                 return "[PDF extraction requires PyPDF2]"
         
+        # 3. Word Files
         elif mime_type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]:
             try:
                 from docx import Document
@@ -244,6 +247,28 @@ def extract_text_from_file(file_path: str, mime_type: str) -> str:
                 return text[:10000]
             except ImportError:
                 return "[DOCX extraction requires python-docx]"
+        
+        # 4. Image Files (New: Using VisualAgent for indexing)
+        elif mime_type in ["image/png", "image/jpeg", "image/webp"]:
+            try:
+                from agents.agent_factory import AgentFactory
+                from llm.llm_manager import llm_manager
+                
+                factory = AgentFactory(db_session=db_session, llm=llm_manager)
+                visual_agent = factory.create_agent("VisualAgent")
+                
+                result = await visual_agent.execute({
+                    "image_path": file_path,
+                    "prompt": "Provide a very detailed description of this image for semantic indexing. Describe objects, colors, text, and overall scene in great detail."
+                })
+                
+                if result.get("status") == "success":
+                    analysis = result.get("output", {}).get("analysis", "")
+                    return analysis
+                else:
+                    return f"[Image Analysis Failed]: {result.get('error')}"
+            except Exception as e:
+                return f"[Image Analysis Error]: {str(e)}"
         
         else:
             return f"[Unsupported file type: {mime_type}]"
@@ -261,6 +286,7 @@ async def index_file_for_rag(
     """
     Index a file's content for RAG (semantic search).
     Extracts text and stores in vector database.
+    Now supports images via VisionAgent analysis.
     """
     db_file = db.query(FileModel).filter(FileModel.id == file_id).first()
     
@@ -273,8 +299,8 @@ async def index_file_for_rag(
     if not os.path.exists(db_file.file_path):
         raise HTTPException(status_code=404, detail="Physical file missing")
     
-    # Extract text content
-    text_content = extract_text_from_file(db_file.file_path, db_file.mime_type)
+    # Extract text content (Async now)
+    text_content = await extract_text_from_file_async(db_file.file_path, db_file.mime_type, db_session=db)
     
     if text_content.startswith("["):
         return {"status": "skipped", "message": text_content}
@@ -377,11 +403,10 @@ async def chat_with_files(
         import logging
         logging.error(f"LLM Generation failed: {e}")
         answer = None
-    
     return {
         "answer": answer or (
             "I'm sorry, I encountered an error while synthesizing an answer. "
-            "Please ensure your Groq API key is valid in Settings, or that your local Ollama server is running."
+            "Please ensure your Groq API key is valid in Settings."
         ),
         "sources": sources
     }

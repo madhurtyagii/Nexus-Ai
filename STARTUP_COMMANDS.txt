@@ -1,0 +1,20 @@
+Nexus AI - Startup Commands
+===========================
+
+Follow these steps to start the application manually:
+
+1. BACKEND SERVER
+-----------------
+Open a new terminal and run:
+cd backend
+..\new_venv\Scripts\activate
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
+2. FRONTEND (DASHBOARD)
+-----------------------
+Open another terminal and run:
+cd frontend
+npm run dev
+
+Access the dashboard at: http://localhost:5173
+Backend API is at: http://localhost:8000

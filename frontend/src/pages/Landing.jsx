@@ -19,6 +19,8 @@ import {
     Star,
     MousePointer2
 } from 'lucide-react';
+import SpotlightCard from '../components/common/SpotlightCard';
+import MagneticButton from '../components/common/MagneticButton';
 
 // Floating particles component
 const FloatingParticles = () => {
@@ -108,11 +110,11 @@ const AnimatedLogo = () => (
     </motion.div>
 );
 
-// Feature card component
+// Feature card component — uses SpotlightCard for cursor-tracking glow
 const FeatureCard = ({ icon: Icon, title, description, delay, gradient }) => (
     <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
+        whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.6, delay }}
         whileHover={{ y: -10, scale: 1.02 }}
@@ -120,7 +122,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay, gradient }) => (
     >
         <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl blur-xl -z-10"
             style={{ background: gradient }} />
-        <div className="glass p-8 rounded-3xl border border-white/5 h-full relative overflow-hidden">
+        <SpotlightCard className="p-8 rounded-3xl h-full">
             <motion.div
                 className="absolute top-0 right-0 w-32 h-32 opacity-5"
                 animate={{ rotate: 360 }}
@@ -133,7 +135,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay, gradient }) => (
             </div>
             <h3 className="text-xl font-black text-white mb-3 tracking-tight">{title}</h3>
             <p className="text-dark-400 leading-relaxed">{description}</p>
-        </div>
+        </SpotlightCard>
     </motion.div>
 );
 
@@ -172,16 +174,17 @@ const StatCounter = ({ value, suffix, label, delay }) => {
     return (
         <motion.div
             ref={ref}
-            initial={{ opacity: 0, scale: 0.5 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.5, filter: 'blur(10px)' }}
+            whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay }}
-            className="text-center"
         >
-            <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-purple-400">
-                {count}{suffix}
-            </div>
-            <div className="text-dark-400 font-medium mt-2">{label}</div>
+            <SpotlightCard className="p-6 text-center">
+                <div className="text-5xl font-black gradient-text-vivid stat-number">
+                    {count}{suffix}
+                </div>
+                <div className="text-dark-400 font-medium mt-2 text-sm uppercase tracking-widest">{label}</div>
+            </SpotlightCard>
         </motion.div>
     );
 };
@@ -196,7 +199,7 @@ export default function Landing() {
     const features = [
         {
             icon: Brain,
-            title: "7 Specialized Agents",
+            title: "8 Specialized Agents",
             description: "From planning to execution, our AI agents work in perfect harmony to complete your tasks.",
             gradient: "bg-gradient-to-br from-primary-500 to-cyan-500",
         },
@@ -289,7 +292,7 @@ export default function Landing() {
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.5 }}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-sm font-bold mb-8"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-sm font-bold mb-8 animated-border"
                     >
                         <Sparkles className="w-4 h-4" />
                         <span>Intelligence v2.0 Now Live</span>
@@ -299,36 +302,40 @@ export default function Landing() {
                     <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 leading-[0.95]">
                         <span className="text-white">The Future of</span>
                         <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-purple-400 to-pink-400">
+                        <span className="gradient-text-vivid text-6xl md:text-8xl">
                             AI Automation
                         </span>
                     </h1>
 
                     <p className="text-xl text-dark-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-                        7 specialized AI agents working in perfect harmony. From idea to execution,
+                        8 specialized AI agents working in perfect harmony. From idea to execution,
                         Nexus transforms your vision into reality with unprecedented speed and precision.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <motion.button
-                            onClick={() => navigate('/signup')}
-                            whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(14,165,233,0.3)" }}
-                            whileTap={{ scale: 0.95 }}
-                            className="group flex items-center gap-3 bg-gradient-to-r from-primary-500 to-primary-400 text-white font-bold px-8 py-4 rounded-2xl text-lg transition-all"
-                        >
-                            <Rocket className="w-5 h-5" />
-                            <span>Start Building Free</span>
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </motion.button>
+                        <MagneticButton strength={0.25}>
+                            <motion.button
+                                onClick={() => navigate('/signup')}
+                                whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(14,165,233,0.3)" }}
+                                whileTap={{ scale: 0.95 }}
+                                className="group flex items-center gap-3 bg-gradient-to-r from-primary-500 to-primary-400 text-white font-bold px-8 py-4 rounded-2xl text-lg transition-all"
+                            >
+                                <Rocket className="w-5 h-5" />
+                                <span>Start Building Free</span>
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </motion.button>
+                        </MagneticButton>
 
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-8 py-4 rounded-2xl text-lg transition-all"
-                        >
-                            <Play className="w-5 h-5" />
-                            <span>Watch Demo</span>
-                        </motion.button>
+                        <MagneticButton strength={0.2}>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-8 py-4 rounded-2xl text-lg transition-all"
+                            >
+                                <Play className="w-5 h-5" />
+                                <span>Watch Demo</span>
+                            </motion.button>
+                        </MagneticButton>
                     </div>
                 </motion.div>
 
@@ -355,8 +362,9 @@ export default function Landing() {
 
             {/* Stats Section */}
             <section className="py-24 px-6 relative z-10">
-                <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-                    <StatCounter value="7" suffix="" label="AI Agents" delay={0} />
+                <div className="glow-line max-w-3xl mx-auto mb-16" />
+                <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <StatCounter value="8" suffix="" label="AI Agents" delay={0} />
                     <StatCounter value="500" suffix="ms" label="Avg Response" delay={0.1} />
                     <StatCounter value="99" suffix="%" label="Uptime" delay={0.2} />
                     <StatCounter value="10" suffix="K+" label="Tasks Completed" delay={0.3} />
@@ -373,9 +381,8 @@ export default function Landing() {
                         className="text-center mb-16"
                     >
                         <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-dark-300">
-                                Built for the Future
-                            </span>
+                            <span className="text-white">Built for the </span>
+                            <span className="gradient-text-vivid">Future</span>
                         </h2>
                         <p className="text-dark-400 text-xl max-w-2xl mx-auto">
                             Everything you need to automate complex workflows with AI
@@ -400,7 +407,7 @@ export default function Landing() {
                         className="text-center mb-16"
                     >
                         <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
-                            How It Works
+                            How It <span className="gradient-text-vivid">Works</span>
                         </h2>
                         <p className="text-dark-400 text-xl">From idea to execution in 4 simple steps</p>
                     </motion.div>
@@ -443,7 +450,7 @@ export default function Landing() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
-                    className="max-w-4xl mx-auto text-center glass rounded-[3rem] p-16 border border-white/5 relative overflow-hidden"
+                    className="max-w-4xl mx-auto text-center glass rounded-[3rem] p-16 border border-white/5 relative overflow-hidden animated-border"
                 >
                     <motion.div
                         className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-purple-500/10"
@@ -452,19 +459,21 @@ export default function Landing() {
                     />
                     <div className="relative z-10">
                         <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
-                            Ready to Transform Your Workflow?
+                            Ready to <span className="gradient-text-vivid">Transform</span> Your Workflow?
                         </h2>
                         <p className="text-dark-400 text-xl mb-10 max-w-xl mx-auto">
                             Join thousands of developers automating their work with Nexus AI
                         </p>
-                        <motion.button
-                            onClick={() => navigate('/signup')}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="bg-gradient-to-r from-primary-500 to-purple-500 hover:from-primary-400 hover:to-purple-400 text-white font-bold px-10 py-5 rounded-2xl text-lg transition-all shadow-[0_20px_50px_rgba(14,165,233,0.3)]"
-                        >
-                            Get Started for Free
-                        </motion.button>
+                        <MagneticButton strength={0.3}>
+                            <motion.button
+                                onClick={() => navigate('/signup')}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="bg-gradient-to-r from-primary-500 to-purple-500 hover:from-primary-400 hover:to-purple-400 text-white font-bold px-10 py-5 rounded-2xl text-lg transition-all shadow-[0_20px_50px_rgba(14,165,233,0.3)]"
+                            >
+                                Get Started for Free
+                            </motion.button>
+                        </MagneticButton>
                     </div>
                 </motion.div>
             </section>

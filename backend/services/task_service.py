@@ -188,6 +188,10 @@ class TaskService:
         if not task:
             return False
         
+        # Signal cancellation for any active agent processing this task
+        from services.cancellation_service import cancellation_service
+        cancellation_service.cancel(f"task_{task_id}")
+        
         # Update task status
         task.status = "cancelled"
         

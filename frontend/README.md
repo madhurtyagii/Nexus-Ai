@@ -36,6 +36,8 @@ http://localhost:5173
 - 🧠 **Ask Your Files** - RAG-powered semantic search
 - 🔀 **Workflow Builder** - Drag-and-drop agent orchestration
 - 📤 Export projects to PDF/Markdown/DOCX
+- 🔀 **Visual Workflow Builder** - Drag-and-drop agent orchestration
+- 📤 Export projects to PDF/Markdown/DOCX/JSON
 
 ### 📱 Mobile
 - 📱 PWA - Installable as standalone app
@@ -56,11 +58,11 @@ http://localhost:5173
 |------|-------------|
 | **Dashboard** | Command center with Quick Actions, Live status |
 | **Tasks** | Searchable task list with real-time updates |
-| **Agents** | 7 AI agents with stats and direct chat |
+| **Agents** | **8 AI agents** with stats and direct chat |
 | **Projects** | Project management with multi-phase execution |
-| **Files** | File browser with RAG indexing |
-| **Chat** | RAG-powered chat with your documents |
-| **Settings** | Account, API keys, appearance preferences |
+| **Files** | File browser with RAG indexing & unified chat |
+| **Settings** | Premium account & appearance preferences |
+| **Workflow** | Visual node-based designer |
 
 ---
 

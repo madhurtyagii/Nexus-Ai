@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
+import json
 
 from database import get_db
 from models.agent import Agent
@@ -26,6 +27,13 @@ class ChatRequest(BaseModel):
     agent_name: str
     message: str
     history: Optional[List[ChatMessage]] = []  # Conversation history for context
+    request_id: Optional[str] = None  # Unique ID for cancellation tracking
+    file_id: Optional[int] = None  # File attachment for multimodal agents (VisualAgent)
+    style: Optional[str] = None  # Style preset for VisualAgent
+
+
+class StopRequest(BaseModel):
+    request_id: str
 
 
 class ChatResponse(BaseModel):
@@ -176,13 +184,21 @@ Note: Respond to the current request, using the conversation history for context
         
         # Execute with conversation-aware input
         result = await agent.execute({
+            "prompt": full_prompt,  # Standard key for all agents (AudioAgent, etc.)
             "original_prompt": full_prompt,
             "mode": "chat",
             "has_history": bool(request.history),
-            "requested_language": language_request
+            "requested_language": language_request,
+            "request_id": request.request_id,
+            "file_id": request.file_id
         })
         
         print(f"🤖 [AgentsRouter] Result from {request.agent_name}: {result}")
+        
+        # Cleanup cancellation registry if it was tracked
+        if request.request_id:
+            from services.cancellation_service import cancellation_service
+            cancellation_service.clear(request.request_id)
         
         # Ensure we get a valid output, prioritizing errors if status is error
         output = result.get("output")
@@ -230,7 +246,7 @@ Note: Respond to the current request, using the conversation history for context
                     findings_list = "\n".join([f"- {f}" for f in findings])
                     output = f"### Summary\n{summary}\n\n### Key Findings\n{findings_list}"
                 
-                # Universal Fallback
+                # Universal Fallback (only if still a dict)
                 else:
                     formatted_parts = []
                     for key, value in output.items():
@@ -254,7 +270,8 @@ Note: Respond to the current request, using the conversation history for context
         return ChatResponse(
             agent_name=request.agent_name,
             response=str(output),
-            status="success"
+            status="success",
+            audio_url=audio_url
         )
     except ValueError as e:
         raise HTTPException(
@@ -262,8 +279,25 @@ Note: Respond to the current request, using the conversation history for context
             detail=f"Agent '{request.agent_name}' not found"
         )
     except Exception as e:
+        # Cleanup cancellation registry on error too
+        if request.request_id:
+            try:
+                from services.cancellation_service import cancellation_service
+                cancellation_service.clear(request.request_id)
+            except:
+                pass
         return ChatResponse(
             agent_name=request.agent_name,
             response=f"I encountered an error: {str(e)}",
             status="error"
         )
+
+
+@router.post("/stop")
+async def stop_agent_request(request: StopRequest):
+    """
+    Signal an ongoing agent request to stop.
+    """
+    from services.cancellation_service import cancellation_service
+    cancellation_service.cancel(request.request_id)
+    return {"status": "success", "message": f"Cancellation signal sent for {request.request_id}"}

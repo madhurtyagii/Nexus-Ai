@@ -1,20 +1,18 @@
-"""
-Nexus AI - Redis Client
-Redis connection and utility functions for caching and messaging
-"""
-
 import redis
+import redis.asyncio as async_redis
 import json
 from typing import Optional, Any, Generator
 from config import get_settings
 
 settings = get_settings()
 
-# Create Redis connection pool
+# --- Synchronous Redis (Legacy/Internal) ---
 pool = redis.ConnectionPool.from_url(settings.redis_url, decode_responses=True)
-
-# Create Redis client
 redis_client = redis.Redis(connection_pool=pool)
+
+# --- Asynchronous Redis (FastAPI Middleware & Async Routes) ---
+async_pool = async_redis.ConnectionPool.from_url(settings.redis_url, decode_responses=True)
+async_redis_client = async_redis.Redis(connection_pool=async_pool)
 
 
 def ping_redis() -> bool:

@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     database_url: str
     
     # Redis
-    redis_url: str = "redis://localhost:6379/0"
+    redis_url: str = "redis://127.0.0.1:6379/0"
     
     # JWT Authentication
     secret_key: str
@@ -22,14 +22,13 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 1440  # 24 hours
     
     # LLM Configuration
-    ollama_base_url: str = "http://localhost:11434"
     groq_api_key: str = ""
     
     # Search Configuration
     tavily_api_key: str = ""
     
     # Server
-    host: str = "0.0.0.0"
+    host: str = "127.0.0.1"
     port: int = 8000
     debug: bool = True
     

@@ -6,6 +6,8 @@ coordination.
 """
 
 import uuid
+import json
+import anyio
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
@@ -13,6 +15,7 @@ from agents.base_agent import BaseAgent
 from agents.agent_registry import AgentRegistry
 from tools.project_planner import ProjectPlannerTool
 from tools.task_scheduler import TaskSchedulerTool
+from tools.architect_tool import ArchitectTool
 from llm.llm_manager import llm_manager
 
 
@@ -37,45 +40,44 @@ class ManagerAgent(BaseAgent):
         >>> print(result["output"]["phases"])
     """
     
-    SYSTEM_PROMPT = """You are a project manager for an AI agent system.
+    SYSTEM_PROMPT = """You are the Lead Project Architect for Nexus AI.
 
-Your responsibilities:
-1. Analyze project requirements and complexity
-2. Break down complex projects into manageable phases and tasks
-3. Assign tasks to the most appropriate specialized agents:
-   - ResearchAgent: Web research, information gathering
-   - CodeAgent: Programming, code generation
-   - ContentAgent: Writing, documentation
-   - DataAgent: Data analysis, visualization
-   - QAAgent: Quality assurance, validation
-4. Create realistic timelines and schedules
-5. Identify dependencies between tasks
-6. Coordinate agent work and track progress
-7. Generate comprehensive project summaries
+Your primary mission is to transform high-level human ideas into cohesive, fully-realized project structures.
 
-Think strategically. Plan thoroughly. Optimize for efficiency and quality."""
+Your core responsibilities:
+1. DESIGN ARCHITECTURE: When a user wants to build something new, design the folder structure, API routes, and file mappings.
+2. AUTONOMOUS BUILDING: Use the 'Architect' tool to physically scaffold the project directories and files in one shot.
+3. STRATEGIC PLANNING: Break down complex projects into logical execution phases.
+4. AGENT COORDINATION: Assign sub-tasks to specialists (CodeAgent, ResearchAgent, AudioAgent, etc.) to fill the architected files with logic and assets.
+5. MEDIA SYNTHESIS: Leverage VisualAgent for design and AudioAgent for sound synthesis to create fully immersive project prototypes.
+6. QUALITY & INTEGRITY: Ensure the proposed architecture follows best practices (modular, scalable, clean).
+
+When architecting, categorize files by their function (e.g., 'controllers', 'models', 'components') and create realistic boilerplate content for AI-ready implementation.
+
+Think like a System Architect. Build with precision. Scale with intelligence."""
 
     def __init__(self, llm_manager=None, db_session=None):
-        super().__init__(
-            name="ManagerAgent",
-            role="Project planning and agent coordination",
-            system_prompt=self.SYSTEM_PROMPT,
-            llm_manager=llm_manager,
-            db_session=db_session
-        )
-        
-        # Attach planning tools
+        # Attach building and planning tools
         self.project_planner = ProjectPlannerTool()
         self.task_scheduler = TaskSchedulerTool()
-        self.tools = [self.project_planner, self.task_scheduler]
+        self.architect = ArchitectTool()
+        tools = [self.project_planner, self.task_scheduler, self.architect]
+        
+        super().__init__(
+            name="ManagerAgent",
+            role="Lead System Architect and Agent Coordinator",
+            system_prompt=self.SYSTEM_PROMPT,
+            llm_manager=llm_manager,
+            db_session=db_session,
+            tools=tools
+        )
         
         # Configuration
         self.max_project_duration = 60 * 60  # 1 hour in seconds
         self.complexity_threshold = 0.7  # Above this, use detailed planning
     
     async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Orchestrates multi-agent workflows.
-ive project planning for complex requests.
+        """Orchestrates multi-agent workflows and performs project planning.
         
         Args:
             input_data: A dictionary containing:
@@ -100,13 +102,38 @@ ive project planning for complex requests.
                 "status": "failed"
             }
         
-        # Step 1: Analyze project
-        analysis = self._analyze_project(project_description)
+        import anyio
         
-        # Step 2: Create project plan
-        project_plan = self._create_project_plan(analysis, project_description)
+        # Step 1: Detect if this is a building/scaffolding request
+        build_keywords = ["build", "scaffold", "architect", "structure", "create a project", "bootstrap"]
+        is_build_request = any(kw in project_description.lower() for kw in build_keywords)
         
-        # Step 3: Create execution workflow
+        build_status = None
+        if is_build_request:
+            print(f"🏗️ ManagerAgent: Designing system architecture...")
+            # Step 1.1: Design structure via LLM
+            structure = await self._design_architecture(project_description)
+            
+            # Step 1.2: Physically build the project
+            project_name = self._generate_project_name(project_description)
+            print(f"🔨 ManagerAgent: Physically scaffolding '{project_name}'...")
+            build_result = await self.use_tool("Architect", project_name=project_name, structure=structure)
+            
+            if build_result.get("success"):
+                build_status = build_result.get("data")
+                print(f"✅ ManagerAgent: Architecture built at {build_status.get('root_path')}")
+
+        import anyio
+        
+        # Step 2: Analyze project
+        print(f"🤖 ManagerAgent: Analyzing project...")
+        analysis = await anyio.to_thread.run_sync(self._analyze_project, project_description)
+        
+        # Step 3: Create project plan
+        print(f"📋 ManagerAgent: creating plan...")
+        project_plan = await anyio.to_thread.run_sync(self.project_planner.execute, project_description)
+        
+        # Step 4: Create execution workflow
         workflow = self._create_execution_workflow(project_plan)
         
         # Generate project ID
@@ -128,13 +155,55 @@ ive project planning for complex requests.
             "estimated_minutes": project_plan.get("total_minutes", 45),
             "risk_assessment": self._assess_risks(project_plan),
             "planning_time": planning_time,
-            "status": "planned"
+            "build_info": build_status, # Include build info in output
+            "status": "architected" if build_status else "planned"
         }
         
         # Format output
         result["output"] = self._format_project_report(result)
         
         return result
+
+    async def _design_architecture(self, description: str) -> Dict[str, Any]:
+        """Ask LLM to design a technical folder/file structure."""
+        prompt = f"""You are a Master System Architect. Design a comprehensive, professional, and scalable folder/file structure for the following project.
+        
+Project Goal: {description}
+
+Provide your design in JSON format ONLY. 
+Be precise. Include all standard directories (src, tests, docs, config, etc.) and core files with realistic boilerplate comments.
+
+Expected JSON Structure:
+{{
+    "folders": ["list/of/nested/directories"],
+    "files": {{
+        "path/to/file.py": "content here",
+        "README.md": "# Project Title\\n## Overview\\n..."
+    }}
+}}
+JSON:"""
+
+        try:
+            response = self.llm.generate(
+                prompt=prompt,
+                system="Respond with valid JSON only. No prose. No markdown blocks.",
+                temperature=0.2
+            )
+            
+            # Clean response (remove json code blocks if present)
+            import re
+            json_str = response.strip()
+            if json_str.startswith("```"):
+                json_str = re.sub(r"```(json)?\n", "", json_str)
+                json_str = json_str.split("```")[0].strip()
+            
+            return json.loads(json_str)
+        except Exception as e:
+            print(f"❌ Architect Design Error: {e}")
+            return {
+                "folders": ["src"],
+                "files": {"README.md": f"# {description}\n\nArchitecture generation failed."}
+            }
     
     def _analyze_project(self, description: str) -> Dict[str, Any]:
         """
@@ -309,7 +378,13 @@ Format your response with these exact labels."""
             "validate": "QAAgent",
             "test": "QAAgent",
             "check": "QAAgent",
-            "quality": "QAAgent"
+            "quality": "QAAgent",
+            "image": "VisualAgent",
+            "logo": "VisualAgent",
+            "design": "VisualAgent",
+            "illustration": "VisualAgent",
+            "icon": "VisualAgent",
+            "ui": "VisualAgent"
         }
         
         assignments = {}

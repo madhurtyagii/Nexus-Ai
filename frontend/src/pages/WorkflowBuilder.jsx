@@ -197,10 +197,10 @@ export default function WorkflowBuilder() {
 
                     <div className="flex gap-6">
                         {/* Agent Palette */}
-                        <div className="w-48 flex-shrink-0">
-                            <div className="card sticky top-6">
-                                <h3 className="text-sm font-medium text-dark-400 mb-3">AGENTS</h3>
-                                <div className="space-y-2">
+                        <div className="w-64 flex-shrink-0">
+                            <div className="card sticky top-6 bg-dark-800/50 border-white/[0.05] backdrop-blur-xl p-5">
+                                <h3 className="text-[10px] font-black text-dark-500 mb-6 uppercase tracking-[0.2em] px-1">Available Agents</h3>
+                                <div className="space-y-4">
                                     {agents.map(agent => {
                                         const colors = agentColors[agent.name] || { bg: 'bg-gray-500/20', border: 'border-gray-500/50', text: 'text-gray-400' };
                                         return (
@@ -208,11 +208,11 @@ export default function WorkflowBuilder() {
                                                 key={agent.id}
                                                 draggable
                                                 onDragStart={(e) => handleDragStart(agent, e)}
-                                                className={`p-3 rounded-lg ${colors.bg} border ${colors.border} cursor-grab active:cursor-grabbing hover:scale-105 transition-all`}
+                                                className={`p-4 rounded-xl ${colors.bg} border ${colors.border} cursor-grab active:cursor-grabbing hover:scale-105 hover:shadow-lg hover:shadow-black/20 transition-all group`}
                                             >
-                                                <div className="flex items-center gap-2">
-                                                    <span>{agentEmojis[agent.name] || '🤖'}</span>
-                                                    <span className={`text-sm font-medium ${colors.text}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xl group-hover:scale-110 transition-transform">{agentEmojis[agent.name] || '🤖'}</span>
+                                                    <span className={`text-sm font-semibold ${colors.text}`}>
                                                         {agent.name.replace('Agent', '')}
                                                     </span>
                                                 </div>
@@ -231,10 +231,10 @@ export default function WorkflowBuilder() {
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
                             onMouseLeave={handleMouseUp}
-                            className="flex-1 h-[600px] bg-dark-800 rounded-2xl border border-dark-700 relative overflow-hidden"
+                            className="flex-1 h-[700px] bg-dark-900/50 rounded-2xl border border-white/[0.05] relative overflow-hidden shadow-inner"
                             style={{
-                                backgroundImage: 'radial-gradient(circle, #374151 1px, transparent 1px)',
-                                backgroundSize: '20px 20px'
+                                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
+                                backgroundSize: '40px 40px'
                             }}
                         >
                             {/* Empty State */}
@@ -285,24 +285,26 @@ export default function WorkflowBuilder() {
                                     <div
                                         key={node.id}
                                         onMouseDown={(e) => handleNodeMouseDown(node, e)}
-                                        className={`absolute w-[150px] p-3 rounded-xl ${colors.bg} border-2 ${selectedNode === node.id ? 'border-primary-500' : colors.border
-                                            } cursor-move shadow-lg transition-all`}
+                                        className={`absolute w-[180px] p-4 rounded-2xl ${colors.bg} border-2 ${selectedNode === node.id ? 'border-primary-500 shadow-primary-500/20' : colors.border
+                                            } cursor-move shadow-2xl backdrop-blur-md transition-all group`}
                                         style={{ left: node.x, top: node.y }}
                                     >
                                         {/* Input Handle */}
                                         <div
-                                            className="node-handle absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-dark-600 border-2 border-dark-400 rounded-full cursor-pointer hover:bg-primary-500 hover:border-primary-500 transition-colors"
+                                            className="node-handle absolute -top-2.5 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-dark-900 border-2 border-dark-400 rounded-full cursor-pointer hover:bg-primary-500 hover:border-primary-400 transition-all z-20 shadow-lg"
                                             onClick={() => handleConnectEnd(node.id)}
                                         />
 
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-lg">{agentEmojis[node.agent] || '🤖'}</span>
-                                            <span className={`font-medium ${colors.text} text-sm truncate`}>
-                                                {node.agent.replace('Agent', '')}
-                                            </span>
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <span className="text-2xl group-hover:scale-110 transition-transform">{agentEmojis[node.agent] || '🤖'}</span>
+                                            <div className="flex-1 min-w-0">
+                                                <span className={`block font-bold ${colors.text} text-sm truncate uppercase tracking-tight`}>
+                                                    {node.agent.replace('Agent', '')}
+                                                </span>
+                                            </div>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}
-                                                className="ml-auto text-dark-500 hover:text-red-400 text-xs"
+                                                className="opacity-0 group-hover:opacity-100 p-1.5 text-dark-500 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-all"
                                             >
                                                 ✕
                                             </button>
@@ -310,7 +312,7 @@ export default function WorkflowBuilder() {
 
                                         {/* Output Handle */}
                                         <div
-                                            className="node-handle absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-primary-500 border-2 border-primary-400 rounded-full cursor-pointer hover:scale-125 transition-transform"
+                                            className="node-handle absolute -bottom-2.5 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-primary-500 border-2 border-white/20 rounded-full cursor-pointer hover:scale-125 transition-all z-20 shadow-lg"
                                             onClick={() => handleConnectStart(node.id)}
                                         />
                                     </div>
@@ -320,28 +322,52 @@ export default function WorkflowBuilder() {
 
                         {/* Node Config Panel */}
                         {selectedNode && (
-                            <div className="w-64 flex-shrink-0">
-                                <div className="card sticky top-6">
-                                    <h3 className="text-sm font-medium text-dark-400 mb-3">NODE CONFIG</h3>
+                            <div className="w-80 flex-shrink-0 animate-in fade-in slide-in-from-right-4 duration-300">
+                                <div className="card sticky top-6 bg-dark-800/50 border-white/[0.05] backdrop-blur-xl p-6">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-xs font-black text-dark-500 uppercase tracking-[0.2em]">Node Configuration</h3>
+                                        <button
+                                            onClick={() => setSelectedNode(null)}
+                                            className="text-dark-500 hover:text-white transition-colors"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+
                                     {(() => {
                                         const node = nodes.find(n => n.id === selectedNode);
                                         if (!node) return null;
                                         const colors = agentColors[node.agent] || { text: 'text-gray-400' };
                                         return (
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xl">{agentEmojis[node.agent] || '🤖'}</span>
-                                                    <span className={`font-semibold ${colors.text}`}>{node.agent}</span>
+                                            <div className="space-y-6">
+                                                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-dark-900 shadow-inner`}>
+                                                        {agentEmojis[node.agent] || '🤖'}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <span className={`block font-bold ${colors.text} text-sm uppercase tracking-wider`}>{node.agent}</span>
+                                                        <span className="text-[10px] text-dark-500 font-medium">CONFIGURABLE AGENT</span>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <label className="block text-xs text-dark-400 mb-1">Custom Prompt</label>
+
+                                                <div className="space-y-2">
+                                                    <label className="block text-xs font-bold text-dark-400 uppercase tracking-widest ml-1">Custom Instructions</label>
                                                     <textarea
                                                         value={node.config.prompt || ''}
                                                         onChange={(e) => updateNodeConfig(node.id, { prompt: e.target.value })}
-                                                        placeholder="Optional: Add specific instructions..."
-                                                        rows={3}
-                                                        className="w-full input-field text-sm"
+                                                        placeholder="Add specific instructions for this agent node..."
+                                                        rows={6}
+                                                        className="w-full bg-dark-900/50 border-white/[0.05] focus:border-primary-500/50 rounded-xl text-sm text-dark-100 placeholder:text-dark-600 focus:ring-4 focus:ring-primary-500/10 transition-all resize-none p-4"
                                                     />
+                                                </div>
+
+                                                <div className="pt-4 border-t border-white/[0.05]">
+                                                    <button
+                                                        onClick={() => deleteNode(node.id)}
+                                                        className="w-full py-3 rounded-xl border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-widest hover:bg-red-500/10 transition-all"
+                                                    >
+                                                        Remove Node
+                                                    </button>
                                                 </div>
                                             </div>
                                         );

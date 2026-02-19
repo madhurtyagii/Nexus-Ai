@@ -59,10 +59,18 @@ class BaseTool(ABC):
             ValueError: If missing required parameters
         """
         # Get required parameters (those without defaults)
-        required = [
-            name for name, desc in self.parameters.items()
-            if "(required)" in desc.lower() or "(optional)" not in desc.lower()
-        ]
+        required = []
+        for name, desc in self.parameters.items():
+            # Handle both string descriptions and dict parameter configs
+            if isinstance(desc, dict):
+                is_optional = desc.get("optional", False)
+                if not is_optional:
+                    required.append(name)
+            elif isinstance(desc, str):
+                if "(required)" in desc.lower() or "(optional)" not in desc.lower():
+                    required.append(name)
+            else:
+                required.append(name)
         
         missing = [p for p in required if p not in kwargs or kwargs[p] is None]
         
@@ -138,7 +146,6 @@ class ToolRegistry:
             pass
             
         cls._tools[tool_class.__name__] = tool_class
-        print(f"✅ Registered tool: {tool_class.__name__}")
         return tool_class
     
     @classmethod

@@ -33,6 +33,13 @@ export default function BottomNav() {
                             <span className="text-[10px]">{item.label}</span>
                         </NavLink>
                     ))}
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('toggle-image-gallery'))}
+                        className="bottom-nav-item flex-1"
+                    >
+                        <span className="text-xl mb-0.5">🖼️</span>
+                        <span className="text-[10px]">Gallery</span>
+                    </button>
                 </div>
             </nav>
 

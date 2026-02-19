@@ -25,6 +25,7 @@ import {
     Mail,
     Lock
 } from 'lucide-react';
+import AgentOrbit from '../components/dashboard/AgentOrbit';
 
 // Floating particles background
 const FloatingParticles = () => {
@@ -71,7 +72,7 @@ const FloatingParticles = () => {
 const features = [
     {
         icon: Brain,
-        title: "7 Specialized AI Agents",
+        title: "8 Specialized AI Agents",
         description: "From code generation to quality assurance, each agent masters their domain",
         color: "from-primary-500 to-cyan-400",
         demo: ["ResearchAgent analyzing requirements...", "CoderAgent generating solution...", "QAAgent testing code..."]
@@ -109,7 +110,7 @@ const steps = [
 
 // Stats
 const stats = [
-    { value: "7", label: "AI Agents" },
+    { value: "8", label: "AI Agents" },
     { value: "10x", label: "Faster" },
     { value: "99%", label: "Accuracy" },
     { value: "24/7", label: "Available" }
@@ -194,12 +195,12 @@ export default function Login() {
                     >
                         <h2 className="text-5xl xl:text-6xl font-black text-white leading-[1.1] mb-6">
                             Build Anything with
-                            <span className="block bg-gradient-to-r from-primary-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                            <span className="block gradient-text-vivid">
                                 AI-Powered Teams
                             </span>
                         </h2>
                         <p className="text-xl text-dark-300 max-w-lg leading-relaxed">
-                            Deploy 7 specialized AI agents that research, code, test, and deliver
+                            Deploy 8 specialized AI agents that research, code, test, and deliver
                             production-ready solutions while you focus on what matters.
                         </p>
                     </motion.div>
@@ -217,7 +218,7 @@ export default function Login() {
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
                                     transition={{ delay: 0.4 + i * 0.1, type: "spring" }}
-                                    className="text-4xl font-black bg-gradient-to-br from-white to-dark-300 bg-clip-text text-transparent"
+                                    className="text-4xl font-black bg-gradient-to-br from-white to-dark-300 bg-clip-text text-transparent stat-number"
                                 >
                                     {stat.value}
                                 </motion.p>
@@ -305,22 +306,29 @@ export default function Login() {
                         </div>
                     </motion.div>
 
-                    {/* How It Works (Bottom) */}
+                    {/* Agent Orbit Visualization */}
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6 }}
-                        className="mt-auto pt-8"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.5, duration: 0.6 }}
+                        className="mt-auto pt-4"
                     >
-                        <p className="text-xs font-bold text-dark-500 uppercase tracking-widest mb-4">How It Works</p>
-                        <div className="flex gap-6">
-                            {steps.map((step, i) => (
-                                <div key={i} className="flex-1">
-                                    <p className="text-primary-500 font-black text-lg mb-1">{step.num}</p>
-                                    <p className="text-white font-bold text-sm">{step.title}</p>
-                                    <p className="text-dark-500 text-xs">{step.desc}</p>
+                        <div className="glass p-6 rounded-2xl border border-white/[0.06]">
+                            <div className="flex items-center gap-8">
+                                <AgentOrbit agents={Array.from({ length: 8 }, (_, i) => ({ id: i, status: 'active' }))} className="w-28 h-28" />
+                                <div>
+                                    <p className="text-xs font-bold text-dark-500 uppercase tracking-widest mb-3">How It Works</p>
+                                    <div className="space-y-2">
+                                        {steps.map((step, i) => (
+                                            <div key={i} className="flex items-center gap-3">
+                                                <span className="text-primary-500 font-black text-xs stat-number">{step.num}</span>
+                                                <span className="text-white font-bold text-xs">{step.title}</span>
+                                                <span className="text-dark-600 text-[10px] hidden xl:inline">— {step.desc}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </motion.div>
                 </div>
@@ -348,10 +356,12 @@ export default function Login() {
                         </div>
 
                         {/* Login Card */}
-                        <div className="glass p-8 lg:p-10 rounded-3xl border border-white/10 relative overflow-hidden">
+                        <div className="animated-border p-8 lg:p-10 rounded-3xl relative overflow-hidden">
+                            {/* Inner glass effect */}
+                            <div className="absolute inset-[1px] rounded-[22px] bg-dark-950/90 backdrop-blur-xl" />
                             {/* Card Glow */}
-                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary-500/20 rounded-full blur-3xl" />
-                            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl" />
+                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary-500/10 rounded-full blur-3xl" />
+                            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/5 rounded-full blur-3xl" />
 
                             <div className="relative z-10">
                                 <div className="text-center mb-8">
@@ -360,7 +370,7 @@ export default function Login() {
                                         animate={{ y: 0, opacity: 1 }}
                                         transition={{ delay: 0.3 }}
                                     >
-                                        <h2 className="text-2xl lg:text-3xl font-black text-white mb-2">Welcome Back</h2>
+                                        <h2 className="text-2xl lg:text-3xl font-black text-white mb-2">Welcome <span className="gradient-text-vivid">Back</span></h2>
                                         <p className="text-dark-400">Sign in to access your AI workspace</p>
                                     </motion.div>
                                 </div>

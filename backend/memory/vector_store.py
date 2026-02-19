@@ -151,10 +151,9 @@ class VectorStore:
         if CHROMADB_AVAILABLE:
             try:
                 os.makedirs(self.persist_directory, exist_ok=True)
-                self.client = chromadb.PersistentClient(
-                    path=self.persist_directory,
-                    settings=ChromaSettings(anonymized_telemetry=False, allow_reset=True)
-                )
+                # Modern ChromaDB clients don't need complex Settings for persistence
+                # if path is provided directly.
+                self.client = chromadb.PersistentClient(path=self.persist_directory)
                 logger.info(f"✅ VectorStore initialized with ChromaDB at: {self.persist_directory}")
             except Exception as e:
                 logger.warning(f"⚠️ ChromaDB failed to init: {e}. Using Resilient Storage.")

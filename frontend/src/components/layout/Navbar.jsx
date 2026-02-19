@@ -13,7 +13,8 @@ import {
     Zap,
     CheckCircle2,
     Info,
-    AlertTriangle
+    AlertTriangle,
+    Command
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -21,8 +22,16 @@ export default function Navbar() {
     const navigate = useNavigate();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showAccountMenu, setShowAccountMenu] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
     const notificationRef = useRef(null);
     const accountRef = useRef(null);
+
+    // Track scroll for dynamic border
+    useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 10);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -43,7 +52,6 @@ export default function Navbar() {
         navigate('/login');
     };
 
-    // Sample notifications
     const notifications = [
         { id: 1, type: 'success', title: 'Task Completed', message: 'Your AI task finished successfully', time: '2m ago' },
         { id: 2, type: 'info', title: 'New Agent Online', message: 'Research Agent is now available', time: '10m ago' },
@@ -68,21 +76,48 @@ export default function Navbar() {
         <motion.nav
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="h-[76px] glass border-b border-white/5 px-6 flex items-center justify-between sticky top-0 z-50 m-4 rounded-3xl"
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className={`h-[72px] glass px-6 flex items-center justify-between sticky top-0 z-50 m-4 rounded-2xl transition-all duration-500 ${scrolled
+                ? 'border-b-2 border-transparent shadow-lg'
+                : 'border-b border-white/5'
+                }`}
+            style={{
+                borderImage: scrolled
+                    ? 'linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.3), rgba(139, 92, 246, 0.3), transparent) 1'
+                    : 'none',
+            }}
         >
+            {/* Logo */}
             <Link to="/dashboard" className="flex items-center gap-3 group">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-[0_0_25px_rgba(14,165,233,0.4)] group-hover:scale-105 transition-transform overflow-hidden bg-gradient-to-br from-primary-500/20 to-purple-500/20 p-0.5">
-                    <img src="/logo.png" alt="Nexus AI" className="w-full h-full object-contain rounded-lg" />
+                <div className="relative">
+                    <motion.div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary-500/20 to-purple-500/20 p-0.5"
+                        whileHover={{ scale: 1.08, rotate: 3 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                    >
+                        <img src="/logo.png" alt="Nexus AI" className="w-full h-full object-contain rounded-lg" />
+                    </motion.div>
+
+                    {/* Logo glow */}
+                    <div className="absolute inset-0 rounded-xl opacity-40 group-hover:opacity-70 transition-opacity"
+                        style={{ boxShadow: '0 0 20px rgba(14, 165, 233, 0.3)' }}
+                    />
                 </div>
+
                 <div className="flex flex-col">
-                    <span className="text-xl font-black tracking-tighter text-white leading-none">Nexus AI</span>
-                    <span className="text-[10px] uppercase tracking-[0.15em] text-primary-400 font-bold mt-0.5">Intelligence v2.0</span>
+                    <span className="text-lg font-black tracking-tighter text-white leading-none">
+                        Nexus AI
+                    </span>
+                    <span className="text-[9px] uppercase tracking-[0.2em] font-bold mt-0.5 gradient-text">
+                        Intelligence v2.0
+                    </span>
                 </div>
             </Link>
 
-            <div className="flex items-center gap-5">
-                {/* Search Button - Triggers Command Palette */}
-                <button
+            {/* Right Section */}
+            <div className="flex items-center gap-3">
+                {/* Search Bar */}
+                <motion.button
                     onClick={() => {
                         const event = new KeyboardEvent('keydown', {
                             key: 'k',
@@ -92,63 +127,80 @@ export default function Navbar() {
                         });
                         document.dispatchEvent(event);
                     }}
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/5 text-dark-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                    className="hidden md:flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-dark-500 hover:text-dark-300 hover:bg-white/[0.06] hover:border-white/10 transition-all cursor-pointer group"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                 >
-                    <Search className="w-4 h-4" />
+                    <Search className="w-3.5 h-3.5 group-hover:text-primary-400 transition-colors" />
                     <span className="text-xs font-medium">Search anything...</span>
-                    <kbd className="text-[10px] opacity-40 ml-4 px-1.5 py-0.5 rounded bg-white/10 uppercase">⌘K</kbd>
-                </button>
+                    <div className="flex items-center gap-0.5 ml-4 opacity-30">
+                        <kbd className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 font-mono">⌘</kbd>
+                        <kbd className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 font-mono">K</kbd>
+                    </div>
+                </motion.button>
 
-                <div className="h-6 w-px bg-white/5 mx-2 hidden md:block" />
+                <div className="h-5 w-px bg-white/[0.06] mx-1 hidden md:block" />
 
-                <div className="flex items-center gap-4">
-                    {/* Notifications Dropdown */}
+                <div className="flex items-center gap-2">
+                    {/* Notifications */}
                     <div className="relative" ref={notificationRef}>
-                        <button
+                        <motion.button
                             onClick={() => {
                                 setShowNotifications(!showNotifications);
                                 setShowAccountMenu(false);
                             }}
-                            className="p-2 text-dark-400 hover:text-primary-400 hover:bg-primary-500/10 rounded-xl transition-all relative group/btn"
+                            className="p-2.5 text-dark-400 hover:text-primary-400 hover:bg-primary-500/10 rounded-xl transition-all relative"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                         >
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full border-2 border-dark-900 group-hover/btn:scale-125 transition-transform" />
-                        </button>
+                            <Bell className="w-[18px] h-[18px]" />
+                            {/* Animated notification badge */}
+                            <motion.span
+                                className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full"
+                                animate={{ scale: [1, 1.3, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                style={{ boxShadow: '0 0 6px rgba(14, 165, 233, 0.6)' }}
+                            />
+                        </motion.button>
 
                         <AnimatePresence>
                             {showNotifications && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    className="absolute right-0 top-full mt-2 w-80 glass rounded-2xl border border-white/10 shadow-2xl overflow-hidden z-50"
+                                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                                    className="absolute right-0 top-full mt-2 w-80 glass rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden z-50"
                                 >
                                     <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
                                         <h3 className="text-sm font-bold text-white">Notifications</h3>
-                                        <span className="text-[10px] font-bold text-primary-400 uppercase tracking-wider">
+                                        <span className="text-[10px] font-bold text-primary-400 uppercase tracking-wider bg-primary-500/10 px-2 py-0.5 rounded-full">
                                             {notifications.length} New
                                         </span>
                                     </div>
                                     <div className="max-h-80 overflow-y-auto">
-                                        {notifications.map((notif) => (
-                                            <div
+                                        {notifications.map((notif, i) => (
+                                            <motion.div
                                                 key={notif.id}
-                                                className="px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer border-b border-white/5 last:border-0"
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: i * 0.05 }}
+                                                className="px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer border-b border-white/[0.03] last:border-0"
                                             >
                                                 <div className="flex items-start gap-3">
-                                                    <div className="p-1.5 rounded-lg bg-white/5">
+                                                    <div className="p-1.5 rounded-lg bg-white/5 mt-0.5">
                                                         {getNotificationIcon(notif.type)}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-bold text-white">{notif.title}</p>
-                                                        <p className="text-xs text-dark-400 line-clamp-1">{notif.message}</p>
-                                                        <p className="text-[10px] text-dark-500 mt-1">{notif.time}</p>
+                                                        <p className="text-sm font-semibold text-white">{notif.title}</p>
+                                                        <p className="text-xs text-dark-400 line-clamp-1 mt-0.5">{notif.message}</p>
+                                                        <p className="text-[10px] text-dark-600 mt-1">{notif.time}</p>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </motion.div>
                                         ))}
                                     </div>
-                                    <div className="px-4 py-3 border-t border-white/5">
+                                    <div className="px-4 py-2.5 border-t border-white/5">
                                         <button
                                             onClick={() => {
                                                 navigate('/settings');
@@ -166,70 +218,90 @@ export default function Navbar() {
 
                     {/* Account Dropdown */}
                     <div className="relative" ref={accountRef}>
-                        <button
+                        <motion.button
                             onClick={() => {
                                 setShowAccountMenu(!showAccountMenu);
                                 setShowNotifications(false);
                             }}
-                            className="flex items-center gap-3 pl-1 pr-3 py-1 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-full transition-all group/profile"
+                            className="flex items-center gap-3 pl-1 pr-1 py-1 rounded-full transition-all group/profile"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                         >
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-lg overflow-hidden relative">
-                                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover/profile:opacity-100 transition-opacity" />
-                                {user?.username?.[0]?.toUpperCase() || 'U'}
+                            {/* Animated gradient ring avatar */}
+                            <div className="relative group-hover/profile:scale-105 transition-transform duration-300">
+                                <div
+                                    className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 via-purple-500 to-pink-500 flex items-center justify-center overflow-hidden transition-all duration-300 relative z-10"
+                                    style={{
+                                        boxShadow: '0 4px 10px rgba(0,0,0,0.1)', // Default subtle shadow
+                                    }}
+                                >
+                                    <div className="absolute inset-0 bg-white/0 group-hover/profile:bg-white/10 transition-colors duration-300" />
+                                    <User className="w-5 h-5 text-white relative z-10" fill="rgba(255,255,255,0.2)" />
+                                </div>
+
+                                {/* Pure CSS Glow using box-shadow on a pseudo-element equivalent (absolute div) to ensure perfect circle */}
+                                <div
+                                    className="absolute inset-0 rounded-full opacity-0 group-hover/profile:opacity-100 transition-opacity duration-300 -z-10"
+                                    style={{
+                                        boxShadow: '0 0 15px 2px rgba(139, 92, 246, 0.6), 0 0 30px 5px rgba(14, 165, 233, 0.3)',
+                                    }}
+                                />
                             </div>
-                            <div className="hidden sm:block text-left">
-                                <p className="text-xs font-bold text-white leading-none">{user?.username}</p>
-                                <p className="text-[10px] text-dark-400 font-medium mt-0.5">Pro Developer</p>
+
+                            <div className="hidden sm:block text-left mr-2">
+                                <p className="text-sm font-bold text-white leading-none group-hover/profile:text-primary-400 transition-colors">{user?.username}</p>
+                                <p className="text-[10px] text-dark-500 font-medium mt-0.5">Pro Developer</p>
                             </div>
-                            <ChevronDown className={`w-3.5 h-3.5 text-dark-500 transition-transform ${showAccountMenu ? 'rotate-180' : ''}`} />
-                        </button>
+                            <ChevronDown className={`w-3.5 h-3.5 text-dark-500 transition-transform duration-300 group-hover/profile:text-white ${showAccountMenu ? 'rotate-180' : ''}`} />
+                        </motion.button>
 
                         <AnimatePresence>
                             {showAccountMenu && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    className="absolute right-0 top-full mt-2 w-56 glass rounded-2xl border border-white/10 shadow-2xl overflow-hidden z-50"
+                                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                                    className="absolute right-0 top-full mt-2 w-64 glass rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden z-50"
                                 >
-                                    {/* User Info Header */}
-                                    <div className="px-4 py-4 border-b border-white/5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white">
-                                                {user?.username?.[0]?.toUpperCase() || 'U'}
+                                    <div className="px-5 py-5 border-b border-white/5 bg-white/[0.02]">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                                                <User className="w-6 h-6 text-white" fill="rgba(255,255,250,0.2)" />
                                             </div>
                                             <div>
                                                 <p className="text-sm font-bold text-white">{user?.username}</p>
-                                                <p className="text-xs text-dark-400">{user?.email}</p>
+                                                <p className="text-xs text-dark-500">{user?.email}</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Menu Items */}
-                                    <div className="py-2">
-                                        {accountMenuItems.map((item) => (
-                                            <button
+                                    <div className="py-1.5">
+                                        {accountMenuItems.map((item, i) => (
+                                            <motion.button
                                                 key={item.label}
+                                                initial={{ opacity: 0, x: -8 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: i * 0.04 }}
                                                 onClick={() => {
                                                     item.action();
                                                     setShowAccountMenu(false);
                                                 }}
-                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-dark-300 hover:text-white hover:bg-white/5 transition-colors"
+                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-dark-400 hover:text-white hover:bg-white/[0.04] transition-all"
                                             >
                                                 <item.icon className="w-4 h-4" />
                                                 <span className="text-sm font-medium">{item.label}</span>
-                                            </button>
+                                            </motion.button>
                                         ))}
                                     </div>
 
-                                    {/* Logout */}
-                                    <div className="border-t border-white/5 py-2">
+                                    <div className="border-t border-white/5 py-1.5">
                                         <button
                                             onClick={() => {
                                                 handleLogout();
                                                 setShowAccountMenu(false);
                                             }}
-                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-red-400 hover:bg-red-500/10 transition-colors"
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-red-400 hover:bg-red-500/10 transition-all"
                                         >
                                             <LogOut className="w-4 h-4" />
                                             <span className="text-sm font-medium">Log out</span>
@@ -240,13 +312,16 @@ export default function Navbar() {
                         </AnimatePresence>
                     </div>
 
-                    <button
+                    {/* Logout button */}
+                    <motion.button
                         onClick={handleLogout}
-                        className="p-2 text-dark-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
+                        className="p-2.5 text-dark-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
                         title="Logout"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                     >
-                        <LogOut className="w-5 h-5" />
-                    </button>
+                        <LogOut className="w-[18px] h-[18px]" />
+                    </motion.button>
                 </div>
             </div>
         </motion.nav>

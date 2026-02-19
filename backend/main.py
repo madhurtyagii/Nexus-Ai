@@ -64,6 +64,8 @@ from routers.feedback import router as feedback_router
 from routers.files import router as files_router
 from routers.workflow_templates import router as workflow_templates_router
 from routers.exports import router as exports_router
+from routers.voice import router as voice_router
+from routers.execute import router as execute_router
 
 # Import messaging
 from messaging import ws_manager
@@ -72,6 +74,7 @@ from messaging import ws_manager
 from middleware.rate_limit import RateLimitMiddleware
 from middleware.security_headers import SecurityHeadersMiddleware
 from middleware.request_id import RequestIDMiddleware
+from fastapi.staticfiles import StaticFiles
 
 
 settings = get_settings()
@@ -97,6 +100,11 @@ async def lifespan(app: FastAPI):
     try:
         from models.agent import Agent
         from agents.agent_registry import AgentRegistry
+        from agents import register_all_agents
+        
+        # 0. Register all agents in memory
+        register_all_agents()
+        print(f"🧠 Registered agents: {AgentRegistry.list_agents()}")
         
         print(f"🔍 Database Engine URL: {engine.url}")
         
@@ -113,7 +121,10 @@ async def lifespan(app: FastAPI):
                 {"name": "ContentAgent", "role": "Writer", "description": "Specialized in content creation and editing."},
                 {"name": "DataAgent", "role": "Analyst", "description": "Specialized in data analysis and visualization."},
                 {"name": "QAAgent", "role": "Quality Assurance", "description": "Specialized in testing and validation."},
-                {"name": "ManagerAgent", "role": "Orchestrator", "description": "Specialized in task planning and agent coordination."}
+                {"name": "ManagerAgent", "role": "Orchestrator", "description": "Specialized in task planning and agent coordination."},
+                {"name": "VisualAgent", "role": "Designer", "description": "Unified visual intelligence — analyzes, generates, and edits images."},
+                {"name": "AudioAgent", "role": "Sound Engineer", "description": "Specialized in sound synthesis and audio processing."},
+                {"name": "MemoryAgent", "role": "Archivist", "description": "Specialized in long-term memory management and context retrieval."}
             ]
             
             for agent_data in default_agents:
@@ -254,6 +265,13 @@ app.include_router(feedback_router)
 app.include_router(files_router)
 app.include_router(workflow_templates_router)
 app.include_router(exports_router)
+app.include_router(voice_router)
+app.include_router(execute_router)
+
+# Mount the storage directory to serve generated images/files
+storage_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "storage")
+os.makedirs(storage_path, exist_ok=True)
+app.mount("/storage", StaticFiles(directory=storage_path), name="storage")
 
 
 @app.get("/", tags=["Root"])

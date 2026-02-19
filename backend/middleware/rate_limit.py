@@ -22,22 +22,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         key = f"rate_limit:{client_ip}"
 
         try:
-            # Import redis_client lazily to avoid import issues
-            from redis_client import redis_client
+            # Import async_redis_client lazily to avoid import issues
+            from redis_client import async_redis_client
             
-            current = redis_client.get(key)
+            # Use async non-blocking calls
+            current = await async_redis_client.get(key)
             if current and int(current) >= self.limit:
                 return JSONResponse(
                     status_code=429,
                     content={"detail": "Too many requests. Please slow down."}
                 )
 
-            # Increment and set expiry IF it's a new window (atomically)
-            pipe = redis_client.pipeline()
-            pipe.incr(key)
-            # Only set expiry if it doesn't exist (fixed window)
-            pipe.expire(key, self.window, nx=True)
-            pipe.execute()
+            # Atomic increment and expiry
+            async with async_redis_client.pipeline(transaction=True) as pipe:
+                await pipe.incr(key)
+                await pipe.expire(key, self.window, nx=True)
+                await pipe.execute()
         except Exception as e:
             # Don't block requests if Redis is down
             print(f"Rate limiter error (non-fatal): {e}")

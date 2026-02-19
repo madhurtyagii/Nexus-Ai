@@ -2,7 +2,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { Copy, Check, Code2 } from 'lucide-react';
+import { Copy, Check, Code2, Play, Terminal, XCircle } from 'lucide-react';
+import api from '../../services/api';
 
 /**
  * Premium Markdown Renderer with Copy Button
@@ -13,12 +14,14 @@ import { Copy, Check, Code2 } from 'lucide-react';
 // Code Block with Copy Button Component
 function CodeBlock({ children, className }) {
     const [copied, setCopied] = useState(false);
+    const [executionOutput, setExecutionOutput] = useState(null);
+    const [isExecuting, setIsExecuting] = useState(false);
 
     // Extract language from className (e.g., "language-python" -> "python")
     const match = /language-(\w+)/.exec(className || '');
     const language = match ? match[1] : 'code';
+    const isRunnable = ['javascript', 'js', 'python', 'py'].includes(language.toLowerCase());
 
-    // Get the raw text content
     const codeString = String(children).replace(/\n$/, '');
 
     const handleCopy = async () => {
@@ -31,9 +34,82 @@ function CodeBlock({ children, className }) {
         }
     };
 
+    const handleRun = async () => {
+        setIsExecuting(true);
+        setExecutionOutput({ type: 'info', content: 'Initializing sandbox...' });
+
+        if (['javascript', 'js'].includes(language.toLowerCase())) {
+            try {
+                // Buffer to capture console.log
+                let logs = [];
+                const originalLog = console.log;
+                console.log = (...args) => {
+                    logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' '));
+                    originalLog(...args);
+                };
+
+                // Execute code
+                // eslint-disable-next-line no-new-func
+                const result = new Function(codeString)();
+
+                // Restore console
+                console.log = originalLog;
+
+                const finalOutput = logs.length > 0 ? logs.join('\n') : (result !== undefined ? String(result) : 'Done (No output)');
+                setExecutionOutput({ success: true, stdout: finalOutput, type: 'success' });
+            } catch (err) {
+                setExecutionOutput({ success: false, error: err.message, type: 'error' });
+            } finally {
+                setIsExecuting(false);
+            }
+        } else if (['python', 'py'].includes(language.toLowerCase())) {
+            try {
+                const response = await api.post('/sandbox/python', {
+                    language: language.toLowerCase() === 'python' || language.toLowerCase() === 'py' ? 'python' : language,
+                    code: codeString,
+                    timeout: 30
+                });
+
+                setExecutionOutput({
+                    success: response.data.success,
+                    stdout: response.data.stdout,
+                    stderr: response.data.stderr,
+                    error: response.data.error,
+                    time: response.data.execution_time
+                });
+            } catch (error) {
+                console.error('Execution error:', error);
+                setExecutionOutput({
+                    success: false,
+                    error: error.response?.data?.detail || error.message || 'Execution failed'
+                });
+            } finally {
+                setIsExecuting(false);
+            }
+        }
+    };
+
+    const getOutputContent = () => {
+        if (!executionOutput) return null;
+
+        if (executionOutput.success) {
+            return executionOutput.stdout || 'Execution successful (no output).';
+        } else {
+            return executionOutput.stderr || executionOutput.error || 'Execution failed.';
+        }
+    };
+
+    const getOutputTypeClass = () => {
+        if (!executionOutput) return 'text-blue-400'; // Default for initial state if needed
+
+        if (executionOutput.type === 'info') return 'text-blue-400';
+        if (executionOutput.success) return 'text-emerald-400';
+        return 'text-red-400';
+    };
+
     return (
         <div className="relative my-4 group">
-            {/* Header with language and copy button */}
+            {/* Header with language and actions */}
             <div className="flex items-center justify-between px-4 py-2 bg-dark-700 rounded-t-lg border-b border-dark-600">
                 <div className="flex items-center gap-2">
                     <div className="flex gap-1.5">
@@ -46,55 +122,90 @@ function CodeBlock({ children, className }) {
                     </span>
                 </div>
 
-                {/* Copy Button */}
-                <motion.button
-                    onClick={handleCopy}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-200 ${copied
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-dark-600 text-dark-300 hover:bg-dark-500 hover:text-white'
-                        }`}
-                >
-                    <AnimatePresence mode="wait">
-                        {copied ? (
-                            <motion.div
-                                key="check"
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                exit={{ scale: 0 }}
-                                className="flex items-center gap-1"
-                            >
-                                <Check size={12} />
-                                <span>Copied!</span>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="copy"
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                exit={{ scale: 0 }}
-                                className="flex items-center gap-1"
-                            >
-                                <Copy size={12} />
-                                <span>Copy</span>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </motion.button>
+                <div className="flex items-center gap-2">
+                    {/* Run Button */}
+                    {isRunnable && (
+                        <motion.button
+                            onClick={handleRun}
+                            disabled={isExecuting}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-200 border border-primary-500/30 ${isExecuting
+                                ? 'bg-primary-500/10 text-primary-400 animate-pulse'
+                                : 'bg-primary-500/10 text-primary-400 hover:bg-primary-500/20 active:bg-primary-500/30'
+                                }`}
+                        >
+                            <Play size={12} fill="currentColor" />
+                            <span>{isExecuting ? 'Running...' : 'Run'}</span>
+                        </motion.button>
+                    )}
+
+                    {/* Copy Button */}
+                    <motion.button
+                        onClick={handleCopy}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-200 ${copied
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                            : 'bg-dark-600 text-dark-300 hover:bg-dark-500 hover:text-white border border-dark-500/30'
+                            }`}
+                    >
+                        <AnimatePresence mode="wait">
+                            {copied ? (
+                                <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-1">
+                                    <Check size={12} />
+                                    <span>Copied!</span>
+                                </motion.div>
+                            ) : (
+                                <motion.div key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-1">
+                                    <Copy size={12} />
+                                    <span>Copy</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.button>
+                </div>
             </div>
 
             {/* Code content */}
-            <pre className="bg-dark-800 border border-t-0 border-dark-600 rounded-b-lg py-4 px-4 overflow-x-auto">
+            <pre className={`bg-dark-800 border border-t-0 border-dark-600 ${executionOutput ? '' : 'rounded-b-lg'} py-4 px-4 overflow-x-auto transition-all`}>
                 <code className="text-sm font-mono text-dark-100 leading-relaxed">
                     {children}
                 </code>
             </pre>
+
+            {/* Execution Output (Live Sandbox) */}
+            <AnimatePresence>
+                {executionOutput && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden bg-black/40 border-x border-b border-dark-600 rounded-b-lg"
+                    >
+                        <div className="flex items-center justify-between px-4 py-1.5 bg-dark-800/50 border-b border-dark-600/30">
+                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-dark-400">
+                                <Terminal size={10} />
+                                <span>Output</span>
+                            </div>
+                            <button
+                                onClick={() => setExecutionOutput(null)}
+                                className="text-dark-500 hover:text-white transition-colors"
+                            >
+                                <XCircle size={12} />
+                            </button>
+                        </div>
+                        <div className={`p-4 font-mono text-sm whitespace-pre-wrap ${getOutputTypeClass()}`}>
+                            {getOutputContent()}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
 
-export default function MarkdownRenderer({ content, className = '' }) {
+export default function MarkdownRenderer({ content, onImageClick, className = '' }) {
     if (!content) return null;
 
     return (
@@ -236,6 +347,35 @@ export default function MarkdownRenderer({ content, className = '' }) {
                             className="mr-2 accent-primary-500"
                         />
                     ),
+
+                    // Images - Support relative paths from backend
+                    img: ({ src, alt }) => {
+                        let fullSrc = src;
+                        if (src && (src.startsWith('/storage') || src.startsWith('/uploads'))) {
+                            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+                            fullSrc = `${baseUrl}${src}`;
+                        }
+                        return (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                onClick={() => onImageClick?.(fullSrc)}
+                                className={`my-4 overflow-hidden rounded-xl border border-dark-700 bg-dark-800 shadow-lg group ${onImageClick ? 'cursor-zoom-in' : ''}`}
+                            >
+                                <img
+                                    src={fullSrc}
+                                    alt={alt || 'AI Generated Content'}
+                                    className="w-full h-auto object-cover max-h-[512px] hover:scale-[1.02] transition-transform duration-500"
+                                    loading="lazy"
+                                />
+                                {alt && (
+                                    <div className="px-4 py-2 text-xs text-dark-400 bg-dark-700/50 italic border-t border-dark-700">
+                                        {alt}
+                                    </div>
+                                )}
+                            </motion.div>
+                        );
+                    }
                 }}
             >
                 {content}

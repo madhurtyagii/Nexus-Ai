@@ -1,17 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+    ArrowLeft,
+    CheckCircle2,
+    Loader2,
+    AlertCircle,
+    Clock,
+    Trash2,
+    RotateCcw,
+    Upload,
+    FolderOpen
+} from 'lucide-react';
 import api from '../services/api';
 import Navbar from '../components/layout/Navbar';
+import Sidebar from '../components/layout/Sidebar';
 import MarkdownRenderer from '../components/common/MarkdownRenderer';
 import ExpandableOutput from '../components/common/ExpandableOutput';
+import ImageLightbox from '../components/common/ImageLightbox';
 import { AgentActivityPanelPolling } from '../components/agents/AgentActivityPanel';
 import FileUpload from '../components/files/FileUpload';
 import FileManager from '../components/files/FileManager';
 
-/**
- * TaskDetail Page
- * Shows full task details, progress, subtasks, and output
- */
 export default function TaskDetail() {
     const { taskId } = useParams();
     const navigate = useNavigate();
@@ -19,10 +29,10 @@ export default function TaskDetail() {
     const [progress, setProgress] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [lightboxImage, setLightboxImage] = useState(null);
     const [isPolling, setIsPolling] = useState(false);
     const [fileRefreshTrigger, setFileRefreshTrigger] = useState(0);
 
-    // Fetch task details
     const fetchTask = async () => {
         try {
             const response = await api.get(`/tasks/${taskId}`);
@@ -36,16 +46,13 @@ export default function TaskDetail() {
         }
     };
 
-    // Fetch progress
     const fetchProgress = async () => {
         try {
             const response = await api.get(`/tasks/${taskId}/status`);
             setProgress(response.data);
-
-            // Stop polling if completed or failed
             if (response.data.status === 'completed' || response.data.status === 'failed') {
                 setIsPolling(false);
-                fetchTask(); // Refresh full task data
+                fetchTask();
             }
         } catch (err) {
             console.error('Progress fetch error:', err);
@@ -57,18 +64,13 @@ export default function TaskDetail() {
         fetchProgress();
     }, [taskId]);
 
-    // Poll for updates when in progress
     useEffect(() => {
         let interval;
-
         if (task?.status === 'in_progress' || task?.status === 'queued') {
             setIsPolling(true);
             interval = setInterval(fetchProgress, 3000);
         }
-
-        return () => {
-            if (interval) clearInterval(interval);
-        };
+        return () => { if (interval) clearInterval(interval); };
     }, [task?.status]);
 
     const handleRetry = async () => {
@@ -92,18 +94,13 @@ export default function TaskDetail() {
         }
     };
 
-    const getStatusColor = (status) => {
+    const getStatusConfig = (status) => {
         switch (status?.toLowerCase()) {
-            case 'completed':
-                return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-            case 'in_progress':
-                return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-            case 'queued':
-                return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-            case 'failed':
-                return 'bg-red-500/20 text-red-400 border-red-500/30';
-            default:
-                return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+            case 'completed': return { color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', icon: CheckCircle2, label: 'Completed' };
+            case 'in_progress': return { color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', icon: Loader2, label: 'In Progress' };
+            case 'queued': return { color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20', icon: Clock, label: 'Queued' };
+            case 'failed': return { color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20', icon: AlertCircle, label: 'Failed' };
+            default: return { color: 'text-dark-400', bg: 'bg-dark-400/10', border: 'border-dark-400/20', icon: Clock, label: status || 'Unknown' };
         }
     };
 
@@ -115,79 +112,55 @@ export default function TaskDetail() {
         }
         const date = new Date(adjustedString);
         if (isNaN(date.getTime())) return dateString;
-
-        // Browser correctly converts UTC string (from Z or offset) to local time
-        return date.toLocaleString();
+        return date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
     const renderOutput = (output) => {
         if (!output) return null;
 
-        // Helper: format a dictionary/object as Markdown
         const formatDictAsMarkdown = (obj) => {
-            // ResearchAgent format
             if (obj.summary && obj.key_findings) {
                 const summaryText = typeof obj.summary === 'object'
                     ? (obj.summary.summary || obj.summary.text || JSON.stringify(obj.summary))
                     : obj.summary;
-
                 const findings = Array.isArray(obj.key_findings)
                     ? obj.key_findings.map(f => `- ${f}`).join('\n')
                     : String(obj.key_findings);
-
                 return `### Summary\n${summaryText}\n\n### Key Findings\n${findings}`;
             }
-
-            // Generic object formatting
             return Object.entries(obj)
-                .filter(([key]) => !['status', 'agent_name', 'timestamp', 'execution_time_seconds',
-                    'tokens_used', 'confidence_score', 'query', 'researched_at'].includes(key))
+                .filter(([key]) => !['status', 'agent_name', 'timestamp', 'execution_time_seconds', 'tokens_used', 'confidence_score', 'query', 'researched_at'].includes(key))
                 .map(([key, value]) => {
                     const cleanKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    if (Array.isArray(value)) {
-                        return `**${cleanKey}:**\n${value.map(v => `- ${v}`).join('\n')}`;
-                    }
-                    if (typeof value === 'object') {
-                        return `**${cleanKey}:** ${value?.summary || value?.text || '(complex data)'}`;
-                    }
+                    if (Array.isArray(value)) return `**${cleanKey}:**\n${value.map(v => `- ${v}`).join('\n')}`;
+                    if (typeof value === 'object') return `**${cleanKey}:** ${value?.summary || value?.text || '(complex data)'}`;
                     return `**${cleanKey}:** ${value}`;
                 })
                 .join('\n\n');
         };
 
-        // If it's a string, check for embedded JSON and clean it up
         if (typeof output === 'string') {
-            // Check if this string contains a JSON object anywhere
             const jsonMatch = output.match(/\{\s*"(summary|key_findings|content|code|body)":/);
-
             if (jsonMatch) {
-                // Try to extract and parse the JSON portion
                 try {
-                    // Find where the JSON starts
                     const jsonStart = output.indexOf('{');
                     const prefix = jsonStart > 0 ? output.substring(0, jsonStart).trim() : '';
                     const jsonStr = output.substring(jsonStart);
-
-                    // Try to parse it
                     const parsed = JSON.parse(jsonStr);
                     const formatted = formatDictAsMarkdown(parsed);
-
                     const finalContent = prefix ? `${prefix}\n\n${formatted}` : formatted;
-                    return <MarkdownRenderer content={finalContent} />;
+                    return <MarkdownRenderer content={finalContent} onImageClick={setLightboxImage} />;
                 } catch (e) {
-                    // If parsing fails, just render as-is
-                    return <MarkdownRenderer content={output} />;
+                    return <MarkdownRenderer content={output} onImageClick={setLightboxImage} />;
                 }
             }
-
             return <MarkdownRenderer content={output} />;
         }
 
-        // For actual objects, format as markdown
         if (typeof output === 'object') {
             try {
                 const markdown = formatDictAsMarkdown(output);
-                return <MarkdownRenderer content={markdown} />;
+                return <MarkdownRenderer content={markdown} onImageClick={setLightboxImage} />;
             } catch (e) {
                 return <pre className="text-dark-200 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>;
             }
@@ -198,10 +171,14 @@ export default function TaskDetail() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-primary">
+            <div className="min-h-screen selection:bg-primary-500/30">
                 <Navbar />
                 <div className="flex items-center justify-center h-96">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                    <motion.div
+                        className="w-10 h-10 border-2 border-primary-500 border-t-transparent rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    />
                 </div>
             </div>
         );
@@ -209,160 +186,196 @@ export default function TaskDetail() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-primary">
+            <div className="min-h-screen selection:bg-primary-500/30">
                 <Navbar />
                 <div className="max-w-4xl mx-auto px-6 py-8">
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
-                        <p className="text-red-400">{error}</p>
-                        <button
+                    <div className="card p-8 text-center border-red-500/20">
+                        <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+                        <p className="text-red-400 font-medium mb-4">{error}</p>
+                        <motion.button
                             onClick={() => navigate('/dashboard')}
-                            className="mt-4 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600"
+                            className="btn-primary text-sm"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
                         >
                             Back to Dashboard
-                        </button>
+                        </motion.button>
                     </div>
                 </div>
             </div>
         );
     }
 
+    const statusConf = getStatusConfig(task?.status);
+    const StatusIcon = statusConf.icon;
+
     return (
-        <div className="min-h-screen bg-primary">
+        <div className="min-h-screen selection:bg-primary-500/30">
             <Navbar />
 
-            <div className="max-w-4xl mx-auto px-6 py-8">
-                {/* Back button */}
-                <button
-                    onClick={() => navigate('/dashboard')}
-                    className="flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-                    </svg>
-                    Back to Dashboard
-                </button>
+            <div className="flex">
+                <Sidebar />
+                <main className="flex-1 p-6 lg:p-8">
+                    <motion.div
+                        className="max-w-4xl mx-auto"
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                    >
+                        {/* Back */}
+                        <motion.button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center gap-2 text-dark-400 hover:text-white mb-6 transition-colors text-sm font-medium group"
+                            whileHover={{ x: -4 }}
+                        >
+                            <ArrowLeft className="w-4 h-4 group-hover:text-primary-400 transition-colors" />
+                            Back
+                        </motion.button>
 
-                {/* Header */}
-                <div className="bg-card backdrop-blur-sm border border-white/5 rounded-xl p-6 mb-6">
-                    <div className="flex items-start justify-between mb-4">
-                        <h1 className="text-xl font-bold text-white leading-relaxed flex-1">
-                            {task?.user_prompt}
-                        </h1>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(task?.status)}`}>
-                            {task?.status}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-sm text-slate-400">
-                        <span>Created: {formatDate(task?.created_at)}</span>
-                        {task?.completed_at && (
-                            <span>Completed: {formatDate(task?.completed_at)}</span>
-                        )}
-                    </div>
-
-                    {/* Progress bar */}
-                    {progress && (task?.status === 'in_progress' || task?.status === 'queued') && (
-                        <div className="mt-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-slate-400">
-                                    {progress.current_agent ? `${progress.current_agent} working...` : 'Processing...'}
-                                </span>
-                                <span className="text-sm text-purple-400">
-                                    {progress.progress_percentage}%
+                        {/* Header Card */}
+                        <div className="card p-6 mb-6">
+                            <div className="flex items-start justify-between gap-4 mb-4">
+                                <h1 className="text-xl font-bold text-white leading-relaxed flex-1">
+                                    {task?.user_prompt}
+                                </h1>
+                                <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${statusConf.bg} ${statusConf.color} border ${statusConf.border}`}>
+                                    <StatusIcon className={`w-3.5 h-3.5 ${task?.status === 'in_progress' ? 'animate-spin' : ''}`} />
+                                    {statusConf.label}
                                 </span>
                             </div>
-                            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500"
-                                    style={{ width: `${progress.progress_percentage}%` }}
-                                />
+
+                            <div className="flex items-center gap-4 text-xs text-dark-500 font-medium">
+                                <span>Created: {formatDate(task?.created_at)}</span>
+                                {task?.completed_at && (
+                                    <span>Completed: {formatDate(task?.completed_at)}</span>
+                                )}
                             </div>
-                            {isPolling && (
-                                <p className="text-xs text-slate-500 mt-2">Auto-refreshing every 3 seconds...</p>
+
+                            {/* Progress bar */}
+                            {progress && (task?.status === 'in_progress' || task?.status === 'queued') && (
+                                <div className="mt-5">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs text-dark-400 font-medium">
+                                            {progress.current_agent ? `${progress.current_agent} working...` : 'Processing...'}
+                                        </span>
+                                        <span className="text-xs text-primary-400 font-bold tabular-nums">
+                                            {progress.progress_percentage}%
+                                        </span>
+                                    </div>
+                                    <div className="h-1.5 bg-dark-800 rounded-full overflow-hidden">
+                                        <motion.div
+                                            className="h-full bg-gradient-to-r from-primary-500 to-purple-500 rounded-full"
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${progress.progress_percentage}%` }}
+                                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                                            style={{ boxShadow: '0 0 8px rgba(14, 165, 233, 0.3)' }}
+                                        />
+                                    </div>
+                                    {isPolling && (
+                                        <p className="text-[10px] text-dark-600 mt-1.5">Auto-refreshing every 3 seconds...</p>
+                                    )}
+                                </div>
                             )}
                         </div>
-                    )}
-                </div>
 
-                {/* Subtasks */}
-                {task?.subtasks && task.subtasks.length > 0 && (
-                    <div className="bg-card backdrop-blur-sm border border-white/5 rounded-xl p-6 mb-6">
-                        <h2 className="text-lg font-semibold text-white mb-4">Subtasks</h2>
-                        <div className="space-y-3">
-                            {task.subtasks.map((subtask) => (
-                                <div
-                                    key={subtask.id}
-                                    className="flex items-center justify-between p-3 bg-dark-800/30 rounded-lg"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-2 h-2 rounded-full ${subtask.status === 'completed' ? 'bg-emerald-500' :
-                                            subtask.status === 'in_progress' ? 'bg-blue-500 animate-pulse' :
-                                                subtask.status === 'failed' ? 'bg-red-500' :
-                                                    'bg-yellow-500'
-                                            }`} />
-                                        <span className="text-dark-200 font-medium">{subtask.assigned_agent}</span>
-                                    </div>
-                                    <span className={`text-xs px-2 py-1 rounded ${getStatusColor(subtask.status)}`}>
-                                        {subtask.status}
-                                    </span>
+                        {/* Subtasks */}
+                        {task?.subtasks && task.subtasks.length > 0 && (
+                            <div className="card p-6 mb-6">
+                                <h2 className="text-base font-bold text-white mb-4 tracking-tight">Subtasks</h2>
+                                <div className="space-y-2">
+                                    {task.subtasks.map((subtask) => {
+                                        const st = getStatusConfig(subtask.status);
+                                        const StIcon = st.icon;
+                                        return (
+                                            <div
+                                                key={subtask.id}
+                                                className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <StIcon className={`w-4 h-4 ${st.color} ${subtask.status === 'in_progress' ? 'animate-spin' : ''}`} />
+                                                    <span className="text-dark-200 text-sm font-medium">{subtask.assigned_agent}</span>
+                                                </div>
+                                                <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md ${st.bg} ${st.color} border ${st.border}`}>
+                                                    {subtask.status?.replace('_', ' ')}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            ))}
+                            </div>
+                        )}
+
+                        {/* Agent Activity Panel */}
+                        {task?.subtasks && task.subtasks.length > 0 && (
+                            <div className="mb-6">
+                                <AgentActivityPanelPolling
+                                    subtasks={task.subtasks}
+                                    status={task.status}
+                                />
+                            </div>
+                        )}
+
+                        {/* File Management */}
+                        <div className="card p-6 mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                                    <FolderOpen className="w-4 h-4 text-primary-400" />
+                                    Files
+                                </h2>
+                                <FileUpload
+                                    taskId={taskId}
+                                    onUploadSuccess={() => setFileRefreshTrigger(prev => prev + 1)}
+                                />
+                            </div>
+                            <FileManager taskId={taskId} refreshTrigger={fileRefreshTrigger} />
                         </div>
-                    </div>
-                )}
 
-                {/* Agent Activity Panel */}
-                {task?.subtasks && task.subtasks.length > 0 && (
-                    <div className="mb-6">
-                        <AgentActivityPanelPolling
-                            subtasks={task.subtasks}
-                            status={task.status}
-                        />
-                    </div>
-                )}
+                        {/* Output */}
+                        {task?.output && (
+                            <div className="card p-6 mb-6">
+                                <h2 className="text-base font-bold text-white mb-4 tracking-tight">Output</h2>
+                                <div className="rounded-xl bg-white/[0.02] border border-white/[0.04] p-4">
+                                    <ExpandableOutput
+                                        content={typeof task.output === 'object' ? JSON.stringify(task.output, null, 2) : task.output}
+                                        title="Task Output"
+                                        collapsedHeight={300}
+                                    />
+                                </div>
+                            </div>
+                        )}
 
-                {/* File Management */}
-                <div className="bg-card backdrop-blur-sm border border-white/5 rounded-xl p-6 mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-white">📁 Files</h2>
-                        <FileUpload
-                            taskId={taskId}
-                            onUploadSuccess={() => setFileRefreshTrigger(prev => prev + 1)}
-                        />
-                    </div>
-                    <FileManager taskId={taskId} refreshTrigger={fileRefreshTrigger} />
-                </div>
-
-                {/* Output */}
-                {task?.output && (
-                    <div className="bg-card backdrop-blur-sm border border-white/5 rounded-xl p-6 mb-6">
-                        <h2 className="text-lg font-semibold text-white mb-4">Output</h2>
-                        <ExpandableOutput
-                            content={typeof task.output === 'object' ? JSON.stringify(task.output, null, 2) : task.output}
-                            title="Task Output"
-                            collapsedHeight={300}
-                        />
-                    </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                    {task?.status === 'failed' && (
-                        <button
-                            onClick={handleRetry}
-                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors"
-                        >
-                            Retry Task
-                        </button>
-                    )}
-                    <button
-                        onClick={handleDelete}
-                        className="px-4 py-2 bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600/30 transition-colors"
-                    >
-                        Delete Task
-                    </button>
-                </div>
+                        {/* Actions */}
+                        <div className="flex gap-3">
+                            {task?.status === 'failed' && (
+                                <motion.button
+                                    onClick={handleRetry}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 border border-primary-500/20 rounded-xl transition-all text-sm font-bold"
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                    Retry Task
+                                </motion.button>
+                            )}
+                            <motion.button
+                                onClick={handleDelete}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-red-500/5 hover:bg-red-500/15 text-red-400/70 hover:text-red-400 border border-red-500/10 hover:border-red-500/20 rounded-xl transition-all text-sm font-bold"
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.97 }}
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Delete Task
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                </main>
             </div>
+
+            <ImageLightbox
+                isOpen={!!lightboxImage}
+                imageUrl={lightboxImage}
+                onClose={() => setLightboxImage(null)}
+            />
         </div>
     );
 }

@@ -263,6 +263,6 @@
 
     to {
         opacity: 1;
-        max-height: 600px;
+        max-height: 10000px;
     }
 }

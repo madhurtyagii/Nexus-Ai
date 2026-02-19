@@ -69,29 +69,129 @@ Format your responses clearly with sections and bullet points when appropriate."
         self.start_execution()
         
         try:
-            # Extract query - check multiple possible keys
+            # Extract query
             query = (
                 input_data.get("query") or 
                 input_data.get("prompt") or 
                 input_data.get("task") or 
-                input_data.get("user_prompt") or 
-                input_data.get("task_description") or 
-                input_data.get("original_prompt", "")
+                input_data.get("user_prompt", "")
             )
             
             if not query:
                 return self.format_output(None, status="error", error="No research query provided")
 
-            # Run basic research workflow
-            results = await self._research_workflow(query)
+            max_depth = input_data.get("max_depth", 2) # Default 2 loops for efficiency
+            current_depth = 0
+            research_history = []
             
-            self.end_execution() # Ensure end_execution is called before returning
-            return self.format_output(results)
+            print(f"🔍 ResearchAgent: Starting recursive research for '{query}' (Max Depth: {max_depth})")
+            
+            # Initial Research Phase
+            current_results = await self._research_workflow(query)
+            research_history.append(current_results)
+            
+            # Recursive "Digging" Phase
+            while current_depth < max_depth:
+                confidence = current_results.get("confidence_score", 0.0)
+                
+                # If we have high confidence, we might be done
+                if confidence > 0.85:
+                    break
+                
+                current_depth += 1
+                self.log_action("research_loop", {"depth": current_depth, "confidence": confidence})
+                
+                # Identify what's missing or needs more detail
+                follow_up_query = self._identify_research_gaps(query, current_results)
+                if not follow_up_query:
+                    break
+                    
+                print(f"🔄 ResearchAgent: Loop {current_depth} - Investigating gaps: '{follow_up_query}'")
+                current_results = await self._research_workflow(follow_up_query)
+                research_history.append(current_results)
+
+            # Final Step: Synthesize all loops into a "Research Paper"
+            final_report = self._synthesize_final_report(query, research_history)
+            
+            self.end_execution()
+            return self.format_output(final_report)
             
         except Exception as e:
             self.log_action("research_error", {"error": str(e)})
             self.end_execution()
             return self.format_output(None, status="error", error=str(e))
+
+    def _identify_research_gaps(self, original_query: str, last_results: Dict[str, Any]) -> Optional[str]:
+        """Ask LLM to find missing info and generate a follow-up query."""
+        summary = last_results.get("summary", "")
+        
+        prompt = f"""You are a research analyst. Review the following research summary and identify any missing information, technical depth gaps, or unanswered questions relative to the original query.
+        
+ORIGINAL QUERY: {original_query}
+CURRENT SUMMARY: {summary}
+
+If there are significant gaps, provide ONE targeted follow-up search query to fill those gaps. 
+If the summary is already comprehensive, respond with 'DONE'.
+
+Response (Query or 'DONE'):"""
+
+        response = self.generate_response(prompt, use_cache=False)
+        if response and "DONE" not in response.upper():
+            return response.strip().strip('"').strip("'")
+        return None
+
+    def _synthesize_final_report(self, original_query: str, history: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Combine all research phases into a final high-quality report."""
+        all_key_findings = []
+        all_sources = []
+        full_context = ""
+        
+        for i, h in enumerate(history):
+            all_key_findings.extend(h.get("key_findings", []))
+            all_sources.extend(h.get("sources", []))
+            full_context += f"\n--- Research Phase {i+1} ---\n{h.get('summary', '')}\n"
+
+        prompt = f"""You are a Senior Research Analyst. Synthesize the following multi-phase research into a final, professional Research Paper.
+
+TOPIC: {original_query}
+
+DATA FROM MULTIPLE PHASES:
+{full_context}
+
+Provide the final result in this JSON format:
+{{
+    "title": "A professional title for the research paper",
+    "summary": "A deep, multi-paragraph executive summary",
+    "sections": [
+        {{"heading": "Section Heading", "content": "Detailed analysis..."}}
+    ],
+    "conclusion": "Final wrap-up and insights",
+    "all_key_findings": ["Consolidated finding 1", "Finding 2..."]
+}}"""
+
+        response = self.generate_response(prompt, use_cache=False)
+        try:
+            # Simple cleanup and parse
+            import re
+            json_str = response.strip()
+            if "```" in json_str:
+                json_str = re.sub(r"```(json)?\n", "", json_str).split("```")[0].strip()
+            
+            final_paper = json.loads(json_str)
+            # Add sources back
+            final_paper["sources"] = self._deduplicate_results(all_sources)[:10]
+            final_paper["confidence_score"] = max(h.get("confidence_score", 0) for h in history)
+            return final_paper
+        except:
+            # Fallback synthesis
+            return {
+                "title": f"Research Report: {original_query}",
+                "summary": history[0].get("summary", "Synthesis failed."),
+                "sections": [],
+                "all_key_findings": list(set(all_key_findings)),
+                "sources": self._deduplicate_results(all_sources)[:10],
+                "confidence_score": 0.5
+            }
     
     async def _research_workflow(self, query: str) -> Dict[str, Any]:
         """Coordinates the sequential steps of the research process.

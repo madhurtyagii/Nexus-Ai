@@ -11,7 +11,7 @@ from dataclasses import dataclass, field, asdict
 
 from sqlalchemy.orm import Session
 
-from agents.agent_factory import AgentFactory
+# from agents.agent_factory import AgentFactory (Moved to prevent circular import)
 from messaging.message_broker import MessageBroker, MessageType, message_broker
 from llm.llm_manager import LLMManager
 
@@ -107,6 +107,7 @@ class AgentCoordinator:
         self.db = db_session
         self.llm = llm_manager
         self.broker = message_broker or message_broker
+        from agents.agent_factory import AgentFactory
         self.factory = AgentFactory(db_session=db_session, llm=llm_manager)
         
         # Active workflows

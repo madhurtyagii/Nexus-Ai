@@ -1,6 +1,7 @@
 /**
  * Nexus AI - Agent Chat Modal
  * Direct chat interface for communicating with specific agents
+ * Features: Expand/Collapse, Image Download, Markdown rendering
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -8,14 +9,24 @@ import { useAuth } from '../../context/AuthContext';
 import { useWebSocket, EventType } from '../../hooks/useWebSocket';
 import api from '../../services/api';
 import MarkdownRenderer from '../common/MarkdownRenderer';
+import StylePresets from './StylePresets';
+import ImageLightbox from '../common/ImageLightbox';
 
 export default function AgentChatModal({ isOpen, onClose, agent }) {
     const { token } = useAuth();
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
+    const [selectedStyle, setSelectedStyle] = useState(null);
+    const [lightboxImage, setLightboxImage] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [currentRequestId, setCurrentRequestId] = useState(null);
+    const [abortController, setAbortController] = useState(null);
+    const [attachedFile, setAttachedFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     // WebSocket for receiving agent responses
     const handleWebSocketMessage = useCallback((message) => {
@@ -43,7 +54,6 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
     useEffect(() => {
         if (isOpen) {
             setTimeout(() => inputRef.current?.focus(), 100);
-            // Clear history for new session
             setMessages([{
                 role: 'system',
                 content: `You're now chatting with ${agent?.name}. Ask anything!`,
@@ -52,35 +62,101 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
         }
     }, [isOpen, agent?.name]);
 
+    // Close on Escape
+    useEffect(() => {
+        const handleKey = (e) => {
+            if (e.key === 'Escape') {
+                if (isExpanded) {
+                    setIsExpanded(false);
+                } else {
+                    onClose();
+                }
+            }
+        };
+        if (isOpen) document.addEventListener('keydown', handleKey);
+        return () => document.removeEventListener('keydown', handleKey);
+    }, [isOpen, isExpanded, onClose]);
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Check if it's an image
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file (PNG, JPG, etc.)');
+            return;
+        }
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await api.post('/files/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            setAttachedFile({
+                id: response.data.id,
+                name: file.name,
+                url: URL.createObjectURL(file)
+            });
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Failed to upload image. Please try again.');
+        } finally {
+            setIsUploading(false);
+            // Reset input so same file can be selected again
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const removeAttachment = () => {
+        if (attachedFile?.url) URL.revokeObjectURL(attachedFile.url);
+        setAttachedFile(null);
+    };
+
     const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+        if ((!input.trim() && !attachedFile) || isLoading || isUploading) return;
 
         const userMessage = input.trim();
+        const fileId = attachedFile?.id;
+
         setInput('');
         setMessages(prev => [...prev, {
             role: 'user',
-            content: userMessage,
-            timestamp: new Date().toISOString()
+            content: userMessage || (fileId ? `[Uploaded Image: ${attachedFile.name}]` : ''),
+            timestamp: new Date().toISOString(),
+            attachedImage: attachedFile?.url
         }]);
+
+        // Clear attachment immediately for UI
+        const currentAttachment = attachedFile;
+        setAttachedFile(null);
         setIsLoading(true);
 
+        const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        setCurrentRequestId(requestId);
+
+        const controller = new AbortController();
+        setAbortController(controller);
+
         try {
-            // Build conversation history for context (exclude system messages)
             const history = messages
                 .filter(m => m.role === 'user' || m.role === 'agent')
-                .map(m => ({
-                    role: m.role,
-                    content: m.content
-                }));
+                .map(m => ({ role: m.role, content: m.content }));
 
-            // Send via REST API with history for context
             const response = await api.post('/agents/chat', {
                 agent_name: agent?.name,
                 message: userMessage,
-                history: history  // Include conversation history
+                history: history,
+                request_id: requestId,
+                style: selectedStyle,
+                file_id: fileId
+            }, {
+                signal: controller.signal
             });
 
-            // Handle direct REST response if no WebSocket
             if (response.data?.response) {
                 setMessages(prev => [...prev, {
                     role: 'agent',
@@ -88,8 +164,14 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                     timestamp: new Date().toISOString()
                 }]);
                 setIsLoading(false);
+                setCurrentRequestId(null);
+                setAbortController(null);
             }
         } catch (error) {
+            if (error.name === 'AbortError') {
+                console.log('Request aborted');
+                return;
+            }
             console.error('Chat error:', error);
             setMessages(prev => [...prev, {
                 role: 'agent',
@@ -97,6 +179,50 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                 timestamp: new Date().toISOString()
             }]);
             setIsLoading(false);
+            setCurrentRequestId(null);
+            setAbortController(null);
+        }
+    };
+
+    // Reset state when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            setMessages([]);
+            setInput('');
+            setSelectedStyle(null);
+            setIsLoading(false);
+            setCurrentRequestId(null);
+            setAttachedFile(null);
+            setIsUploading(false);
+        }
+    }, [isOpen]);
+
+    const handleStop = async () => {
+        if (!currentRequestId) return;
+
+        // 1. Optimistic UI update - don't wait for backend
+        setIsLoading(false);
+        const reqIdToStop = currentRequestId;
+        setCurrentRequestId(null);
+
+        // 2. Abort local fetch immediately
+        if (abortController) {
+            abortController.abort();
+            setAbortController(null);
+        }
+
+        setMessages(prev => [...prev, {
+            role: 'system',
+            content: '🛑 Request stopped by user.',
+            timestamp: new Date().toISOString()
+        }]);
+
+        try {
+            // 3. Notify backend in the background
+            await api.post('/agents/stop', { request_id: reqIdToStop });
+            console.log('✅ Backend notified of stop:', reqIdToStop);
+        } catch (error) {
+            console.error('Failed to notify backend of stop:', error);
         }
     };
 
@@ -106,6 +232,25 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
             handleSend();
         }
     };
+
+    // Download image from markdown image syntax
+    const handleImageDownload = (content) => {
+        const match = content.match(/!\[.*?\]\((.*?)\)/);
+        if (match && match[1]) {
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+            const imgUrl = match[1].startsWith('/') ? `${baseUrl}${match[1]}` : match[1];
+            const link = document.createElement('a');
+            link.href = imgUrl;
+            link.download = match[1].split('/').pop() || 'nexus-image.png';
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
+    // Check if message contains an image
+    const hasImage = (content) => /!\[.*?\]\(.*?\)/.test(content);
 
     if (!isOpen) return null;
 
@@ -117,11 +262,17 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
         'QAAgent': '✅',
         'MemoryAgent': '🧠',
         'ManagerAgent': '📋',
+        'VisualAgent': '🎨',
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-dark-800 rounded-2xl border border-dark-700 w-full max-w-2xl h-[600px] flex flex-col overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div
+                className={`bg-dark-800 rounded-2xl border border-dark-700 flex flex-col overflow-hidden shadow-2xl transition-all duration-500 ease-in-out ${isExpanded
+                    ? 'fixed inset-4 w-auto h-auto max-w-none'
+                    : 'relative w-full max-w-2xl h-[600px]'
+                    }`}
+            >
                 {/* Header */}
                 <div className="p-4 border-b border-dark-700 flex items-center justify-between bg-dark-800/80">
                     <div className="flex items-center gap-3">
@@ -130,15 +281,28 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                         </div>
                         <div>
                             <h2 className="text-lg font-semibold text-white">{agent?.name}</h2>
-                            <p className="text-xs text-dark-400">Direct Chat</p>
+                            <p className="text-xs text-dark-400">
+                                {isExpanded ? 'Full Chat Mode' : 'Direct Chat'}
+                            </p>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-700 text-dark-400 hover:text-white transition-colors"
-                    >
-                        ✕
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {/* Expand / Collapse button */}
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-700 text-dark-400 hover:text-white transition-colors"
+                            title={isExpanded ? 'Collapse' : 'Expand to full chat'}
+                        >
+                            {isExpanded ? '⊡' : '⛶'}
+                        </button>
+                        {/* Close button */}
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-700 text-dark-400 hover:text-white transition-colors"
+                        >
+                            ✕
+                        </button>
+                    </div>
                 </div>
 
                 {/* Messages */}
@@ -149,15 +313,44 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                             <div
-                                className={`max-w-[80%] px-4 py-2.5 rounded-2xl ${msg.role === 'user'
+                                className={`${isExpanded ? 'max-w-[60%]' : 'max-w-[80%]'} px-4 py-2.5 rounded-2xl ${msg.role === 'user'
                                     ? 'bg-primary-500 text-white rounded-br-sm'
                                     : msg.role === 'system'
                                         ? 'bg-dark-700/50 text-dark-400 text-sm italic'
                                         : 'bg-dark-700 text-white rounded-bl-sm'
                                     }`}
                             >
+                                {msg.attachedImage && (
+                                    <div className="mb-2 rounded-lg overflow-hidden border border-white/10">
+                                        <img
+                                            src={msg.attachedImage}
+                                            alt="Attached"
+                                            className="max-h-48 object-contain cursor-pointer"
+                                            onClick={() => setLightboxImage(msg.attachedImage)}
+                                        />
+                                    </div>
+                                )}
                                 {msg.role === 'agent' ? (
-                                    <MarkdownRenderer content={msg.content} />
+                                    <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
+                                        <div className={`p-4 rounded-2xl ${msg.role === 'user'
+                                            ? 'bg-primary-500 text-white rounded-tr-none'
+                                            : 'bg-dark-700 text-dark-100 rounded-tl-none border border-dark-600'
+                                            }`}>
+                                            <MarkdownRenderer
+                                                content={msg.content}
+                                                onImageClick={setLightboxImage}
+                                            />
+                                        </div>
+                                        {/* Download button for images */}
+                                        {hasImage(msg.content) && (
+                                            <button
+                                                onClick={() => handleImageDownload(msg.content)}
+                                                className="mt-2 flex items-center gap-1.5 text-xs text-primary-400 hover:text-primary-300 bg-primary-500/10 hover:bg-primary-500/20 px-3 py-1.5 rounded-lg transition-all"
+                                            >
+                                                ⬇ Download Image
+                                            </button>
+                                        )}
+                                    </div>
                                 ) : (
                                     <p className="whitespace-pre-wrap">{msg.content}</p>
                                 )}
@@ -167,10 +360,18 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                     {isLoading && (
                         <div className="flex justify-start">
                             <div className="bg-dark-700 text-dark-400 px-4 py-3 rounded-2xl rounded-bl-sm">
-                                <div className="flex gap-1.5">
-                                    <span className="w-2 h-2 bg-dark-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                                    <span className="w-2 h-2 bg-dark-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                                    <span className="w-2 h-2 bg-dark-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex gap-1.5">
+                                        <span className="w-2 h-2 bg-dark-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                        <span className="w-2 h-2 bg-dark-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                        <span className="w-2 h-2 bg-dark-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                    </div>
+                                    <button
+                                        onClick={handleStop}
+                                        className="text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors border border-red-400/30 px-2 py-0.5 rounded-md hover:bg-red-400/10"
+                                    >
+                                        🛑 Stop
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -179,20 +380,69 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                 </div>
 
                 {/* Input */}
+                {/* Input Area */}
                 <div className="p-4 border-t border-dark-700 bg-dark-800/80">
+                    {/* Image Preview */}
+                    {attachedFile && (
+                        <div className="mb-3 flex items-center gap-3 p-2 bg-dark-700 rounded-xl border border-primary-500/30 w-fit">
+                            <img src={attachedFile.url} className="w-12 h-12 rounded-lg object-cover" alt="Preview" />
+                            <div className="flex flex-col">
+                                <span className="text-xs text-white font-medium truncate max-w-[150px]">{attachedFile.name}</span>
+                                <span className="text-[10px] text-primary-400">Ready to upload</span>
+                            </div>
+                            <button
+                                onClick={removeAttachment}
+                                className="w-6 h-6 flex items-center justify-center rounded-full bg-dark-600 text-dark-400 hover:text-white hover:bg-red-500/20 transition-all font-bold text-xs"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
+
+                    {agent?.name === 'VisualAgent' && (
+                        <StylePresets
+                            selectedStyle={selectedStyle}
+                            onSelectStyle={setSelectedStyle}
+                        />
+                    )}
                     <div className="flex gap-3">
+                        {agent?.name === 'VisualAgent' && (
+                            <>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileUpload}
+                                    className="hidden"
+                                    accept="image/*"
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isLoading || isUploading || attachedFile}
+                                    className={`w-12 h-12 flex items-center justify-center rounded-xl border border-dark-600 text-dark-400 hover:text-white hover:border-primary-500 transition-all flex-shrink-0 ${attachedFile ? 'bg-primary-500/20 border-primary-500 text-primary-400' : 'bg-dark-700'}`}
+                                    title="Attach Image"
+                                >
+                                    {isUploading ? (
+                                        <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                        </svg>
+                                    )}
+                                </button>
+                            </>
+                        )}
                         <textarea
                             ref={inputRef}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder={`Ask ${agent?.name} anything...`}
-                            rows={1}
+                            placeholder={attachedFile ? `Describe what to do with this image...` : `Ask ${agent?.name} anything...`}
+                            rows={isExpanded ? 2 : 1}
                             className="flex-1 bg-dark-700 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-primary-500 resize-none"
                         />
                         <button
                             onClick={handleSend}
-                            disabled={!input.trim() || isLoading}
+                            disabled={(!input.trim() && !attachedFile) || isLoading || isUploading}
                             className="px-5 py-3 bg-gradient-to-r from-primary-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-primary-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Send
@@ -200,6 +450,13 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                     </div>
                 </div>
             </div>
+
+            <ImageLightbox
+                isOpen={!!lightboxImage}
+                imageUrl={lightboxImage}
+                onClose={() => setLightboxImage(null)}
+            />
         </div>
     );
 }
+

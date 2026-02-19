@@ -42,7 +42,11 @@ class CodeExecutorTool(BaseTool):
     ALLOWED_IMPORTS = {
         'math', 'random', 'datetime', 'json', 're', 'string',
         'collections', 'itertools', 'functools', 'operator',
-        'decimal', 'fractions', 'statistics', 'copy',
+        'decimal', 'fractions', 'statistics', 'copy', 'logging',
+        'time', 'uuid', 'base64', 'hashlib', 'hmac',
+        'typing', 'enum', 'bisect', 'heapq', 'pprint', 'abc',
+        'array', 'cmath', 'numbers', 'csv', 'html', 'difflib',
+        'calendar', 'zoneinfo', 'textwrap', 'colorsys',
     }
     
     def __init__(self, max_execution_time: int = 5):
@@ -165,10 +169,28 @@ class CodeExecutorTool(BaseTool):
         stdout_capture = io.StringIO()
         stderr_capture = io.StringIO()
         
+        # Add allowed imports
+        def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+            module_base = name.split('.')[0]
+            if module_base in self.ALLOWED_IMPORTS:
+                return __import__(name, globals, locals, fromlist, level)
+            raise ImportError(f"Import of '{name}' is not allowed in the sandbox")
+
         # Create safe globals
         safe_globals = {
             '__builtins__': {
-                # Safe builtins
+                '__import__': safe_import,
+                '__build_class__': __import__('builtins').__build_class__,
+                '__name__': '__main__',
+                '__doc__': None,
+                '__package__': None,
+                
+                # Standard decorators
+                'classmethod': classmethod,
+                'staticmethod': staticmethod,
+                'property': property,
+                
+                # Core functions
                 'print': print,
                 'len': len,
                 'range': range,
@@ -213,11 +235,25 @@ class CodeExecutorTool(BaseTool):
                 'sum': sum,
                 'type': type,
                 'zip': zip,
+                'super': super,
+                'vars': vars,
+                'dir': dir,
+                
+                # Exceptions
                 'Exception': Exception,
                 'ValueError': ValueError,
                 'TypeError': TypeError,
                 'KeyError': KeyError,
                 'IndexError': IndexError,
+                'AttributeError': AttributeError,
+                'RuntimeError': RuntimeError,
+                'StopIteration': StopIteration,
+                'AssertionError': AssertionError,
+                'ImportError': ImportError,
+                'ZeroDivisionError': ZeroDivisionError,
+                'NameError': NameError,
+                
+                # Constants
                 'True': True,
                 'False': False,
                 'None': None,

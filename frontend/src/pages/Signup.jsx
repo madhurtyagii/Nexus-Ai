@@ -66,7 +66,7 @@ const FloatingParticles = () => {
 
 // Benefits
 const benefits = [
-    { icon: Brain, text: "7 Specialized AI Agents" },
+    { icon: Brain, text: "8 Specialized AI Agents" },
     { icon: Zap, text: "Real-time Processing" },
     { icon: Shield, text: "Enterprise Security" },
     { icon: Code, text: "Full-Stack Generation" },

@@ -29,7 +29,8 @@ class AgentFactory:
         "DataAgent": ["data_analyzer", "FileProcessor"],
         "QAAgent": ["FileProcessor"],
         "MemoryAgent": ["memory_store"],
-        "ManagerAgent": ["FileProcessor"],
+        "ManagerAgent": ["FileProcessor", "architect"],
+        "VisualAgent": ["image_generator", "visual_analyzer", "FileProcessor"],
     }
     
     def __init__(self, db_session: Session = None, llm: LLMManager = None):
@@ -59,6 +60,16 @@ class AgentFactory:
         Returns:
             Configured agent instance
         """
+        # Self-healing: Ensure agents are registered if registry is empty
+        if not AgentRegistry.list_agents():
+            from agents import register_all_agents
+            register_all_agents()
+            print(f"🔄 AgentFactory: Triggered self-healing registration. Available: {AgentRegistry.list_agents()}")
+
+        # Alias: VisionAgent is now merged into VisualAgent
+        if agent_name == "VisionAgent":
+            agent_name = "VisualAgent"
+
         # Get required tools for this agent
         required_tool_names = self.AGENT_TOOLS.get(agent_name, [])
         

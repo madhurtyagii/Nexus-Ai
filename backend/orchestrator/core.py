@@ -43,12 +43,13 @@ Available agents:
 - QAAgent: Quality assurance, validation, testing
 - MemoryAgent: Context retrieval, user preference learning
 - ManagerAgent: Task planning, coordination (use for complex multi-step tasks)
+- VisualAgent: Image generation (SDXL), image editing (img2img), AND image analysis (describing charts, identifying objects)
 
 Analyze the user's task and respond with JSON only:
 {
     "complexity_score": <float 0-1, where 0=trivial, 1=very complex>,
     "required_agents": [<list of agent names needed>],
-    "task_type": "<research|coding|writing|data|mixed>",
+    "task_type": "<research|coding|writing|data|visual|mixed>",
     "estimated_time": "<e.g., '2 minutes', '10 minutes'>",
     "reasoning": "<brief explanation of why these agents>"
 }"""

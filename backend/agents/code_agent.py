@@ -413,36 +413,69 @@ Be clear and beginner-friendly."""
         
         return tool.execute(code=code, timeout=5)
     
-    def _attempt_fix(self, code: str, error: str, language: str) -> Optional[Dict[str, Any]]:
+    async def _healing_loop(self, code: str, error: str, language: str, max_attempts: int = 3) -> Dict[str, Any]:
         """
-        Attempt to fix code that failed to execute.
+        Attempt to fix code multiple times if it fails execution.
         """
-        prompt = f"""This {language} code has an error:
+        attempts = 0
+        current_code = code
+        current_error = error
+        fix_history = []
+        
+        while attempts < max_attempts:
+            attempts += 1
+            print(f"🛠️ CodeAgent: Healing attempt {attempts}/{max_attempts} for {language}...")
+            
+            # Record failure in history
+            fix_history.append(f"Attempt {attempts-1 if attempts > 1 else 'Initial'} Error: {current_error[:200]}")
 
+            prompt = f"""You are fixing {language.upper()} code that failed to run.
+            
+FAILED CODE:
 ```{language}
-{code}
+{current_code}
 ```
 
-Error: {error}
+ERROR RECEIVED:
+{current_error}
 
-Fix the code. Return ONLY the fixed code in a markdown code block."""
+PREVIOUS ATTEMPTS & FAILURES:
+{chr(10).join(fix_history)}
 
-        response = self.generate_response(prompt, use_cache=False)
-        
-        if response:
+Analyze the error and the code. Provide the COMPENSATED {language.upper()} code in a markdown block. 
+The code MUST be a complete, self-contained replacement. Ensure all imports are present."""
+
+            response = self.generate_response(prompt, use_cache=False)
             fixed_code = self._extract_code_from_markdown(response)
-            if fixed_code and fixed_code != code:
-                # Test the fix
-                if language == "python":
-                    test_result = self._test_python_code(fixed_code)
+            
+            if not fixed_code or fixed_code == current_code:
+                # LLM didn't change code or produced nothing
+                break
+                
+            # Test the fix for Python
+            if language == "python":
+                test_result = self._test_python_code(fixed_code)
+                if test_result.get("success"):
+                    print(f"✅ CodeAgent: Healing successful on attempt {attempts}!")
                     return {
                         "code": fixed_code,
-                        "tested": test_result.get("success", False),
-                        "test_output": test_result.get("stdout") or test_result.get("error")
+                        "tested": True,
+                        "test_output": test_result.get("stdout") or "Execution successful."
                     }
+                else:
+                    current_code = fixed_code
+                    current_error = test_result.get("error")
+                    # Continue to next attempt
+            else:
+                # For non-python, we assume the one-shot fix might be better but can't verify
                 return {"code": fixed_code, "tested": False}
-        
-        return None
+                
+        # Return whatever we ended with if we ran out of attempts
+        return {
+            "code": current_code,
+            "tested": False,
+            "test_output": current_error
+        }
     
     def _get_code_explanation(self, code: str, language: str) -> str:
         """
@@ -462,13 +495,13 @@ Fix the code. Return ONLY the fixed code in a markdown code block."""
     
     def _extract_code_from_markdown(self, text: str) -> str:
         """
-        Extract code from markdown code blocks.
+        Extract code from markdown code blocks with better handling for multiple blocks.
         """
         if not text:
             return ""
         
-        # Try to find code blocks
-        pattern = r'```(?:\w+)?\n([\s\S]*?)```'
+        # Try to find code blocks with language tag or without
+        pattern = r"```(?:\w+)?\s*\n([\s\S]*?)```"
         matches = re.findall(pattern, text)
         
         if matches:

@@ -32,9 +32,26 @@ export default function ExpandableOutput({
 
     // Check if content overflows the collapsed height
     useEffect(() => {
-        if (contentRef.current) {
-            setNeedsExpand(contentRef.current.scrollHeight > collapsedHeight + 20);
-        }
+        if (!contentRef.current) return;
+
+        const checkOverflow = () => {
+            if (contentRef.current) {
+                const hasOverflow = contentRef.current.scrollHeight > collapsedHeight + 5;
+                setNeedsExpand(hasOverflow);
+            }
+        };
+
+        // Initial check
+        const timer = setTimeout(checkOverflow, 100);
+
+        // Observe content changes (e.g., as markdown renders or images load)
+        const observer = new ResizeObserver(checkOverflow);
+        observer.observe(contentRef.current);
+
+        return () => {
+            clearTimeout(timer);
+            observer.disconnect();
+        };
     }, [content, collapsedHeight]);
 
     const handleCopyAll = async () => {

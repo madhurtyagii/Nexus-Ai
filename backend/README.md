@@ -15,6 +15,7 @@ High-performance async orchestration engine built with FastAPI. Manages AI agent
 API:        http://localhost:8000
 Docs:       http://localhost:8000/docs
 WebSocket:  ws://localhost:8000/ws
+Storage:    http://localhost:8000/storage
 ```
 
 ---
@@ -22,14 +23,14 @@ WebSocket:  ws://localhost:8000/ws
 ## ✨ Features
 
 ### 🤖 Multi-Agent System
-- 7 specialized AI agents (Manager, Research, Code, Content, QA, Data, Memory)
+- **8 specialized AI agents** (Manager, Research, Code, Content, QA, Data, Memory, Visual)
 - Automatic agent selection based on task type
 - Multi-phase project execution (Research → Implementation → QA)
 
 ### 🧠 Intelligence
 - **RAG Endpoints** - `/files/{id}/index` and `/files/query`
 - Vector search with ChromaDB + sentence-transformers
-- Text extraction for PDF, DOCX, TXT files
+- Unified Visual Intelligence for image generation and analysis
 
 ### ⚡ Real-time
 - WebSocket pub/sub for live task updates
@@ -54,7 +55,7 @@ WebSocket:  ws://localhost:8000/ws
 | Database | SQLite + SQLAlchemy |
 | Vectors | ChromaDB + Sentence Transformers |
 | LLM | Groq API / Ollama |
-| Auth | JWT (python-jose) |
+| Auth | Direct Bcrypt (3.14 compatible) |
 
 ---
 

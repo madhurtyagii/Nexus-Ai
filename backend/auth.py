@@ -6,14 +6,11 @@ JWT token creation, verification, and password hashing
 from datetime import datetime, timedelta
 from typing import Optional, Union
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from config import get_settings
 
 # Get settings
 settings = get_settings()
-
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -27,9 +24,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         True if password matches, False otherwise
     """
-    # Truncate to 72 bytes for consistency with get_password_hash
-    safe_password = plain_password.encode('utf-8')[:72].decode('utf-8', 'ignore')
-    return pwd_context.verify(safe_password, hashed_password)
+    pw_bytes = plain_password.encode('utf-8')[:72]
+    hash_bytes = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(pw_bytes, hash_bytes)
 
 
 def get_password_hash(password: str) -> str:
@@ -42,9 +39,9 @@ def get_password_hash(password: str) -> str:
     Returns:
         Hashed password string
     """
-    # Truncate to 72 bytes to avoid passlib/bcrypt ValueError
-    safe_password = password.encode('utf-8')[:72].decode('utf-8', 'ignore')
-    return pwd_context.hash(safe_password)
+    pw_bytes = password.encode('utf-8')[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pw_bytes, salt).decode('utf-8')
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

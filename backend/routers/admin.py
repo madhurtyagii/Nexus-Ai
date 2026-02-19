@@ -33,7 +33,6 @@ async def health_check():
         "services": {
             "database": "connected",
             "redis": "connected" if ping_redis() else "disconnected",
-            "ollama": "available" if llm_status["ollama"] else "unavailable",
             "groq": "available" if llm_status["groq"] else "unavailable"
         }
     }
@@ -123,10 +122,6 @@ async def get_llm_status(
     
     return {
         "providers": {
-            "ollama": {
-                "available": provider_status["ollama"],
-                "models": available_models["ollama"]
-            },
             "groq": {
                 "available": provider_status["groq"],
                 "models": available_models["groq"]

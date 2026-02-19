@@ -54,7 +54,7 @@ const HELP_CATEGORIES = [
         description: 'Understand your specialized team of AI agents.',
         items: [
             {
-                title: '7 Specialized Roles',
+                title: '9 Specialized Roles',
                 content: 'From the Manager who orchestrates to the QA Analyst who verifies, each agent has unique capabilities and focus areas.',
                 icon: Cpu
             },
@@ -180,8 +180,8 @@ export default function Help() {
                                             key={cat.id}
                                             onClick={() => setActiveCat(cat.id)}
                                             className={`flex items-center gap-4 p-4 rounded-2xl border transition-all text-left ${isActive
-                                                    ? 'bg-primary-500/10 border-primary-500/50 text-white shadow-[0_10px_30px_rgba(14,165,233,0.15)]'
-                                                    : 'bg-white/[0.02] border-white/5 text-dark-400 hover:border-white/20 hover:bg-white/[0.04]'
+                                                ? 'bg-primary-500/10 border-primary-500/50 text-white shadow-[0_10px_30px_rgba(14,165,233,0.15)]'
+                                                : 'bg-white/[0.02] border-white/5 text-dark-400 hover:border-white/20 hover:bg-white/[0.04]'
                                                 }`}
                                         >
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? 'bg-primary-500 text-white' : 'bg-white/5 text-dark-400'}`}>

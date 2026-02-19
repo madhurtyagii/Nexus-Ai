@@ -123,6 +123,14 @@ Your capabilities:
 Always create efficient execution plans and ensure smooth coordination.""",
         "available_tools": ["task_planner", "agent_coordinator", "progress_tracker"],
         "is_active": True
+    },
+    {
+        "name": "VisualAgent",
+        "role": "Generates, analyzes, and edits images",
+        "description": "Unified visual intelligence agent — analyzes images using multimodal LLMs, generates new images via Stable Diffusion XL, and performs image-to-image editing.",
+        "system_prompt": "You are a Visual Agent. You can analyze images, generate new images from prompts, and edit existing images. Choose the right mode based on user intent.",
+        "available_tools": ["image_generator", "visual_analyzer"],
+        "is_active": True
     }
 ]
 
@@ -136,22 +144,38 @@ def seed_agents():
     db = SessionLocal()
     
     try:
-        # Check if agents already exist
-        existing_count = db.query(Agent).count()
+        # 1. REMOVE deprecated agents
+        deprecated_agents = ["VisionAgent", "AudioAgent"]
+        for agent_name in deprecated_agents:
+            deprecated = db.query(Agent).filter(Agent.name == agent_name).first()
+            if deprecated:
+                db.delete(deprecated)
+                print(f"🗑️  Removed deprecated agent: {agent_name}")
         
-        if existing_count > 0:
-            print(f"⚠️ Found {existing_count} existing agents. Skipping seed.")
-            print("   To re-seed, delete existing agents first.")
-            return
+        # 2. ADD or UPDATE active agents
+        added_count = 0
+        updated_count = 0
         
-        # Insert agents
         for agent_data in AGENTS:
-            agent = Agent(**agent_data)
-            db.add(agent)
-            print(f"✅ Added: {agent_data['name']}")
+            existing = db.query(Agent).filter(Agent.name == agent_data['name']).first()
+            
+            if not existing:
+                # Add new agent
+                agent = Agent(**agent_data)
+                db.add(agent)
+                print(f"✅ Added: {agent_data['name']}")
+                added_count += 1
+            else:
+                # Update existing agent (force update description/role/tools)
+                existing.role = agent_data['role']
+                existing.description = agent_data['description']
+                existing.system_prompt = agent_data['system_prompt']
+                existing.available_tools = agent_data['available_tools']
+                print(f"🔄 Updated: {agent_data['name']}")
+                updated_count += 1
         
         db.commit()
-        print(f"\n🎉 Successfully seeded {len(AGENTS)} agents!")
+        print(f"\n🎉 Sync Complete: {added_count} added, {updated_count} updated.")
         
     except Exception as e:
         db.rollback()

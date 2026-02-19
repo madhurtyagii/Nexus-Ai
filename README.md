@@ -10,7 +10,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-✅_Complete-success" alt="Status: Complete" />
-  <img src="https://img.shields.io/badge/Version-2.1-blueviolet" alt="Version: 2.1" />
+  <img src="https://img.shields.io/badge/Version-2.5-blueviolet" alt="Version: 2.5" />
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python" alt="Python: 3.11+" />
   <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi" alt="FastAPI: 0.100+" />
@@ -19,10 +19,10 @@
 </p>
 
 <p align="center">
-  <strong>🎉 Project Completed — February 2026</strong>
+  <strong>🎉 Project Finalized — February 2026</strong>
 </p>
 
-**Nexus AI** is a cutting-edge, autonomous workspace that orchestrates a team of specialized AI agents to solve complex challenges through intelligent collaboration, semantic memory, and robust project orchestration.
+**Nexus AI** is a cutting-edge, autonomous workspace that orchestrates a team of **8 specialized AI agents** to solve complex challenges through intelligent collaboration, semantic memory, and robust project orchestration.
 
 ---
 
@@ -64,28 +64,28 @@ npm run dev
 ## ✨ Features
 
 ### 🎨 Premium UI/UX
-- 🌟 **Ultra-Premium Dashboard** - Glassmorphism with animated gradients
-- 🖱️ **Cursor Effects** - 6 customizable effects (Ring, Particles, Ribbon, Aurora, Stardust, Orbit)
+- 🌟 **Ultra-Premium Dashboard** - Glassmorphism with animated Aurora backgrounds
+- 🖱️ **Dynamic Cursor Effects** - 6 customizable effects (Ring, Particles, Aurora, etc.)
 - 🌓 **Global Theme System** - Dark/Light mode with radial transitions
 - ⌨️ **Command Palette** - Ctrl+K for quick navigation
 - 🔔 **Real-time Toasts** - Beautiful notifications with react-hot-toast
 
 ### ⚡ Real-time & Interactivity
 - 📡 **WebSocket Live Mirroring** - Instant task updates with visual "Live" indicator
-- 💬 **Direct Agent Chat** - Communicate directly with any agent
+- 💬 **Direct Agent Chat** - Communicate directly with any agent in your fleet
 - 📊 **Agent Metrics** - Performance stats and activity charts
 - 🎯 **Animated Components** - Framer Motion throughout
 
 ### 🧠 Intelligence & Workflow
 - 🧠 **RAG for Files** - Semantic search: "Ask Your Files" natural language queries
-- 🔀 **Visual Workflow Builder** - Drag-and-drop agent orchestration
+- 🔀 **Visual Workflow Builder** - Drag-and-drop agent orchestration designer
 - 📤 **Export Engine** - PDF, Markdown, DOCX, JSON exports
 - 🔄 **Multi-Phase Project Execution** - Research → Implementation → QA
 
 ### 📱 Accessibility
 - 📱 **PWA Support** - Install as standalone mobile/desktop app
 - 🔽 **Mobile Bottom Nav** - Touch-friendly navigation
-- 💅 **Responsive Design** - Safe-area support for notched phones
+- 💅 **Responsive Design** - Safe-area support for modern devices
 
 ### ⚙️ Settings & Account
 - 👤 **Editable Profile** - Change username & email in Settings
@@ -95,7 +95,7 @@ npm run dev
 
 ---
 
-## 🤖 The AI Agent Team
+## 🤖 The AI Workforce (8 Specialized Agents)
 
 | Agent | Role |
 |-------|------|
@@ -106,6 +106,7 @@ npm run dev
 | 🧪 **QAAgent** | Tests outputs, validates requirements, quality checks |
 | 📊 **DataAgent** | Data analysis, CSV processing, visualizations |
 | 🧠 **MemoryAgent** | Semantic context and long-term memory management |
+| 🎨 **VisualAgent** | Unified visual intelligence (Generation & Analysis) |
 
 ---
 

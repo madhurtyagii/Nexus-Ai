@@ -16,7 +16,7 @@ class GroqClient:
     def __init__(
         self, 
         api_key: str = None, 
-        default_model: str = "llama-3.1-8b-instant",
+        default_model: str = "meta-llama/llama-4-scout-17b-16e-instruct",
         timeout: float = 60.0
     ):
         """
@@ -52,7 +52,8 @@ class GroqClient:
         stream: bool = False,
         system: str = None,
         temperature: float = 0.7,
-        max_tokens: int = 4096
+        max_tokens: int = 4096,
+        images: List[str] = None
     ) -> Optional[str]:
         """
         Generate text completion from Groq.
@@ -60,26 +61,43 @@ class GroqClient:
         Args:
             prompt: User prompt
             model: Model to use (defaults to default_model)
-            stream: Whether to stream response (not implemented for simplicity)
+            stream: Whether to stream response
             system: Optional system prompt
             temperature: Creativity parameter (0-1)
             max_tokens: Maximum tokens to generate
+            images: List of base64 encoded images
             
         Returns:
             Generated text or None on failure
         """
         model = model or self.default_model
         
+        # Determine if this involves images
+        if images:
+            content = [{"type": "text", "text": prompt}]
+            for img in images:
+                # Ensure base64 prefix if missing
+                if not img.startswith("data:"):
+                    img = f"data:image/jpeg;base64,{img}"
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": img}
+                })
+            
+            user_message = {"role": "user", "content": content}
+        else:
+            user_message = {"role": "user", "content": prompt}
+
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
-        messages.append({"role": "user", "content": prompt})
+        messages.append(user_message)
         
         return self.chat(messages, model, temperature, max_tokens)
     
     def chat(
         self, 
-        messages: List[Dict[str, str]], 
+        messages: List[Dict[str, Any]], 
         model: str = None,
         temperature: float = 0.7,
         max_tokens: int = 4096
@@ -88,7 +106,7 @@ class GroqClient:
         Chat completion with message history.
         
         Args:
-            messages: List of {"role": "user/assistant/system", "content": "..."}
+            messages: List of {"role": "...", "content": "..."} or multi-content
             model: Model to use
             temperature: Creativity parameter (0-1)
             max_tokens: Maximum tokens to generate
@@ -117,15 +135,10 @@ class GroqClient:
                     json=payload
                 )
                 
-                if response.status_code == 401:
-                    print("⚠️ Groq API key is invalid")
-                    return None
-                    
-                if response.status_code == 429:
-                    print("⚠️ Groq rate limit exceeded")
+                if response.status_code != 200:
+                    print(f"❌ Groq API Error ({response.status_code}): {response.text}")
                     return None
                 
-                response.raise_for_status()
                 data = response.json()
                 
                 choices = data.get("choices", [])
@@ -141,6 +154,8 @@ class GroqClient:
             return None
         except Exception as e:
             print(f"⚠️ Groq error: {e}")
+            if 'response' in locals():
+                print(f"Response text: {response.text}")
             return None
     
     def count_tokens(self, text: str) -> int:
@@ -192,9 +207,9 @@ class GroqClient:
         """
         # Groq's available models (as of 2026)
         return [
+            "meta-llama/llama-4-maverick-17b-128e-instruct",
+            "meta-llama/llama-4-scout-17b-16e-instruct",
             "llama-3.3-70b-versatile",
             "llama-3.1-8b-instant",
-            "llama3-groq-70b-8192-tool-use-preview",
-            "mixtral-8x7b-32768",
-            "gemma2-9b-it"
+            "whisper-large-v3-turbo"
         ]
