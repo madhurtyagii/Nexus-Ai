@@ -31,7 +31,7 @@
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- Groq API Key (or Ollama for local LLM)
+- Groq API Key
 
 ### Launch Commands
 ```bash
@@ -91,7 +91,7 @@ npm run dev
 - 👤 **Editable Profile** - Change username & email in Settings
 - 🔐 **Password Management** - Secure password updates
 - 🎨 **Appearance Controls** - Theme & cursor effect preferences
-- 🔑 **API Key Management** - Groq/Ollama provider switching
+- 🔑 **API Key Management** - Groq provider switching
 
 ---
 
@@ -120,8 +120,7 @@ npm run dev
                                  │
         ┌────────────────────────┼────────────────────────┐
         ▼                        ▼                        ▼
-┌───────────────┐      ┌───────────────┐       ┌───────────────┐
-│    SQLite     │      │   ChromaDB    │       │   Groq/Ollama │
+│    SQLite     │      │   ChromaDB    │       │     Groq      │
 │  (Database)   │      │ (Vectors/RAG) │       │     (LLM)     │
 └───────────────┘      └───────────────┘       └───────────────┘
 ```

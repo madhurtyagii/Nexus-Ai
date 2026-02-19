@@ -54,7 +54,7 @@ Storage:    http://localhost:8000/storage
 | Framework | FastAPI (async Python) |
 | Database | SQLite + SQLAlchemy |
 | Vectors | ChromaDB + Sentence Transformers |
-| LLM | Groq API / Ollama |
+| LLM | Groq API |
 | Auth | Direct Bcrypt (3.14 compatible) |
 
 ---
