@@ -34,8 +34,6 @@ http://localhost:5173
 
 ### 🧠 Intelligence
 - 🧠 **Ask Your Files** - RAG-powered semantic search
-- 🔀 **Workflow Builder** - Drag-and-drop agent orchestration
-- 📤 Export projects to PDF/Markdown/DOCX
 - 🔀 **Visual Workflow Builder** - Drag-and-drop agent orchestration
 - 📤 Export projects to PDF/Markdown/DOCX/JSON
 
@@ -48,7 +46,7 @@ http://localhost:5173
 - 👤 **Editable Profile** - Change username & email
 - 🎨 **Appearance** - Theme & cursor effect preferences
 - 🔐 **Security** - Password management
-- 🔑 **API Keys** - Groq/Ollama provider switching
+- 🔑 **API Keys** - Groq provider switching
 
 ---
 
