@@ -1,172 +1,132 @@
 <p align="center">
-  <img src="frontend/public/logo2.png" width="140" />
+  <img src="frontend/public/logo2.png" width="160" />
 </p>
 
 <h1 align="center">Nexus AI</h1>
 
 <p align="center">
-  <strong>Intelligence v2.6 — The Autonomous Multi-Agent Workspace</strong>
+  <strong>The Autonomous Multi-Agent Orchestration Workspace</strong>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-✅_Complete-success" alt="Status: Complete" />
   <img src="https://img.shields.io/badge/Version-2.6-blueviolet" alt="Version: 2.6" />
-  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python" alt="Python: 3.11+" />
-  <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi" alt="FastAPI: 0.100+" />
   <img src="https://img.shields.io/badge/React-18.x-61DAFB?logo=react" alt="React: 18.x" />
-  <img src="https://img.shields.io/badge/PWA-Installable-8b5cf6" alt="PWA: Installable" />
+  <img src="https://img.shields.io/badge/Intelligence-Autonomous-8b5cf6" alt="Intelligence: Autonomous" />
 </p>
-
-<p align="center">
-  <strong>🎉 Final UI Refinement Completed — February 2026</strong>
-</p>
-
-**Nexus AI** is a cutting-edge, autonomous workspace that orchestrates a team of **8 specialized AI agents** to solve complex challenges through intelligent collaboration, semantic memory, and robust project orchestration.
 
 ---
 
-## 🚀 Quick Start
+## 🌟 Vision
+**Nexus AI** represents the next evolution of human-AI collaboration. It is not just another chatbot; it is a **fully autonomous agentic workforce**. Nexus leverages a fleet of 8 specialized AI agents that collaborate, think, and execute complex projects with industrial-grade precision. 
+
+By unifying **Semantic Memory (RAG)**, **Real-time Live Mirroring**, and a **Visionary UI**, Nexus provides a glass-box experience into the future of autonomous software orchestration.
+
+---
+
+## 🚀 How It Works: The Autonomous Pipeline
+Nexus operates on a "Collaborative Intelligence" model. When you provide a goal, the system initiates a structured multi-phase execution pipeline:
+
+```mermaid
+graph TD
+    A[User Input/Goal] --> B{Manager Agent}
+    B -->|Strategic Planning| C[Research Agent]
+    C -->|Web Intel & Citations| D[Content/Code Agent]
+    D -->|Implementation| E[QA Agent]
+    E -->|Validation & Testing| F{Success?}
+    F -->|No| D
+    F -->|Yes| G[Final Output/Project Dashboard]
+    
+    subgraph "Context Engine"
+    H[(ChromaDB Vector Store)] <--> B
+    H <--> D
+    end
+```
+
+1.  **Orchestration**: The `ManagerAgent` breaks down the goal into actionable tasks.
+2.  **Intel Gathering**: The `ResearchAgent` performs live web searches to validate constraints and gather data.
+3.  **Execution**: `Code` and `Content` agents implement the solution based on research findings.
+4.  **Verification**: The `QAAgent` subjects all output to rigorous testing before delivery.
+
+---
+
+## 🤖 The Nexus Workforce
+Meet your elite fleet. Each agent is a specialized LLM instance with unique system prompts and toolsets:
+
+| Agent | Capability | Functional Deep-Dive |
+|:---:|:---:|---|
+| 👑 | **Manager** | Strategic planning, conflict resolution, and multi-agent coordination. |
+| 🔍 | **Researcher** | Real-time web intelligence with automated citation and source validation. |
+| 💻 | **Coder** | Full-stack implementation, refactoring, and complex architectural design. |
+| ✍️ | **Content** | High-fidelity technical writing, blog generation, and creative branding. |
+| 🧪 | **QA** | Validation of requirements, code testing, and quality assurance gating. |
+| 📊 | **Data** | Deep analysis of CSV/JSON data with automated visualization generation. |
+| 🧠 | **Memory** | Long-term semantic recall powered by Vector Embeddings (RAG). |
+| 🎨 | **Visual** | State-of-the-art vision analysis and aesthetic asset generation. |
+
+---
+
+## 💎 Technical Pillars & Innovation
+
+### 🧠 Semantic Recall (RAG 2.0)
+Nexus uses **ChromaDB** as its long-term memory. Every file you upload is indexed into a vector space, allowing agents to "remember" technical documentation, past conversations, and project context with near-zero latency.
+
+### 📡 Live Mirroring (WebSockets)
+Experience "Glass-Box" transparency. Every step an agent takes—every thought, every tool call—is broadcasted in real-time to the frontend via **WebSockets**. The UI pulses with life as agents work in the background.
+
+### 🌓 Premium Visual Foundation
+The UI is a testament to modern web aesthetics:
+- **Off-White Mastery**: A curated premium light mode designed for visual comfort and high-end feel.
+- **Aurora Backgrounds**: Animated mesh gradients that react to system state.
+- **Micro-Interactions**: Framer Motion powered transitions and physics-based components.
+- **Dynamic Cursor System**: 6 unique particle and glow effects that follow your intent.
+
+---
+
+## 🏗️ Architecture Detail
+
+```mermaid
+C4Context
+    title Nexus AI Technical Architecture
+    
+    Person(user, "User", "Orchestrates AI Fleet")
+    System_Boundary(c1, "Nexus AI Ecosystem") {
+        System(web, "React PWA", "Premium Interface / WebSockets")
+        System(api, "FastAPI backend", "Agent Orchestration & RAG")
+        SystemDb(db, "SQLite / ChromaDB", "Relational Data & Vector Memory")
+    }
+    
+    System_Ext(groq, "Groq / LLMs", "Sub-second inference core")
+    
+    Rel(user, web, "Interacts with")
+    Rel(web, api, "Provisions goals / Receives stream", "JSON/WS")
+    Rel(api, db, "Persists state & memory")
+    Rel(api, groq, "Executes agent thoughts", "OpenAI Protocol")
+```
+
+---
+
+## 📁 Installation & Launch
 
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- Groq API Key
+- Groq API Key (The speed engine of Nexus)
 
-### Launch Commands
+### Fast Launch
 ```bash
-# Clone the repository
-git clone https://github.com/madhurtyagii/nexus-ai.git
-cd nexus-ai
-
-# Backend (Terminal 1)
+# Backend Setup
 cd backend
-python -m venv new_venv
-new_venv\Scripts\activate  # Windows
+python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 python main.py
 
-# Frontend (Terminal 2)
+# Frontend Setup
 cd frontend
 npm install
 npm run dev
 ```
-
-### 🔗 Local URLs
-| Service | URL |
-|---------|-----|
-| **Frontend** | http://localhost:5173 |
-| **Backend API** | http://localhost:8000 |
-| **API Docs** | http://localhost:8000/docs |
-
----
-
-## ✨ Features
-
-### 🎨 Premium UI/UX
-- 🌟 **Ultra-Premium Dashboard** - Glassmorphism with animated Aurora backgrounds
-- 🖱️ **Dynamic Cursor Effects** - 6 customizable effects (Ring, Particles, Aurora, etc.)
-- 🌓 **Global Theme System** - Dark/Light mode with radial transitions
-- ⌨️ **Command Palette** - Ctrl+K for quick navigation
-- 🔔 **Real-time Toasts** - Beautiful notifications with react-hot-toast
-
-### ⚡ Real-time & Interactivity
-- 📡 **WebSocket Live Mirroring** - Instant task updates with visual "Live" indicator
-- 💬 **Direct Agent Chat** - Communicate directly with any agent in your fleet
-- 📊 **Agent Metrics** - Performance stats and activity charts
-- 🎯 **Animated Components** - Framer Motion throughout
-
-### 🧠 Intelligence & Workflow
-- 🧠 **RAG for Files** - Semantic search: "Ask Your Files" natural language queries
-- 🔀 **Visual Workflow Builder** - Drag-and-drop agent orchestration designer
-- 📤 **Export Engine** - PDF, Markdown, DOCX, JSON exports
-- 🔄 **Multi-Phase Project Execution** - Research → Implementation → QA
-
-### 📱 Accessibility
-- 📱 **PWA Support** - Install as standalone mobile/desktop app
-- 🔽 **Mobile Bottom Nav** - Touch-friendly navigation
-- 💅 **Responsive Design** - Safe-area support for modern devices
-
-### ⚙️ Settings & Account
-- 👤 **Editable Profile** - Change username & email in Settings
-- 🔐 **Password Management** - Secure password updates
-- 🎨 **Appearance Controls** - Theme & cursor effect preferences
-- 🔑 **API Key Management** - Groq provider switching
-
----
-
-## 🤖 The AI Workforce (8 Specialized Agents)
-
-| Agent | Role |
-|-------|------|
-| 👑 **ManagerAgent** | Orchestrates goals, creates plans, coordinates agents |
-| 🔍 **ResearchAgent** | Web research with citations and source validation |
-| 💻 **CodeAgent** | Code generation, debugging, software architecture |
-| ✍️ **ContentAgent** | Creative writing, documentation, blog posts |
-| 🧪 **QAAgent** | Tests outputs, validates requirements, quality checks |
-| 📊 **DataAgent** | Data analysis, CSV processing, visualizations |
-| 🧠 **MemoryAgent** | Semantic context and long-term memory management |
-| 🎨 **VisualAgent** | Unified visual intelligence (Generation & Analysis) |
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────┐     ┌─────────────────┐
-│  React (Vite)   │────▶│  FastAPI        │
-│  PWA Frontend   │     │  Backend        │
-└─────────────────┘     └────────┬────────┘
-                                 │
-        ┌────────────────────────┼────────────────────────┐
-        ▼                        ▼                        ▼
-│    SQLite     │      │   ChromaDB    │       │     Groq      │
-│  (Database)   │      │ (Vectors/RAG) │       │     (LLM)     │
-└───────────────┘      └───────────────┘       └───────────────┘
-```
-
----
-
-## 🎨 Design Highlights
-
-- **Glassmorphism** - Frosted glass effects with backdrop blur
-- **Animated Gradients** - Mesh backgrounds with subtle animations
-- **Neon Accents** - Cyan/purple color scheme with glow effects
-- **Spring Animations** - Smooth, physics-based transitions
-- **Dark Mode First** - Deep space theme with high contrast
-
----
-
-## 📁 Project Structure
-
-```
-nexus-ai/
-├── frontend/           # React PWA (Vite)
-│   ├── src/
-│   │   ├── components/ # Reusable UI components
-│   │   ├── pages/      # Route pages
-│   │   ├── context/    # React contexts
-│   │   └── services/   # API client
-│   └── public/         # Static assets
-│
-├── backend/            # FastAPI server
-│   ├── agents/         # AI agent implementations
-│   ├── routers/        # API endpoints
-│   ├── models/         # Database models
-│   ├── schemas/        # Pydantic schemas
-│   ├── orchestrator/   # Workflow engine
-│   ├── memory/         # RAG & vector store
-│   ├── llm/            # LLM integrations
-│   └── tools/          # Agent tools
-│
-└── README.md           # This file
-```
-
----
-
-## 🤝 Contributing & License
-
-Nexus AI is released under the [MIT License](LICENSE). Contributions welcome!
 
 ---
 
@@ -175,5 +135,5 @@ Nexus AI is released under the [MIT License](LICENSE). Contributions welcome!
 </p>
 
 <p align="center">
-  <strong>🎉 Project Completed — February 2026</strong>
+  <strong>🚀 Nexus AI — Orchestrating the Future of Work.</strong>
 </p>
