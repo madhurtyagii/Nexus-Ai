@@ -43,6 +43,15 @@ function App() {
     React.useEffect(() => {
         const handleToggle = () => setIsGalleryOpen(prev => !prev);
         window.addEventListener('toggle-image-gallery', handleToggle);
+
+        // Theme initialization
+        const savedTheme = localStorage.getItem('nexus_theme');
+        if (savedTheme === 'light') {
+            document.documentElement.classList.add('light');
+        } else {
+            document.documentElement.classList.remove('light');
+        }
+
         return () => window.removeEventListener('toggle-image-gallery', handleToggle);
     }, []);
 

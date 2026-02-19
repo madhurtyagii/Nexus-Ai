@@ -10,6 +10,13 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from database import engine, Base
+import models.user
+import models.task
+import models.agent
+import models.project
+import models.file
+import models.workflow_template
+import models.chat
 from seed_templates import seed_templates
 from seed_agents import seed_agents
 

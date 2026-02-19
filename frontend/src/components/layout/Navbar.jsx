@@ -79,7 +79,7 @@ export default function Navbar() {
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className={`h-[72px] glass px-6 flex items-center justify-between sticky top-0 z-50 m-4 rounded-2xl transition-all duration-500 ${scrolled
                 ? 'border-b-2 border-transparent shadow-lg'
-                : 'border-b border-white/5'
+                : 'border-b border-border'
                 }`}
             style={{
                 borderImage: scrolled
@@ -105,7 +105,7 @@ export default function Navbar() {
                 </div>
 
                 <div className="flex flex-col">
-                    <span className="text-lg font-black tracking-tighter text-white leading-none">
+                    <span className="text-lg font-black tracking-tighter text-text-primary leading-none">
                         Nexus AI
                     </span>
                     <span className="text-[9px] uppercase tracking-[0.2em] font-bold mt-0.5 gradient-text">
@@ -139,7 +139,7 @@ export default function Navbar() {
                     </div>
                 </motion.button>
 
-                <div className="h-5 w-px bg-white/[0.06] mx-1 hidden md:block" />
+                <div className="h-5 w-px bg-border mx-1 hidden md:block" />
 
                 <div className="flex items-center gap-2">
                     {/* Notifications */}
@@ -170,7 +170,7 @@ export default function Navbar() {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                                     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                                    className="absolute right-0 top-full mt-2 w-80 glass rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden z-50"
+                                    className="absolute right-0 top-full mt-2 w-80 glass rounded-2xl border border-border shadow-2xl overflow-hidden z-50"
                                 >
                                     <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
                                         <h3 className="text-sm font-bold text-white">Notifications</h3>
@@ -262,7 +262,7 @@ export default function Navbar() {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                                     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                                    className="absolute right-0 top-full mt-2 w-64 glass rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden z-50"
+                                    className="absolute right-0 top-full mt-2 w-64 glass rounded-2xl border border-border shadow-2xl overflow-hidden z-50"
                                 >
                                     <div className="px-5 py-5 border-b border-white/5 bg-white/[0.02]">
                                         <div className="flex items-center gap-4">

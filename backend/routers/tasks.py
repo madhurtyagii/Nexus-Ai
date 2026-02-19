@@ -207,6 +207,35 @@ async def get_task_subtasks(
     return service.get_subtasks(task_id)
 
 
+@router.post("/{task_id}/followup")
+async def task_followup(
+    task_id: int,
+    followup_data: dict, # simple dict for now { "followup_prompt": "..." }
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Submit a follow-up request for a completed task.
+    """
+    task = db.query(Task).filter(
+        Task.id == task_id,
+        Task.user_id == current_user.id
+    ).first()
+    
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    prompt = followup_data.get("followup_prompt")
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Follow-up prompt required")
+    
+    service = TaskService(db)
+    background_tasks.add_task(service.process_followup, task_id, prompt)
+    
+    return {"message": "Follow-up instructions received and queued", "task_id": task_id}
+
+
 @router.post("/{task_id}/retry")
 async def retry_task(
     task_id: int,

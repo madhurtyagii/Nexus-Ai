@@ -227,6 +227,49 @@ Analyze the user's task and respond with JSON only:
         return subtask_ids
     
     @retry(exceptions=(TaskExecutionError, DatabaseError), tries=3, delay=1)
+    def execute_followup(self, task_id: int, followup_prompt: str) -> Dict[str, Any]:
+        """Processes a follow-up request for an existing task.
+        
+        Uses the previous task output as context to analyze and execute 
+        the refinement instructions.
+        """
+        print(f"🔄 Executing follow-up for task {task_id}: {followup_prompt[:50]}...")
+        
+        try:
+            task = self.db.query(Task).filter(Task.id == task_id).first()
+            if not task:
+                raise TaskExecutionError(f"Task {task_id} not found")
+            
+            # Combine original prompt + output + follow-up for analysis
+            refinement_context = f"""
+Original Task: {task.user_prompt}
+Previous Result: {task.output}
+Follow-up Instructions: {followup_prompt}
+"""
+            # Re-analyze with followup context
+            analysis = self.analyze_task(refinement_context)
+            
+            # Update task status
+            task.status = TaskStatus.IN_PROGRESS.value
+            self.db.commit()
+            
+            # Create subtasks for the follow-up
+            # Note: We might want to mark these as 'followup' types in the future
+            subtask_ids = self.create_execution_plan(task_id, analysis)
+            
+            for subtask_id in subtask_ids:
+                enqueue_task(subtask_id)
+                
+            return {
+                "task_id": task_id,
+                "status": "in_progress",
+                "is_followup": True,
+                "subtask_ids": subtask_ids
+            }
+        except Exception as e:
+            self.db.rollback()
+            raise TaskExecutionError(f"Follow-up failed for task {task_id}: {str(e)}")
+
     def execute_task(self, task_id: int) -> Dict[str, Any]:
         """Runs the complete end-to-end task execution pipeline.
         

@@ -5,12 +5,12 @@
 <h1 align="center">Nexus AI</h1>
 
 <p align="center">
-  <strong>Intelligence v2.0 — The Autonomous Multi-Agent Workspace</strong>
+  <strong>Intelligence v2.6 — The Autonomous Multi-Agent Workspace</strong>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-✅_Complete-success" alt="Status: Complete" />
-  <img src="https://img.shields.io/badge/Version-2.5-blueviolet" alt="Version: 2.5" />
+  <img src="https://img.shields.io/badge/Version-2.6-blueviolet" alt="Version: 2.6" />
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python" alt="Python: 3.11+" />
   <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi" alt="FastAPI: 0.100+" />
@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <strong>🎉 Project Finalized — February 2026</strong>
+  <strong>🎉 Final UI Refinement Completed — February 2026</strong>
 </p>
 
 **Nexus AI** is a cutting-edge, autonomous workspace that orchestrates a team of **8 specialized AI agents** to solve complex challenges through intelligent collaboration, semantic memory, and robust project orchestration.

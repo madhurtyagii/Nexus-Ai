@@ -620,6 +620,78 @@ async def delete_project(
     return {"message": "Project deleted successfully"}
 
 
+@router.post("/{project_id}/followup")
+async def project_followup(
+    project_id: int,
+    followup_data: dict, # { "refinement_prompt": "..." }
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Submit follow-up instructions to refine a project plan.
+    """
+    project = db.query(Project).filter(
+        Project.id == project_id,
+        Project.user_id == current_user.id
+    ).first()
+    
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    prompt = followup_data.get("refinement_prompt")
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Refinement prompt required")
+    
+    background_tasks.add_task(
+        _run_ai_refinement,
+        project_id,
+        prompt,
+        current_user.id
+    )
+    
+    return {"message": "Refinement instructions received and queued", "project_id": project_id}
+
+
+def _run_ai_refinement(project_id: int, refinement_prompt: str, user_id: int):
+    """Background task to refine project plan."""
+    from database import SessionLocal
+    db = SessionLocal()
+    try:
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if not project: return
+        
+        from agents.manager_agent import ManagerAgent
+        import asyncio
+        manager = ManagerAgent()
+        
+        refinement_result = asyncio.run(manager.execute({
+            "project_description": project.description or project.name,
+            "refinement_prompt": refinement_prompt,
+            "existing_plan": project.project_plan,
+            "user_id": user_id
+        }))
+        
+        if refinement_result and refinement_result.get("phases"):
+            project.project_plan = refinement_result.get("phases", [])
+            project.workflow = refinement_result.get("workflow", {})
+            project.total_phases = len(refinement_result.get("phases", []))
+            
+            total_tasks = 0
+            for phase in refinement_result.get("phases", []):
+                total_tasks += len(phase.get("tasks", []))
+            project.total_tasks = total_tasks
+            project.estimated_minutes = refinement_result.get("estimated_minutes", 30)
+            project.risk_level = refinement_result.get("risk_assessment", {}).get("risk_level", "medium")
+            project.status = "planning" # Set back to planning to show new plan
+            db.commit()
+            print(f"✅ AI refinement complete for project {project_id}")
+    except Exception as e:
+        print(f"❌ AI refinement failed: {e}")
+    finally:
+        db.close()
+
+
 @router.post("/{project_id}/replan")
 async def replan_project(
     project_id: int,

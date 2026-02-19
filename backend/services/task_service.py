@@ -207,6 +207,11 @@ class TaskService:
         self.db.commit()
         return True
     
+    def process_followup(self, task_id: int, followup_prompt: str) -> Dict[str, Any]:
+        """Process a follow-up logic via Orchestrator."""
+        orchestrator = OrchestratorEngine(self.db)
+        return orchestrator.execute_followup(task_id, followup_prompt)
+
     def retry_task(self, task_id: int) -> Dict[str, Any]:
         """
         Retry a failed task.

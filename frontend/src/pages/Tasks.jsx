@@ -181,7 +181,7 @@ export default function Tasks() {
                                     <ArrowLeft className="w-4 h-4" />
                                 </motion.button>
                                 <div>
-                                    <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                                    <h1 className="text-3xl font-black text-text-primary tracking-tight flex items-center gap-3">
                                         <span>📋</span> All <span className="gradient-text-vivid">Tasks</span>
                                     </h1>
                                     <p className="text-dark-400 text-sm font-medium mt-1">
@@ -203,7 +203,7 @@ export default function Tasks() {
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Search tasks..."
-                                        className="w-full pl-11 pr-4 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-white text-sm placeholder:text-dark-600 focus:outline-none focus:border-primary-500/30 focus:bg-white/[0.05] transition-all"
+                                        className="w-full pl-11 pr-4 py-2.5 bg-bg-tertiary border border-border rounded-xl text-text-primary text-sm placeholder:text-dark-600 focus:outline-none focus:border-primary-500/30 focus:bg-white/[0.05] transition-all"
                                     />
                                 </div>
 
@@ -253,7 +253,7 @@ export default function Tasks() {
                                 <div className="w-16 h-16 bg-white/[0.03] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/[0.06]">
                                     <ClipboardList className="w-7 h-7 text-dark-600" />
                                 </div>
-                                <h3 className="text-lg font-bold text-white mb-2">No Tasks Found</h3>
+                                <h3 className="text-lg font-bold text-text-primary mb-2">No Tasks Found</h3>
                                 <p className="text-dark-500 text-sm mb-6 max-w-sm mx-auto">
                                     {searchQuery || statusFilter !== 'all'
                                         ? 'Try adjusting your filters to find what you\'re looking for.'
@@ -296,7 +296,7 @@ export default function Tasks() {
 
                                                 {/* Content */}
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-semibold text-dark-100 line-clamp-1 group-hover:text-white transition-colors">
+                                                    <p className="text-sm font-semibold text-text-primary line-clamp-1 group-hover:text-primary-500 transition-colors">
                                                         {task.user_prompt}
                                                     </p>
                                                     <div className="flex items-center gap-3 mt-1.5">
@@ -397,7 +397,7 @@ export default function Tasks() {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="p-6 border-b border-white/[0.06] flex items-center justify-between">
-                                <h2 className="text-lg font-bold text-white">Task Details</h2>
+                                <h2 className="text-lg font-bold text-text-primary">Task Details</h2>
                                 <motion.button
                                     onClick={() => setShowModal(false)}
                                     className="p-2 text-dark-400 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all"

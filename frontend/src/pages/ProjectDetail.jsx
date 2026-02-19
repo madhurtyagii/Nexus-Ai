@@ -4,9 +4,9 @@ import toast from 'react-hot-toast';
 import api, { projectsAPI, exportsAPI } from '../services/api';
 import { ProjectTimeline, PhaseAccordion, ActivityFeed } from '../components/projects';
 import FileUpload from '../components/files/FileUpload';
-import FileManager from '../components/files/FileManager';
 import MarkdownRenderer from '../components/common/MarkdownRenderer';
 import ExpandableOutput from '../components/common/ExpandableOutput';
+import FloatingRefinementBar from '../components/common/FloatingRefinementBar';
 import './ProjectDetail.css';
 
 function ProjectDetail() {
@@ -99,6 +99,27 @@ function ProjectDetail() {
             toast.error('Failed to export project');
         } finally {
             setExporting(false);
+        }
+    };
+
+    const [refinementInput, setRefinementInput] = useState('');
+    const [isRefining, setIsRefining] = useState(false);
+
+    const handleRefine = async () => {
+        if (!refinementInput.trim() || isRefining) return;
+        setIsRefining(true);
+        try {
+            await api.post(`/projects/${id}/followup`, {
+                refinement_prompt: refinementInput
+            });
+            setRefinementInput('');
+            toast.success('Refinement instructions received');
+            setProject(prev => ({ ...prev, status: 'planning' }));
+        } catch (error) {
+            console.error('Refinement failed:', error);
+            toast.error('Failed to send refinement instructions');
+        } finally {
+            setIsRefining(false);
         }
     };
 
@@ -338,6 +359,7 @@ function ProjectDetail() {
                         </div>
                     </div>
                 )}
+
             </div>
 
             {/* File Management */}
@@ -349,7 +371,15 @@ function ProjectDetail() {
                         onUploadSuccess={() => setFileRefreshTrigger(prev => prev + 1)}
                     />
                 </div>
-                <FileManager projectId={id} refreshTrigger={fileRefreshTrigger} />
+                <div className="card p-8 text-center bg-bg-tertiary border border-border rounded-2xl">
+                    <p className="text-dark-400 mb-4">Files associated with this project can be managed in the unified Files area.</p>
+                    <button
+                        onClick={() => navigate('/files')}
+                        className="px-6 py-2 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 border border-primary-500/20 rounded-xl transition-all text-sm font-bold"
+                    >
+                        Go to Files
+                    </button>
+                </div>
             </div>
 
             {/* Activity Feed */}
@@ -409,6 +439,12 @@ function ProjectDetail() {
                     />
                 </div>
             )}
+
+            {/* Floating Refinement Bar */}
+            <FloatingRefinementBar
+                onRefine={handleRefine}
+                isLoading={isRefining}
+            />
         </div>
     );
 }

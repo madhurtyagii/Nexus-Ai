@@ -52,13 +52,13 @@ export default function SpotlightCard({
             onClick={onClick}
             className={`relative overflow-hidden rounded-2xl transition-all duration-300 ${className}`}
             style={{
-                background: 'rgba(15, 23, 42, 0.5)',
+                background: 'var(--bg-card)',
                 backdropFilter: 'blur(16px) saturate(150%)',
                 WebkitBackdropFilter: 'blur(16px) saturate(150%)',
-                border: `1px solid ${isHovered ? borderColor : 'rgba(255, 255, 255, 0.06)'}`,
+                border: `1px solid ${isHovered ? borderColor : 'var(--border)'}`,
                 boxShadow: isHovered
-                    ? `0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06)`
-                    : `0 4px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04)`,
+                    ? `var(--shadow-elevated), var(--shadow-inset-hover)`
+                    : `var(--shadow-card), var(--shadow-inset)`,
                 cursor: onClick ? 'pointer' : 'default',
             }}
             {...props}

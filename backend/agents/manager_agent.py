@@ -91,14 +91,16 @@ Think like a System Architect. Build with precision. Scale with intelligence."""
         """
         start_time = datetime.now()
         
-        # Get project description
+        # Get project description and refinement prompt
         project_description = input_data.get("project_description") or \
                              input_data.get("complex_task") or \
                              input_data.get("user_prompt", "")
         
-        if not project_description:
+        refinement_prompt = input_data.get("refinement_prompt")
+        
+        if not project_description and not refinement_prompt:
             return {
-                "error": "No project description provided",
+                "error": "No project description or refinement prompt provided",
                 "status": "failed"
             }
         
@@ -125,13 +127,25 @@ Think like a System Architect. Build with precision. Scale with intelligence."""
 
         import anyio
         
-        # Step 2: Analyze project
-        print(f"🤖 ManagerAgent: Analyzing project...")
-        analysis = await anyio.to_thread.run_sync(self._analyze_project, project_description)
-        
-        # Step 3: Create project plan
-        print(f"📋 ManagerAgent: creating plan...")
-        project_plan = await anyio.to_thread.run_sync(self.project_planner.execute, project_description)
+        # Step 2: Analyze project or Refine existing plan
+        if refinement_prompt:
+            print(f"🔄 ManagerAgent: Refining existing plan based on feedback...")
+            existing_plan = input_data.get("existing_plan")
+            
+            # Use LLM to refine the plan
+            project_plan = await self._refine_project_plan(
+                description=project_description,
+                existing_plan=existing_plan,
+                refinement_prompt=refinement_prompt
+            )
+            analysis = await anyio.to_thread.run_sync(self._analyze_project, f"{project_description}\nRefinement: {refinement_prompt}")
+        else:
+            print(f"🤖 ManagerAgent: Analyzing project...")
+            analysis = await anyio.to_thread.run_sync(self._analyze_project, project_description)
+            
+            # Step 3: Create project plan
+            print(f"📋 ManagerAgent: creating plan...")
+            project_plan = await anyio.to_thread.run_sync(self.project_planner.execute, project_description)
         
         # Step 4: Create execution workflow
         workflow = self._create_execution_workflow(project_plan)
@@ -163,6 +177,37 @@ Think like a System Architect. Build with precision. Scale with intelligence."""
         result["output"] = self._format_project_report(result)
         
         return result
+
+    async def _refine_project_plan(self, description: str, existing_plan: List[Dict], refinement_prompt: str) -> Dict[str, Any]:
+        """Ask LLM to update an existing project plan based on new instructions."""
+        prompt = f"""You are the Lead Project Architect. Refine the existing project plan based on the user's new instructions.
+        
+Project: {description}
+Existing Plan: {json.dumps(existing_plan, indent=2)}
+Refinement Instructions: {refinement_prompt}
+
+Update the phases and tasks accordingly. Return a valid JSON object in the exact same format as the existing plan.
+Expected JSON format: {{ "phases": [...], "total_estimated_time": "...", "total_minutes": ... }}
+
+JSON:"""
+        try:
+            response = self.llm.generate(
+                prompt=prompt,
+                system="Respond with valid JSON only. Preserve the existing project structure but modify/add phases/tasks as requested.",
+                temperature=0.3
+            )
+            
+            # Clean response
+            import re
+            json_str = response.strip()
+            if json_str.startswith("```"):
+                json_str = re.sub(r"```(json)?\n", "", json_str)
+                json_str = json_str.split("```")[0].strip()
+            
+            return json.loads(json_str)
+        except Exception as e:
+            print(f"❌ Refinement Error: {e}")
+            return {"phases": existing_plan, "total_minutes": 30, "error": str(e)}
 
     async def _design_architecture(self, description: str) -> Dict[str, Any]:
         """Ask LLM to design a technical folder/file structure."""

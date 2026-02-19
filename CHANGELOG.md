@@ -1,6 +1,21 @@
-# Changelog
-
 All notable changes to Nexus AI will be documented in this file.
+
+## [2.6.0] - 2026-02-19
+### Added
+- 🌓 **Theme Persistence** - Application now remembers light/dark mode preference across reloads
+- 📊 **Redesigned Storage Bar** - Professional indicator with vibrant gradients and soft glow on the Files page
+- 🎨 **Premium Off-White Aesthetic** - Comprehensive light mode overhaul for improved visual comfort and high-end feel
+- 🧱 **Enhanced Card Depth** - Multi-layered shadows and subtle gradients for a truly premium component experience
+
+### Improved
+- Standardized Nexus Intelligence card to match global card aesthetics
+- Precise horizontal centering for Floating Refinement Bar via Framer Motion
+- Harmonized card styles across Dashboard, Files, Tasks, and Project Detail pages
+
+### Fixed
+- "Flashy" light mode sections with hardcoded dark styles
+- Conflicting CSS transforms in Floating Refinement Bar
+- Missing `Database` icon import in Files.jsx
 
 ## [2.2.0] - 2026-02-06
 ### Added

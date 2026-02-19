@@ -4,7 +4,7 @@ import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
 import MarkdownRenderer from '../components/common/MarkdownRenderer';
 import toast from 'react-hot-toast';
-import { Upload, Plus, FileUp, Loader2, Sparkles, MessageSquare, Bot, Search, Info } from 'lucide-react';
+import { Upload, Plus, FileUp, Loader2, Sparkles, MessageSquare, Bot, Search, Info, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Files() {
@@ -234,7 +234,7 @@ export default function Files() {
     ];
 
     return (
-        <div className="min-h-screen bg-dark-900">
+        <div className="min-h-screen bg-bg-primary">
             <Navbar />
             <div className="flex">
                 <Sidebar />
@@ -242,7 +242,7 @@ export default function Files() {
                     {/* Header */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                         <div>
-                            <h1 className="text-3xl font-black text-white tracking-tight italic uppercase">
+                            <h1 className="text-3xl font-black text-text-primary tracking-tight italic uppercase">
                                 📁 Files
                             </h1>
                             <p className="text-dark-400 font-medium">Manage all your uploaded files across projects.</p>
@@ -270,17 +270,36 @@ export default function Files() {
                         </div>
                     </div>
 
-                    {/* Storage Bar */}
-                    <div className="card p-6 mb-8">
-                        <div className="flex items-center justify-between mb-3">
-                            <span className="text-white font-bold text-sm">Storage Used</span>
-                            <span className="text-dark-400 text-sm font-medium tabular-nums">{formatBytes(totalStorage)} / 100 MB</span>
+                    {/* Storage Indicator */}
+                    <div className="card p-5 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-primary-500/10 rounded-xl border border-primary-500/10">
+                                <Database className="w-5 h-5 text-primary-500" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-black text-text-primary uppercase tracking-wider mb-0.5">Cloud Storage</h3>
+                                <p className="text-dark-500 text-[11px] font-bold uppercase tracking-widest">{formatBytes(totalStorage)} Used of 100 MB</p>
+                            </div>
                         </div>
-                        <div className="h-2.5 bg-white/[0.04] rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-gradient-to-r from-primary-500 to-purple-500 rounded-full transition-all duration-700"
-                                style={{ width: `${Math.min((totalStorage / (100 * 1024 * 1024)) * 100, 100)}%`, boxShadow: '0 0 12px rgba(14, 165, 233, 0.3)' }}
-                            ></div>
+
+                        <div className="flex-1 max-w-md w-full">
+                            <div className="h-3 bg-dark-900/5 dark:bg-white/[0.04] rounded-full overflow-hidden border border-border/50 relative">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min((totalStorage / (100 * 1024 * 1024)) * 100, 100)}%` }}
+                                    transition={{ duration: 1, ease: 'easeOut' }}
+                                    className="h-full bg-gradient-to-r from-primary-500 via-primary-400 to-purple-500 rounded-full relative"
+                                    style={{ boxShadow: '0 0 15px rgba(14, 165, 233, 0.4)' }}
+                                >
+                                    <div className="absolute inset-0 bg-white/10" />
+                                </motion.div>
+                            </div>
+                        </div>
+
+                        <div className="hidden md:block">
+                            <span className="text-xl font-black text-text-primary tabular-nums">
+                                {Math.round((totalStorage / (100 * 1024 * 1024)) * 100)}%
+                            </span>
                         </div>
                     </div>
 
@@ -295,7 +314,7 @@ export default function Files() {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search files..."
-                                    className="w-full pl-12 pr-4 py-3.5 bg-white/[0.03] border border-white/5 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:border-primary-500/50 transition-colors text-sm font-medium"
+                                    className="w-full pl-12 pr-4 py-3.5 bg-bg-tertiary border border-border rounded-xl text-text-primary placeholder-dark-500 focus:outline-none focus:border-primary-500/50 transition-colors text-sm font-medium"
                                 />
                             </div>
 
@@ -339,7 +358,7 @@ export default function Files() {
                     </div>
 
                     {/* Nexus Intelligence - RAG Chat */}
-                    <div className="rounded-2xl mb-8 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.08) 0%, rgba(139,92,246,0.06) 50%, rgba(15,23,42,0.9) 100%)', border: '1px solid rgba(14,165,233,0.15)' }}>
+                    <div className="card mb-8 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, var(--mesh-1), var(--mesh-2), var(--bg-card))' }}>
                         {/* Subtle glow */}
                         <div className="absolute top-0 left-0 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
                         <div className="absolute bottom-0 right-0 w-48 h-48 bg-purple-500/8 rounded-full blur-3xl pointer-events-none" />
@@ -351,7 +370,7 @@ export default function Files() {
                                         <Bot className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-black text-white flex items-center gap-2.5">
+                                        <h3 className="text-lg font-black text-text-primary flex items-center gap-2.5">
                                             Nexus Intelligence
                                             <span className="bg-primary-500/15 text-primary-400 text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-widest font-black border border-primary-500/20">RAG v2.0</span>
                                         </h3>
@@ -365,7 +384,7 @@ export default function Files() {
                             </div>
 
                             <div className="relative">
-                                <div className="flex items-center gap-3 bg-white/[0.04] rounded-2xl px-5 py-1 border border-white/[0.06] focus-within:border-primary-500/30 transition-colors">
+                                <div className="flex items-center gap-3 bg-bg-tertiary rounded-2xl px-5 py-1 border border-border focus-within:border-primary-500/30 transition-colors">
                                     <Search className="w-5 h-5 text-dark-500 flex-shrink-0" />
                                     <input
                                         type="text"
@@ -373,7 +392,7 @@ export default function Files() {
                                         onChange={(e) => setRagQuery(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleRagSearch()}
                                         placeholder="Type your question (e.g., 'Summarize the roadmap PDF'...)"
-                                        className="flex-1 bg-transparent py-3.5 text-white font-medium placeholder-dark-500 focus:outline-none text-sm"
+                                        className="flex-1 bg-transparent py-3.5 text-text-primary font-medium placeholder-dark-500 focus:outline-none text-sm"
                                     />
                                     <button
                                         onClick={handleRagSearch}
@@ -454,7 +473,7 @@ export default function Files() {
                             <div className="w-20 h-20 bg-white/[0.03] border border-white/[0.06] rounded-3xl flex items-center justify-center mx-auto mb-6">
                                 <span className="text-4xl">📁</span>
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">No Files Found</h3>
+                            <h3 className="text-xl font-bold text-text-primary mb-2">No Files Found</h3>
                             <p className="text-dark-400 font-medium">
                                 {searchQuery || typeFilter !== 'all'
                                     ? 'Try adjusting your filters.'
@@ -489,7 +508,7 @@ export default function Files() {
 
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-white font-bold text-[15px] truncate group-hover:text-primary-400 transition-colors mb-1">
+                                            <h3 className="text-text-primary font-bold text-[15px] truncate group-hover:text-primary-400 transition-colors mb-1">
                                                 {file.filename}
                                             </h3>
                                             <div className="flex items-center gap-3 text-sm text-dark-500 font-medium">

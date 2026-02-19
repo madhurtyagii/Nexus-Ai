@@ -24,6 +24,9 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
     const [abortController, setAbortController] = useState(null);
     const [attachedFile, setAttachedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [history, setHistory] = useState([]);
+    const [showHistory, setShowHistory] = useState(false);
+    const [currentConversationId, setCurrentConversationId] = useState(null);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -50,17 +53,53 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Focus input when modal opens
+    // Fetch history for this agent
+    const fetchHistory = useCallback(async () => {
+        if (!agent?.name) return;
+        try {
+            const response = await api.get(`/agents/conversations/${agent.name}`);
+            setHistory(response.data || []);
+        } catch (error) {
+            console.error('Failed to fetch chat history:', error);
+        }
+    }, [agent?.name]);
+
+    // Focus input and fetch history when modal opens
     useEffect(() => {
         if (isOpen) {
             setTimeout(() => inputRef.current?.focus(), 100);
-            setMessages([{
-                role: 'system',
-                content: `You're now chatting with ${agent?.name}. Ask anything!`,
-                timestamp: new Date().toISOString()
-            }]);
+            if (messages.length === 0) {
+                setMessages([{
+                    role: 'system',
+                    content: `You're now chatting with ${agent?.name}. Ask anything!`,
+                    timestamp: new Date().toISOString()
+                }]);
+            }
+            fetchHistory();
         }
-    }, [isOpen, agent?.name]);
+    }, [isOpen, agent?.name, fetchHistory, messages.length]);
+
+    const loadConversation = async (convId) => {
+        setIsLoading(true);
+        try {
+            const response = await api.get(`/agents/conversations/chat/${convId}`);
+            setMessages(response.data || []);
+            setCurrentConversationId(convId);
+        } catch (error) {
+            console.error('Failed to load conversation:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const startNewChat = () => {
+        setMessages([{
+            role: 'system',
+            content: `You're now chatting with ${agent?.name}. Ask anything!`,
+            timestamp: new Date().toISOString()
+        }]);
+        setCurrentConversationId(null);
+    };
 
     // Close on Escape
     useEffect(() => {
@@ -142,17 +181,20 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
         setAbortController(controller);
 
         try {
-            const history = messages
+            // Only send history if it's a fresh manual send (backend now handles persistent history retrieval)
+            // But we keep this for initial context if needed
+            const historyPayload = messages
                 .filter(m => m.role === 'user' || m.role === 'agent')
                 .map(m => ({ role: m.role, content: m.content }));
 
             const response = await api.post('/agents/chat', {
                 agent_name: agent?.name,
                 message: userMessage,
-                history: history,
+                history: historyPayload,
                 request_id: requestId,
                 style: selectedStyle,
-                file_id: fileId
+                file_id: fileId,
+                conversation_id: currentConversationId
             }, {
                 signal: controller.signal
             });
@@ -163,6 +205,12 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                     content: response.data.response,
                     timestamp: new Date().toISOString()
                 }]);
+
+                if (response.data.conversation_id && !currentConversationId) {
+                    setCurrentConversationId(response.data.conversation_id);
+                    fetchHistory();
+                }
+
                 setIsLoading(false);
                 setCurrentRequestId(null);
                 setAbortController(null);
@@ -194,6 +242,8 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
             setCurrentRequestId(null);
             setAttachedFile(null);
             setIsUploading(false);
+            setHistory([]);
+            setCurrentConversationId(null);
         }
     }, [isOpen]);
 
@@ -268,185 +318,231 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
             <div
-                className={`bg-dark-800 rounded-2xl border border-dark-700 flex flex-col overflow-hidden shadow-2xl transition-all duration-500 ease-in-out ${isExpanded
+                className={`bg-dark-800 rounded-2xl border border-dark-700 flex flex-row overflow-hidden shadow-2xl transition-all duration-500 ease-in-out ${isExpanded
                     ? 'fixed inset-4 w-auto h-auto max-w-none'
-                    : 'relative w-full max-w-2xl h-[600px]'
+                    : 'relative w-full max-w-4xl h-[650px]'
                     }`}
             >
-                {/* Header */}
-                <div className="p-4 border-b border-dark-700 flex items-center justify-between bg-dark-800/80">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-xl">
-                            {agentEmojis[agent?.name] || '🤖'}
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-semibold text-white">{agent?.name}</h2>
-                            <p className="text-xs text-dark-400">
-                                {isExpanded ? 'Full Chat Mode' : 'Direct Chat'}
-                            </p>
-                        </div>
+                {/* History Sidebar */}
+                <div className={`transition-all duration-300 border-r border-dark-700 bg-dark-900/50 flex flex-col ${showHistory || isExpanded ? 'w-64' : 'w-0 overflow-hidden border-none'}`}>
+                    <div className="p-4 border-b border-dark-700 flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-dark-400">History</span>
+                        <button
+                            onClick={startNewChat}
+                            className="p-1.5 rounded-lg bg-primary-500/10 text-primary-400 hover:bg-primary-500 hover:text-white transition-all text-xs flex items-center gap-1"
+                        >
+                            <span>+</span> New Chat
+                        </button>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {/* Expand / Collapse button */}
-                        <button
-                            onClick={() => setIsExpanded(!isExpanded)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-700 text-dark-400 hover:text-white transition-colors"
-                            title={isExpanded ? 'Collapse' : 'Expand to full chat'}
-                        >
-                            {isExpanded ? '⊡' : '⛶'}
-                        </button>
-                        {/* Close button */}
-                        <button
-                            onClick={onClose}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-700 text-dark-400 hover:text-white transition-colors"
-                        >
-                            ✕
-                        </button>
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                        {history.length === 0 ? (
+                            <div className="p-4 text-center text-dark-500 text-xs mt-10">
+                                No previous chats.
+                            </div>
+                        ) : (
+                            history.map((conv) => (
+                                <button
+                                    key={conv.id}
+                                    onClick={() => loadConversation(conv.id)}
+                                    className={`w-full text-left p-2.5 rounded-xl transition-all group relative overflow-hidden ${currentConversationId === conv.id ? 'bg-primary-500/20 text-primary-400' : 'text-dark-300 hover:bg-dark-700'}`}
+                                >
+                                    <div className="text-sm font-medium truncate pr-4">{conv.title}</div>
+                                    <div className="text-[10px] text-dark-500 mt-1">{new Date(conv.updated_at).toLocaleDateString()}</div>
+                                    {currentConversationId === conv.id && (
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-500" />
+                                    )}
+                                </button>
+                            ))
+                        )}
                     </div>
                 </div>
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {messages.map((msg, idx) => (
-                        <div
-                            key={idx}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                            <div
-                                className={`${isExpanded ? 'max-w-[60%]' : 'max-w-[80%]'} px-4 py-2.5 rounded-2xl ${msg.role === 'user'
-                                    ? 'bg-primary-500 text-white rounded-br-sm'
-                                    : msg.role === 'system'
-                                        ? 'bg-dark-700/50 text-dark-400 text-sm italic'
-                                        : 'bg-dark-700 text-white rounded-bl-sm'
-                                    }`}
-                            >
-                                {msg.attachedImage && (
-                                    <div className="mb-2 rounded-lg overflow-hidden border border-white/10">
-                                        <img
-                                            src={msg.attachedImage}
-                                            alt="Attached"
-                                            className="max-h-48 object-contain cursor-pointer"
-                                            onClick={() => setLightboxImage(msg.attachedImage)}
-                                        />
-                                    </div>
-                                )}
-                                {msg.role === 'agent' ? (
-                                    <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
-                                        <div className={`p-4 rounded-2xl ${msg.role === 'user'
-                                            ? 'bg-primary-500 text-white rounded-tr-none'
-                                            : 'bg-dark-700 text-dark-100 rounded-tl-none border border-dark-600'
-                                            }`}>
-                                            <MarkdownRenderer
-                                                content={msg.content}
-                                                onImageClick={setLightboxImage}
-                                            />
-                                        </div>
-                                        {/* Download button for images */}
-                                        {hasImage(msg.content) && (
-                                            <button
-                                                onClick={() => handleImageDownload(msg.content)}
-                                                className="mt-2 flex items-center gap-1.5 text-xs text-primary-400 hover:text-primary-300 bg-primary-500/10 hover:bg-primary-500/20 px-3 py-1.5 rounded-lg transition-all"
-                                            >
-                                                ⬇ Download Image
-                                            </button>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                    {isLoading && (
-                        <div className="flex justify-start">
-                            <div className="bg-dark-700 text-dark-400 px-4 py-3 rounded-2xl rounded-bl-sm">
-                                <div className="flex items-center gap-4">
-                                    <div className="flex gap-1.5">
-                                        <span className="w-2 h-2 bg-dark-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                                        <span className="w-2 h-2 bg-dark-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                                        <span className="w-2 h-2 bg-dark-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                                    </div>
-                                    <button
-                                        onClick={handleStop}
-                                        className="text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors border border-red-400/30 px-2 py-0.5 rounded-md hover:bg-red-400/10"
-                                    >
-                                        🛑 Stop
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input */}
-                {/* Input Area */}
-                <div className="p-4 border-t border-dark-700 bg-dark-800/80">
-                    {/* Image Preview */}
-                    {attachedFile && (
-                        <div className="mb-3 flex items-center gap-3 p-2 bg-dark-700 rounded-xl border border-primary-500/30 w-fit">
-                            <img src={attachedFile.url} className="w-12 h-12 rounded-lg object-cover" alt="Preview" />
-                            <div className="flex flex-col">
-                                <span className="text-xs text-white font-medium truncate max-w-[150px]">{attachedFile.name}</span>
-                                <span className="text-[10px] text-primary-400">Ready to upload</span>
-                            </div>
+                {/* Main Chat Area */}
+                <div className="flex-1 flex flex-col bg-dark-800 relative">
+                    {/* Header */}
+                    <div className="p-4 border-b border-dark-700 flex items-center justify-between bg-dark-800/80">
+                        <div className="flex items-center gap-3">
                             <button
-                                onClick={removeAttachment}
-                                className="w-6 h-6 flex items-center justify-center rounded-full bg-dark-600 text-dark-400 hover:text-white hover:bg-red-500/20 transition-all font-bold text-xs"
+                                onClick={() => setShowHistory(!showHistory)}
+                                className={`p-2 rounded-lg hover:bg-dark-700 transition-colors ${showHistory ? 'text-primary-400' : 'text-dark-400'}`}
+                            >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-xl">
+                                {agentEmojis[agent?.name] || '🤖'}
+                            </div>
+                            <div>
+                                <h1 className="text-lg font-semibold text-white">{agent?.name}</h1>
+                                <p className="text-xs text-dark-400">
+                                    {isExpanded ? 'Full Chat Mode' : 'Direct Chat'}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {/* Expand / Collapse button */}
+                            <button
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-700 text-dark-400 hover:text-white transition-colors"
+                                title={isExpanded ? 'Collapse' : 'Expand to full chat'}
+                            >
+                                {isExpanded ? '⊡' : '⛶'}
+                            </button>
+                            {/* Close button */}
+                            <button
+                                onClick={onClose}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-700 text-dark-400 hover:text-white transition-colors"
                             >
                                 ✕
                             </button>
                         </div>
-                    )}
+                    </div>
 
-                    {agent?.name === 'VisualAgent' && (
-                        <StylePresets
-                            selectedStyle={selectedStyle}
-                            onSelectStyle={setSelectedStyle}
-                        />
-                    )}
-                    <div className="flex gap-3">
-                        {agent?.name === 'VisualAgent' && (
-                            <>
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleFileUpload}
-                                    className="hidden"
-                                    accept="image/*"
-                                />
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={isLoading || isUploading || attachedFile}
-                                    className={`w-12 h-12 flex items-center justify-center rounded-xl border border-dark-600 text-dark-400 hover:text-white hover:border-primary-500 transition-all flex-shrink-0 ${attachedFile ? 'bg-primary-500/20 border-primary-500 text-primary-400' : 'bg-dark-700'}`}
-                                    title="Attach Image"
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        {messages.map((msg, idx) => (
+                            <div
+                                key={idx}
+                                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            >
+                                <div
+                                    className={`${isExpanded ? 'max-w-[70%]' : 'max-w-[90%]'} flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                                 >
-                                    {isUploading ? (
-                                        <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                        </svg>
-                                    )}
-                                </button>
-                            </>
+                                    <div
+                                        className={`px-4 py-2.5 rounded-2xl ${msg.role === 'user'
+                                            ? 'bg-primary-500 text-white rounded-br-none shadow-lg shadow-primary-500/10'
+                                            : msg.role === 'system'
+                                                ? 'bg-dark-700/50 text-dark-400 text-xs italic border border-dark-600/50'
+                                                : 'bg-dark-700 text-dark-100 rounded-bl-none border border-dark-600'
+                                            }`}
+                                    >
+                                        {msg.attachedImage && (
+                                            <div className="mb-2 rounded-lg overflow-hidden border border-white/10">
+                                                <img
+                                                    src={msg.attachedImage.startsWith('blob:') ? msg.attachedImage : `${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}${msg.attachedImage}`}
+                                                    alt="Attached"
+                                                    className="max-h-48 object-contain cursor-pointer"
+                                                    onClick={() => setLightboxImage(msg.attachedImage)}
+                                                />
+                                            </div>
+                                        )}
+                                        {msg.role === 'agent' ? (
+                                            <div className="min-w-0 max-w-full overflow-hidden">
+                                                <MarkdownRenderer
+                                                    content={msg.content}
+                                                    onImageClick={setLightboxImage}
+                                                />
+                                                {/* Download button for images */}
+                                                {hasImage(msg.content) && (
+                                                    <button
+                                                        onClick={() => handleImageDownload(msg.content)}
+                                                        className="mt-3 flex items-center gap-1.5 text-xs text-primary-400 hover:text-primary-300 bg-primary-500/10 hover:bg-primary-500/20 px-3 py-1.5 rounded-lg transition-all"
+                                                    >
+                                                        ⬇ Download Image
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                                        )}
+                                    </div>
+                                    <span className="text-[10px] text-dark-500 mt-1 px-1">
+                                        {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                        {isLoading && (
+                            <div className="flex justify-start">
+                                <div className="bg-dark-700 text-dark-400 px-4 py-3 rounded-2xl rounded-bl-none border border-dark-600">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex gap-1.5">
+                                            <span className="w-1.5 h-1.5 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                            <span className="w-1.5 h-1.5 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                            <span className="w-1.5 h-1.5 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                        </div>
+                                        <button
+                                            onClick={handleStop}
+                                            className="text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors border border-red-400/30 px-2 py-0.5 rounded-md hover:bg-red-400/10"
+                                        >
+                                            🛑 Stop
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         )}
-                        <textarea
-                            ref={inputRef}
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder={attachedFile ? `Describe what to do with this image...` : `Ask ${agent?.name} anything...`}
-                            rows={isExpanded ? 2 : 1}
-                            className="flex-1 bg-dark-700 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-primary-500 resize-none"
-                        />
-                        <button
-                            onClick={handleSend}
-                            disabled={(!input.trim() && !attachedFile) || isLoading || isUploading}
-                            className="px-5 py-3 bg-gradient-to-r from-primary-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-primary-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Send
-                        </button>
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    {/* Input Area */}
+                    <div className="p-4 border-t border-dark-700 bg-dark-800/80">
+                        {/* Image Preview */}
+                        {attachedFile && (
+                            <div className="mb-3 flex items-center gap-3 p-2 bg-dark-700 rounded-xl border border-primary-500/30 w-fit">
+                                <img src={attachedFile.url} className="w-12 h-12 rounded-lg object-cover" alt="Preview" />
+                                <div className="flex flex-col">
+                                    <span className="text-xs text-white font-medium truncate max-w-[150px]">{attachedFile.name}</span>
+                                    <span className="text-[10px] text-primary-400">Ready to upload</span>
+                                </div>
+                                <button
+                                    onClick={removeAttachment}
+                                    className="w-6 h-6 flex items-center justify-center rounded-full bg-dark-600 text-dark-400 hover:text-white hover:bg-red-500/20 transition-all font-bold text-xs"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        )}
+
+                        {agent?.name === 'VisualAgent' && (
+                            <StylePresets
+                                selectedStyle={selectedStyle}
+                                onSelectStyle={setSelectedStyle}
+                            />
+                        )}
+                        <div className="flex gap-3">
+                            {agent?.name === 'VisualAgent' && (
+                                <>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileUpload}
+                                        className="hidden"
+                                        accept="image/*"
+                                    />
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isLoading || isUploading || attachedFile}
+                                        className={`w-12 h-12 flex items-center justify-center rounded-xl border border-dark-600 text-dark-400 hover:text-white hover:border-primary-500 transition-all flex-shrink-0 ${attachedFile ? 'bg-primary-500/20 border-primary-500 text-primary-400' : 'bg-dark-700'}`}
+                                        title="Attach Image"
+                                    >
+                                        {isUploading ? (
+                                            <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                </>
+                            )}
+                            <textarea
+                                ref={inputRef}
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder={attachedFile ? `Describe what to do with this image...` : `Ask ${agent?.name} anything...`}
+                                rows={isExpanded ? 2 : 1}
+                                className="flex-1 bg-dark-700 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-dark-500 focus:outline-none focus:border-primary-500 resize-none max-h-32"
+                            />
+                            <button
+                                onClick={handleSend}
+                                disabled={(!input.trim() && !attachedFile) || isLoading || isUploading}
+                                className="px-5 py-3 bg-gradient-to-r from-primary-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-primary-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed h-12"
+                            >
+                                Send
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

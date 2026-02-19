@@ -20,9 +20,9 @@ import ExpandableOutput from '../components/common/ExpandableOutput';
 import ImageLightbox from '../components/common/ImageLightbox';
 import { AgentActivityPanelPolling } from '../components/agents/AgentActivityPanel';
 import FileUpload from '../components/files/FileUpload';
-import FileManager from '../components/files/FileManager';
+import FloatingRefinementBar from '../components/common/FloatingRefinementBar';
 
-export default function TaskDetail() {
+function TaskDetail() {
     const { taskId } = useParams();
     const navigate = useNavigate();
     const [task, setTask] = useState(null);
@@ -72,6 +72,29 @@ export default function TaskDetail() {
         }
         return () => { if (interval) clearInterval(interval); };
     }, [task?.status]);
+
+    const [followupInput, setFollowupInput] = useState('');
+    const [isSendingFollowup, setIsSendingFollowup] = useState(false);
+
+    const handleFollowup = async () => {
+        if (!followupInput.trim() || isSendingFollowup) return;
+        setIsSendingFollowup(true);
+        try {
+            await api.post(`/tasks/${taskId}/followup`, {
+                followup_prompt: followupInput
+            });
+            setFollowupInput('');
+            // Switch back to polling to see new subtasks
+            setIsPolling(true);
+            fetchTask();
+            fetchProgress();
+        } catch (err) {
+            console.error('Follow-up failed:', err);
+            alert('Failed to send follow-up instructions.');
+        } finally {
+            setIsSendingFollowup(false);
+        }
+    };
 
     const handleRetry = async () => {
         try {
@@ -327,14 +350,22 @@ export default function TaskDetail() {
                                     onUploadSuccess={() => setFileRefreshTrigger(prev => prev + 1)}
                                 />
                             </div>
-                            <FileManager taskId={taskId} refreshTrigger={fileRefreshTrigger} />
+                            <div className="card p-6 text-center bg-dark-800/20 border border-white/5 rounded-2xl mt-4">
+                                <p className="text-dark-400 mb-4 text-sm">Files for this task are available in the central Files area.</p>
+                                <button
+                                    onClick={() => navigate('/files')}
+                                    className="px-6 py-2 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 border border-primary-500/20 rounded-xl transition-all text-sm font-bold"
+                                >
+                                    Go to Files
+                                </button>
+                            </div>
                         </div>
 
                         {/* Output */}
                         {task?.output && (
                             <div className="card p-6 mb-6">
                                 <h2 className="text-base font-bold text-white mb-4 tracking-tight">Output</h2>
-                                <div className="rounded-xl bg-white/[0.02] border border-white/[0.04] p-4">
+                                <div className="rounded-xl bg-white/[0.02] border border-white/[0.04] p-4 mb-6">
                                     <ExpandableOutput
                                         content={typeof task.output === 'object' ? JSON.stringify(task.output, null, 2) : task.output}
                                         title="Task Output"
@@ -345,7 +376,7 @@ export default function TaskDetail() {
                         )}
 
                         {/* Actions */}
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 mb-10">
                             {task?.status === 'failed' && (
                                 <motion.button
                                     onClick={handleRetry}
@@ -367,9 +398,21 @@ export default function TaskDetail() {
                                 Delete Task
                             </motion.button>
                         </div>
+
+                        {/* Spacer for Floating Bar */}
+                        <div className="h-32" />
                     </motion.div>
                 </main>
             </div>
+
+            {/* Floating Refinement Bar */}
+            <FloatingRefinementBar
+                onRefine={handleFollowup}
+                isLoading={isSendingFollowup}
+                title="Continue the conversation"
+                subtitle="Ask a follow-up or request changes"
+                placeholder="Ask a follow-up... (e.g., 'Now summarize this' or 'Try with more detail')"
+            />
 
             <ImageLightbox
                 isOpen={!!lightboxImage}
@@ -379,3 +422,5 @@ export default function TaskDetail() {
         </div>
     );
 }
+
+export default TaskDetail;

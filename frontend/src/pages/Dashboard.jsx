@@ -249,7 +249,7 @@ export default function Dashboard() {
                                     {greeting.emoji}
                                 </motion.span>
                                 <div>
-                                    <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-white">
+                                    <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-text-primary">
                                         {greeting.text}, <span className="gradient-text-vivid">{user?.username}</span>
                                     </h1>
                                     <div className="flex items-center gap-3 mt-1.5">
@@ -304,7 +304,7 @@ export default function Dashboard() {
                                                 onFocus={() => setInputFocused(true)}
                                                 onBlur={() => setInputFocused(false)}
                                                 placeholder=""
-                                                className="w-full bg-transparent border-none text-white pl-14 pr-6 py-5 focus:ring-0 text-lg placeholder:text-dark-600 font-medium outline-none relative z-10"
+                                                className="w-full bg-transparent border-none text-text-primary pl-14 pr-6 py-5 focus:ring-0 text-lg placeholder:text-dark-600 font-medium outline-none relative z-10"
                                             />
                                             {/* Typing animation placeholder */}
                                             <div className="absolute inset-0 flex items-center pl-14 pointer-events-none">
@@ -355,7 +355,7 @@ export default function Dashboard() {
                                         <div className="p-2 bg-primary-500/10 rounded-xl">
                                             <ArrowUpRight className="w-4 h-4 text-primary-400" />
                                         </div>
-                                        <h2 className="text-lg font-bold text-white tracking-tight">Quick Actions</h2>
+                                        <h2 className="text-lg font-bold text-text-primary tracking-tight">Quick Actions</h2>
                                     </div>
                                     <div className="grid grid-cols-2 gap-2.5">
                                         {quickActions.map((action, i) => (
@@ -368,7 +368,7 @@ export default function Dashboard() {
                                             >
                                                 <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover/action:opacity-100 transition-opacity rounded-xl`} />
                                                 <action.icon className={`w-5 h-5 ${action.iconColor} relative z-10 mb-3 transition-transform group-hover/action:scale-110`} />
-                                                <p className="text-xs font-bold text-white relative z-10">{action.label}</p>
+                                                <p className="text-xs font-bold text-text-primary relative z-10">{action.label}</p>
                                             </motion.button>
                                         ))}
                                     </div>
@@ -382,7 +382,7 @@ export default function Dashboard() {
                                         <div className="p-2 bg-purple-500/10 rounded-xl">
                                             <Users className="w-4 h-4 text-purple-400" />
                                         </div>
-                                        <h2 className="text-lg font-bold text-white tracking-tight">Agent Fleet</h2>
+                                        <h2 className="text-lg font-bold text-text-primary tracking-tight">Agent Fleet</h2>
                                     </div>
                                     <AgentOrbit agents={displayAgents} className="w-full h-36" />
                                 </SpotlightCard>
@@ -395,7 +395,7 @@ export default function Dashboard() {
                                         <div className="p-2 bg-emerald-500/10 rounded-xl">
                                             <TrendingUp className="w-4 h-4 text-emerald-400" />
                                         </div>
-                                        <h2 className="text-lg font-bold text-white tracking-tight">Performance</h2>
+                                        <h2 className="text-lg font-bold text-text-primary tracking-tight">Performance</h2>
                                     </div>
                                     <HeroStats tasks={recentTasks} />
                                 </SpotlightCard>
@@ -440,7 +440,7 @@ export default function Dashboard() {
                                     <div className="flex items-center justify-between mb-6">
                                         <div className="flex items-center gap-3">
                                             <Pin className="w-5 h-5 text-primary-400 -rotate-45" />
-                                            <h2 className="text-xl font-bold text-white tracking-tight">Pinned Projects</h2>
+                                            <h2 className="text-xl font-bold text-text-primary tracking-tight">Pinned Projects</h2>
                                         </div>
                                         <motion.button
                                             onClick={() => navigate('/projects')}
@@ -462,7 +462,7 @@ export default function Dashboard() {
                                                 className="group relative p-4 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-primary-500/20 transition-all cursor-pointer overflow-hidden"
                                             >
                                                 <div className="flex items-center justify-between mb-2">
-                                                    <h3 className="font-bold text-base text-white group-hover:text-primary-400 transition-colors">{project.name}</h3>
+                                                    <h3 className="font-bold text-base text-text-primary group-hover:text-primary-400 transition-colors">{project.name}</h3>
                                                     <TrendingUp className="w-3.5 h-3.5 text-dark-600 group-hover:text-primary-400 transition-colors" />
                                                 </div>
                                                 <p className="text-xs text-dark-500 font-medium mb-3 line-clamp-1">{project.description || 'Active project'}</p>
@@ -498,7 +498,7 @@ export default function Dashboard() {
                                             <div className="p-2 bg-amber-500/10 rounded-xl">
                                                 <Activity className="w-4 h-4 text-amber-400" />
                                             </div>
-                                            <h2 className="text-xl font-bold text-white tracking-tight">Activity Timeline</h2>
+                                            <h2 className="text-xl font-bold text-text-primary tracking-tight">Activity Timeline</h2>
                                         </div>
                                         <button onClick={() => navigate('/tasks')} className="text-[10px] font-bold text-primary-400 hover:text-white transition-colors uppercase tracking-wider">
                                             View All

@@ -72,12 +72,12 @@ export default function Sidebar() {
             variants={sidebarVariants}
             animate={collapsed ? 'collapsed' : 'expanded'}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="min-h-[calc(100vh-76px)] glass border-r border-white/5 p-3 hidden lg:flex flex-col m-4 rounded-3xl sticky top-[80px] overflow-hidden"
+            className="min-h-[calc(100vh-76px)] glass border-r border-border p-3 hidden lg:flex flex-col m-4 rounded-3xl sticky top-[80px] overflow-hidden"
         >
             {/* Collapse Toggle */}
             <button
                 onClick={toggleCollapse}
-                className="flex items-center justify-center w-full p-2 mb-2 rounded-xl text-dark-500 hover:text-white hover:bg-white/5 transition-all duration-300 group"
+                className="flex items-center justify-center w-full p-2 mb-2 rounded-xl text-dark-500 hover:text-text-primary hover:bg-bg-secondary transition-all duration-300 group"
                 title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
                 {collapsed ? (
@@ -119,7 +119,7 @@ export default function Sidebar() {
                                         `group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden ${collapsed ? 'justify-center' : ''
                                         } ${isActive
                                             ? 'text-white bg-primary-500/10'
-                                            : 'text-dark-400 hover:text-white hover:bg-white/[0.04]'
+                                            : 'text-dark-400 hover:text-text-primary hover:bg-bg-secondary'
                                         }`
                                     }
                                 >
@@ -163,7 +163,7 @@ export default function Sidebar() {
                                                         initial={{ opacity: 0, x: -10 }}
                                                         animate={{ opacity: 1, x: 0 }}
                                                         exit={{ opacity: 0, x: -10 }}
-                                                        className={`text-sm font-medium relative z-10 whitespace-nowrap ${isActive ? 'text-white' : ''}`}
+                                                        className={`text-sm font-medium relative z-10 whitespace-nowrap ${isActive ? 'text-text-primary' : ''}`}
                                                     >
                                                         {item.label}
                                                     </motion.span>
@@ -177,7 +177,7 @@ export default function Sidebar() {
 
                         {/* Group Separator */}
                         {groupIdx < navGroups.length - 1 && (
-                            <div className={`mt-3 mx-3 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent`} />
+                            <div className={`mt-3 mx-3 h-px bg-gradient-to-r from-transparent via-border to-transparent`} />
                         )}
                     </div>
                 ))}
@@ -215,8 +215,8 @@ export default function Sidebar() {
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-4 p-4 rounded-2xl relative overflow-hidden"
                         style={{
-                            background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.04), rgba(139, 92, 246, 0.04))',
-                            border: '1px solid rgba(255, 255, 255, 0.04)',
+                            background: 'linear-gradient(135deg, var(--mesh-1), var(--mesh-2))',
+                            border: '1px solid var(--border)',
                         }}
                     >
                         <div className="flex items-center gap-2 mb-3">

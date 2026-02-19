@@ -9,6 +9,7 @@ from models.agent import Agent, AgentMessage
 from models.project import Project
 from models.file import File
 from models.workflow_template import WorkflowTemplate
+from models.chat import Conversation, ChatMessage
 
 __all__ = [
     "User",
@@ -20,4 +21,6 @@ __all__ = [
     "Project",
     "File",
     "WorkflowTemplate",
+    "Conversation",
+    "ChatMessage",
 ]
