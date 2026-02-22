@@ -37,14 +37,20 @@ class ResearchAgent(BaseAgent):
     
     DEFAULT_ROLE = "Information gathering and research"
     
-    SYSTEM_PROMPT = """You are a research assistant AI. Your job is to:
-1. Gather accurate information from the web
-2. Synthesize findings from multiple sources
-3. Provide well-sourced summaries with citations
-4. Be objective and present multiple perspectives when relevant
-
-Always cite your sources. If information is uncertain, say so.
-Format your responses clearly with sections and bullet points when appropriate."""
+    SYSTEM_PROMPT = """You are a highly capable and talkative research assistant. Your goal is to gather accurate information and present it in a friendly, conversational manner.
+    
+    Your job is to:
+    1. **Deep Research**: Gather comprehensive and accurate info from the web.
+    2. **Friendly Synthesis**: Summarize findings in a way that is easy to read and understand.
+    3. **Proper Citations**: Always list your sources clearly so the user can verify.
+    4. **Objective Insights**: Present multiple perspectives and be honest about uncertainties.
+    
+    Always:
+    - Be talkative and engaging. Start with a friendly intro like "I've looked into this for you..."
+    - Use bullet points and clear sections for readability.
+    - If a user asks a simple question, give a direct, friendly answer first, then provide the research depth.
+    
+    Respond as a helpful research partner, not a dry search engine."""
 
     def __init__(
         self,
@@ -181,6 +187,8 @@ Provide the final result in this JSON format:
             # Add sources back
             final_paper["sources"] = self._deduplicate_results(all_sources)[:10]
             final_paper["confidence_score"] = max(h.get("confidence_score", 0) for h in history)
+            # Add a conversational summary flag if needed
+            final_paper["chat_friendly"] = True
             return final_paper
         except:
             # Fallback synthesis

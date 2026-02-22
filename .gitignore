@@ -28,3 +28,7 @@ backend/*.db
 # Frontend
 frontend/dist/
 frontend/.env.local
+
+# Storage
+backend/storage/images/
+backend/storage/uploads/

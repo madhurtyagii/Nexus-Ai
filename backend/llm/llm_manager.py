@@ -182,7 +182,3 @@ class LLMManager:
 
 # Global LLM manager instance
 llm_manager = LLMManager()
-
-
-# Global LLM manager instance
-llm_manager = LLMManager()

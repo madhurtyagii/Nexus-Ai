@@ -54,7 +54,7 @@ const HELP_CATEGORIES = [
         description: 'Understand your specialized team of AI agents.',
         items: [
             {
-                title: '9 Specialized Roles',
+                title: '8 Specialized Roles',
                 content: 'From the Manager who orchestrates to the QA Analyst who verifies, each agent has unique capabilities and focus areas.',
                 icon: Cpu
             },

@@ -62,6 +62,12 @@ export const agentsAPI = {
     list: () => api.get('/agents/'),
     get: (id) => api.get(`/agents/${id}`),
     getByName: (name) => api.get(`/agents/name/${name}`),
+    // Conversation management
+    getConversationHistory: (id) => api.get(`/agents/conversations/chat/${id}`),
+    getAgentConversations: (name) => api.get(`/agents/conversations/${name}`),
+    updateConversation: (id, title) => api.patch(`/agents/conversations/${id}?title=${encodeURIComponent(title)}`),
+    deleteConversation: (id) => api.delete(`/agents/conversations/${id}`),
+    clearAgentHistory: (name) => api.delete(`/agents/conversations/clear/${name}`),
 };
 
 // Projects API

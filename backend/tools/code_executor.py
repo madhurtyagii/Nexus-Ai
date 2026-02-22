@@ -174,7 +174,18 @@ class CodeExecutorTool(BaseTool):
             module_base = name.split('.')[0]
             if module_base in self.ALLOWED_IMPORTS:
                 return __import__(name, globals, locals, fromlist, level)
-            raise ImportError(f"Import of '{name}' is not allowed in the sandbox")
+            
+            # Friendly messages for common disallowed imports
+            GUI_MODULES = {'tkinter', 'pygame', 'PyQt5', 'PyQt6', 'wxPython', 'kivy', 'turtle'}
+            if module_base in GUI_MODULES:
+                raise ImportError(
+                    f"'{name}' is a GUI library and cannot run in this sandbox. "
+                    f"Please use console/text-based code with print() instead."
+                )
+            raise ImportError(
+                f"'{name}' is not available in this sandbox. "
+                f"Allowed modules: math, random, datetime, json, re, string, collections, itertools, etc."
+            )
 
         # Create safe globals
         safe_globals = {

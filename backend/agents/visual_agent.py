@@ -27,9 +27,8 @@ logger = get_logger("agents.visual")
 
 # ── Vision / Analysis constants ──────────────────────────────────────
 VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"  # Groq Llama 4 Multimodal
-VISION_SYSTEM_PROMPT = """You are a visual expert. You analyze images with high precision.
-When shown an image, describe it clearly. If asked a specific question about an image, 
-be accurate and detailed. If it's a UI sketch, describe the layout, colors, and components."""
+VISION_SYSTEM_PROMPT = """You are a highly skilled visual expert and friendly collaborator. You analyze images with high precision and explain them in a conversational, helpful tone.
+When shown an image, describe it clearly as if talking to a friend. If asked a specific question, be accurate but keep it engaging. If it's a UI sketch, explain the layout and possibilities vividly."""
 
 # Keywords that signal the user wants to ANALYZE an existing image (not generate)
 ANALYZE_KEYWORDS = [
@@ -91,7 +90,7 @@ class VisualAgent(BaseAgent):
         super().__init__(
             name="VisualAgent",
             role=self.DEFAULT_ROLE,
-            system_prompt="You are a unified visual agent. You can analyze images, generate new images, and edit existing ones.",
+            system_prompt="You are a friendly and talkative visual assistant. You can analyze images, generate stunning new visuals, and edit existing ones while being a helpful partner in the creative process.",
             **kwargs
         )
         self.output_dir = os.path.join(
@@ -106,13 +105,49 @@ class VisualAgent(BaseAgent):
             return base64.b64encode(f.read()).decode("utf-8")
 
     def _detect_mode(self, prompt: str, has_image: bool) -> str:
-        """Detect whether user wants ANALYZE, EDIT, or GENERATE."""
+        """Detect whether user wants ANALYZE, EDIT, GENERATE, or just CHAT."""
         prompt_lower = prompt.lower()
+        
+        # If there's an image attached, it's either edit or analyze
         if has_image:
             if any(kw in prompt_lower for kw in EDIT_KEYWORDS):
                 return "edit"
-            # Default for image + text = analyze
             return "analyze"
+        
+        # Strip conversation context to get the actual user message
+        clean = prompt_lower
+        if "current request:" in clean:
+            clean = clean.split("current request:")[-1].split("note:")[0].strip()
+        
+        # Explicit generation keywords — user clearly wants an image
+        GENERATE_KEYWORDS = [
+            "generate", "create", "draw", "paint", "make me", "make an",
+            "make a", "design", "render", "sketch", "illustrate",
+            "show me", "picture of", "image of", "photo of",
+            "portrait of", "landscape of", "scene of", "artwork",
+            "wallpaper", "logo", "icon", "poster", "banner",
+        ]
+        if any(kw in clean for kw in GENERATE_KEYWORDS):
+            return "generate"
+        
+        # If the message is short and casual, it's probably chat
+        # (e.g., "good job", "thanks", "hello", "nice", "wow", "cool")
+        CHAT_INDICATORS = [
+            "good", "nice", "great", "thanks", "thank", "hello", "hi",
+            "hey", "wow", "cool", "awesome", "love it", "perfect",
+            "amazing", "beautiful", "well done", "ok", "okay",
+            "what can you", "who are you", "help", "how are",
+            "sure", "yes", "no", "please", "sorry", "lol", "haha",
+            "?", "!", "bruh", "bro", "dude", "man", "yo",
+        ]
+        if len(clean.split()) <= 8 and any(kw in clean for kw in CHAT_INDICATORS):
+            return "chat"
+        
+        # If the message is very short (1-3 words) without clear visual content, chat
+        if len(clean.split()) <= 3 and not any(c.isdigit() for c in clean):
+            return "chat"
+        
+        # Default: assume they want to generate
         return "generate"
 
     async def _analyze_image(self, image_path: str, prompt: str) -> Dict[str, Any]:
@@ -136,6 +171,36 @@ class VisualAgent(BaseAgent):
             "model_used": VISION_MODEL,
             "mode": "analyze"
         })
+
+    async def _chat_response(self, prompt: str, input_data: dict) -> Dict[str, Any]:
+        """Generate a friendly conversational response using the LLM."""
+        user_msg = input_data.get("user_message") or prompt
+        # Strip conversation context
+        if "Current request:" in user_msg:
+            user_msg = user_msg.split("Current request:")[-1].split("Note:")[0].strip()
+        
+        chat_prompt = f"""You are the VisualAgent — a friendly, creative AI artist. 
+The user just said: "{user_msg}"
+
+Respond naturally and warmly in 1-3 sentences. Be conversational, encouraging, and a little playful.
+If they complimented your work, thank them genuinely.
+If they're asking about your capabilities, briefly mention you can generate images, analyze photos, and edit visuals.
+Do NOT generate or describe an image unless they explicitly ask for one.
+Keep it short and human-like."""
+        
+        try:
+            response = self.llm.generate(
+                prompt=chat_prompt,
+                model="meta-llama/llama-4-maverick-17b-128e-instruct",
+                use_cache=False
+            )
+            if response:
+                return self.format_output(response.strip())
+        except Exception as e:
+            logger.error(f"Chat response error: {e}")
+        
+        # Fallback
+        return self.format_output("Thanks! 😊 Let me know if you'd like me to create, analyze, or edit any images!")
 
     def _build_prompt(self, raw_prompt: str, style: str = None) -> str:
         """Strips command prefixes and enhances the prompt with quality boosters and style presets."""
@@ -190,6 +255,13 @@ class VisualAgent(BaseAgent):
         logger.info(f"🎨 VisualAgent mode={mode}, has_image={has_image}, prompt='{raw_prompt[:60]}...'")
         
         try:
+            # ── CHAT MODE (casual conversation) ──
+            if mode == "chat":
+                logger.info("💬 VisualAgent CHAT mode — responding conversationally")
+                result = await self._chat_response(raw_prompt, input_data)
+                self.end_execution()
+                return result
+            
             # ── ANALYZE MODE ──
             if mode == "analyze":
                 result = await self._analyze_image(image_path, raw_prompt)
@@ -321,9 +393,19 @@ class VisualAgent(BaseAgent):
                 except Exception as db_err:
                     logger.error(f"⚠️ Failed to save image to DB: {db_err}")
             
-            return self.format_output(
-                f"![{raw_prompt}]({relative_path})"
-            )
+            # Use the clean user message for alt text, not the full context prompt
+            clean_description = input_data.get("user_message") or raw_prompt
+            # Strip conversation context if it leaked into the message
+            if "Previous conversation:" in clean_description:
+                parts = clean_description.split("Current request:")
+                if len(parts) > 1:
+                    clean_description = parts[-1].split("Note:")[0].strip()
+            # Keep alt text short
+            alt_text = clean_description[:100].strip()
+            
+            response_text = f"Here's your generated image:\n\n![{alt_text}]({relative_path})"
+            
+            return self.format_output(response_text)
             
         except Exception as e:
             print(f"❌ VisualAgent Error: {str(e)}")

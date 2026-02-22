@@ -37,21 +37,17 @@ class CodeAgent(BaseAgent):
     
     DEFAULT_ROLE = "Code generation and debugging"
     
-    SYSTEM_PROMPT = """You are an expert programmer and code assistant. Your capabilities include:
-
-1. **Code Generation**: Write clean, efficient, well-documented code in any language
-2. **Debugging**: Find and fix bugs in code
-3. **Code Review**: Analyze code for issues, best practices, and improvements
-4. **Explanation**: Explain how code works clearly
-
-Always:
-- Write clean, readable code with proper formatting
-- Include comments and docstrings
-- Handle errors appropriately
-- Follow language-specific best practices
-- Test your code mentally before returning
-
-When returning code, use markdown code blocks with the language specified."""
+    SYSTEM_PROMPT = """You are a helpful and expert programmer. Your goal is to provide clean, working code while being conversational and supportive.
+    
+    Always:
+    - Be talkative and friendly.
+    - Write clean, readable code with proper formatting.
+    - Follow language-specific best practices.
+    - When chatting, feel free to suggest improvements or alternatives.
+    - Use ONE markdown code block with the language specified.
+    - If you are correcting code, explain exactly what changed.
+    - Include helpful comments in the code.
+    - Provide a clear explanation before and after the code block."""
 
     SUPPORTED_LANGUAGES = ["python", "javascript", "java", "cpp", "go", "rust", "typescript", "html", "css"]
 
@@ -113,10 +109,11 @@ When returning code, use markdown code blocks with the language specified."""
             task_lower = task.lower()
             
             print(f"🔍 CodeAgent.execute: task_lower[:200] = {task_lower[:200]}")
+            print(f"🔍 CodeAgent Debug: self class={self.__class__.__name__}, methods={dir(self)}")
             
             if any(word in task_lower for word in ["fix", "debug", "error", "bug", "issue"]):
                 print("🔍 CodeAgent: Taking DEBUG path")
-                result = self._debug_code(task, input_data.get("code", ""))
+                result = await self._debug_code(task, input_data.get("code", ""))
             elif any(word in task_lower for word in ["review", "check", "analyze", "audit"]):
                 print("🔍 CodeAgent: Taking REVIEW path")
                 result = self._review_code(task, input_data.get("code", ""))
@@ -126,17 +123,20 @@ When returning code, use markdown code blocks with the language specified."""
             else:
                 # Default: generate code
                 print("🔍 CodeAgent: Taking GENERATE path")
-                result = self._generate_code(task)
+                result = await self._generate_code(task)
             
             self.end_execution()
             return self.format_output(result)
             
         except Exception as e:
+            import traceback
+            print(f"❌ CodeAgent.execute() FAILED: {type(e).__name__}: {str(e)}")
+            traceback.print_exc()
             self.log_action("code_error", {"error": str(e)})
             self.end_execution()
             return self.format_output(None, status="error", error=str(e))
     
-    def _generate_code(self, task: str) -> Dict[str, Any]:
+    async def _generate_code(self, task: str) -> Dict[str, Any]:
         """Generates implementation code based on a task description.
         
         Args:
@@ -189,7 +189,7 @@ IMPORTANT INSTRUCTIONS:
 2. Start with a 1-2 sentence explanation, then the code block
 3. The code must be complete and runnable - not fragments
 4. Use proper {language.upper()} syntax and best practices
-5. Include comments inside the code
+5. Include helpful comments inside the code
 
 FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
 Brief explanation of what this code does.
@@ -225,7 +225,7 @@ DO NOT use multiple code blocks. DO NOT use inline code. Return ONE complete cod
             # If test failed, try to fix
             if not tested and test_result.get("error"):
                 self.log_action("fixing_code", {"error": test_result["error"][:100]})
-                fixed = self._attempt_fix(code, test_result["error"], language)
+                fixed = await self._heal_code_attempt(code, test_result["error"], language)
                 if fixed:
                     code = fixed["code"]
                     tested = fixed.get("tested", False)
@@ -242,7 +242,7 @@ DO NOT use multiple code blocks. DO NOT use inline code. Return ONE complete cod
             "test_output": test_output
         }
     
-    def _debug_code(self, task: str, code: str = "") -> Dict[str, Any]:
+    async def _debug_code(self, task: str, code: str = "") -> Dict[str, Any]:
         """
         Debug and fix code.
         """
@@ -254,7 +254,7 @@ DO NOT use multiple code blocks. DO NOT use inline code. Return ONE complete cod
         
         if not code:
             # Ask LLM to identify the code from the description
-            return self._generate_code(task)
+            return await self._generate_code(task)
         
         language = self._detect_language(task) or "python"
         
@@ -413,9 +413,9 @@ Be clear and beginner-friendly."""
         
         return tool.execute(code=code, timeout=5)
     
-    async def _healing_loop(self, code: str, error: str, language: str, max_attempts: int = 3) -> Dict[str, Any]:
+    async def _heal_code_attempt(self, code: str, error: str, language: str, max_attempts: int = 3) -> Dict[str, Any]:
         """
-        Attempt to fix code multiple times if it fails execution.
+        Attempt to fix code multiple times if it fails execution (defensive rename).
         """
         attempts = 0
         current_code = code
@@ -479,12 +479,12 @@ The code MUST be a complete, self-contained replacement. Ensure all imports are 
     
     def _get_code_explanation(self, code: str, language: str) -> str:
         """
-        Get a brief explanation of the generated code.
+        Get a brief explanation of the generated code while being friendly.
         """
         if not code:
             return ""
         
-        prompt = f"""In 2-3 sentences, explain what this {language} code does:
+        prompt = f"""In 2-3 sentences, explain what this {language} code does while being friendly and supportive:
 
 ```{language}
 {code[:500]}

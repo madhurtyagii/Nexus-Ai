@@ -7,7 +7,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWebSocket, EventType } from '../../hooks/useWebSocket';
-import api from '../../services/api';
+import api, { agentsAPI } from '../../services/api';
 import MarkdownRenderer from '../common/MarkdownRenderer';
 import StylePresets from './StylePresets';
 import ImageLightbox from '../common/ImageLightbox';
@@ -27,6 +27,8 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
     const [history, setHistory] = useState([]);
     const [showHistory, setShowHistory] = useState(false);
     const [currentConversationId, setCurrentConversationId] = useState(null);
+    const [editingConversationId, setEditingConversationId] = useState(null);
+    const [editTitleValue, setEditTitleValue] = useState('');
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -57,7 +59,7 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
     const fetchHistory = useCallback(async () => {
         if (!agent?.name) return;
         try {
-            const response = await api.get(`/agents/conversations/${agent.name}`);
+            const response = await agentsAPI.getAgentConversations(agent.name);
             setHistory(response.data || []);
         } catch (error) {
             console.error('Failed to fetch chat history:', error);
@@ -82,13 +84,37 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
     const loadConversation = async (convId) => {
         setIsLoading(true);
         try {
-            const response = await api.get(`/agents/conversations/chat/${convId}`);
+            const response = await agentsAPI.getConversationHistory(convId);
             setMessages(response.data || []);
             setCurrentConversationId(convId);
         } catch (error) {
             console.error('Failed to load conversation:', error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleRenameConversation = async (convId, newTitle) => {
+        if (!newTitle.trim()) return;
+        try {
+            await agentsAPI.updateConversation(convId, newTitle);
+            setHistory(prev => prev.map(c => c.id === convId ? { ...c, title: newTitle } : c));
+            setEditingConversationId(null);
+        } catch (error) {
+            console.error('Failed to rename conversation:', error);
+        }
+    };
+
+    const handleDeleteConversation = async (convId) => {
+        if (!window.confirm('Are you sure you want to delete this conversation?')) return;
+        try {
+            await agentsAPI.deleteConversation(convId);
+            setHistory(prev => prev.filter(c => c.id !== convId));
+            if (currentConversationId === convId) {
+                startNewChat();
+            }
+        } catch (error) {
+            console.error('Failed to delete conversation:', error);
         }
     };
 
@@ -319,7 +345,7 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
             <div
                 className={`bg-dark-800 rounded-2xl border border-dark-700 flex flex-row overflow-hidden shadow-2xl transition-all duration-500 ease-in-out ${isExpanded
-                    ? 'fixed inset-4 w-auto h-auto max-w-none'
+                    ? 'fixed inset-4 md:inset-6 w-auto h-auto'
                     : 'relative w-full max-w-4xl h-[650px]'
                     }`}
             >
@@ -341,17 +367,76 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                             </div>
                         ) : (
                             history.map((conv) => (
-                                <button
-                                    key={conv.id}
-                                    onClick={() => loadConversation(conv.id)}
-                                    className={`w-full text-left p-2.5 rounded-xl transition-all group relative overflow-hidden ${currentConversationId === conv.id ? 'bg-primary-500/20 text-primary-400' : 'text-dark-300 hover:bg-dark-700'}`}
-                                >
-                                    <div className="text-sm font-medium truncate pr-4">{conv.title}</div>
-                                    <div className="text-[10px] text-dark-500 mt-1">{new Date(conv.updated_at).toLocaleDateString()}</div>
-                                    {currentConversationId === conv.id && (
-                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-500" />
+                                <div key={conv.id} className="group relative">
+                                    {editingConversationId === conv.id ? (
+                                        <div className="p-2 space-y-2 bg-dark-700/50 rounded-xl border border-primary-500/30">
+                                            <input
+                                                autoFocus
+                                                value={editTitleValue}
+                                                onChange={(e) => setEditTitleValue(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleRenameConversation(conv.id, editTitleValue);
+                                                    if (e.key === 'Escape') setEditingConversationId(null);
+                                                }}
+                                                className="w-full bg-dark-800 border border-dark-600 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-primary-500"
+                                            />
+                                            <div className="flex justify-end gap-1">
+                                                <button
+                                                    onClick={() => setEditingConversationId(null)}
+                                                    className="p-1 px-2 text-[10px] text-dark-400 hover:text-white"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRenameConversation(conv.id, editTitleValue)}
+                                                    className="p-1 px-2 text-[10px] bg-primary-500 text-white rounded-md"
+                                                >
+                                                    Save
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={() => loadConversation(conv.id)}
+                                                className={`w-full text-left p-2.5 rounded-xl transition-all relative overflow-hidden ${currentConversationId === conv.id ? 'bg-primary-500/20 text-primary-400' : 'text-dark-300 hover:bg-dark-700'}`}
+                                            >
+                                                <div className="text-sm font-medium truncate pr-10">{conv.title}</div>
+                                                <div className="text-[10px] text-dark-500 mt-1">{new Date(conv.updated_at).toLocaleDateString()}</div>
+                                                {currentConversationId === conv.id && (
+                                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-500" />
+                                                )}
+                                            </button>
+                                            <div className="absolute right-2 top-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditingConversationId(conv.id);
+                                                        setEditTitleValue(conv.title);
+                                                    }}
+                                                    className="p-1.5 rounded-md hover:bg-dark-600 text-dark-400 hover:text-primary-400 transition-all"
+                                                    title="Rename"
+                                                >
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteConversation(conv.id);
+                                                    }}
+                                                    className="p-1.5 rounded-md hover:bg-dark-600 text-dark-400 hover:text-red-400 transition-all"
+                                                    title="Delete"
+                                                >
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </>
                                     )}
-                                </button>
+                                </div>
                             ))
                         )}
                     </div>
@@ -407,7 +492,7 @@ export default function AgentChatModal({ isOpen, onClose, agent }) {
                                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                             >
                                 <div
-                                    className={`${isExpanded ? 'max-w-[70%]' : 'max-w-[90%]'} flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                                    className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} ${isExpanded ? 'max-w-[75%]' : 'max-w-[90%]'}`}
                                 >
                                     <div
                                         className={`px-4 py-2.5 rounded-2xl ${msg.role === 'user'

@@ -35,23 +35,23 @@ class ContentAgent(BaseAgent):
     
     DEFAULT_ROLE = "Writing and content creation"
     
-    SYSTEM_PROMPT = """You are a professional writer and content creator. Your capabilities include:
+    SYSTEM_PROMPT = """You are a highly skilled and versatile professional writer. Your goal is to provide exceptional content while being engaging, talkative, and flexible.
+    
+    Your capabilities include:
+    1. **Creative & Professional Writing**: Blog posts, articles, documentation, emails, essays, and more.
+    2. **Intent-Focused Generation**: Always prioritize writing the actual content the user needs, rather than describing how to ask for it.
+    3. **Adaptability**: Adjust your tone perfectly to match the user's request, from academic to casual.
+    4. **Polishing**: Edit and improve existing text for clarity and impact.
+    
+    Always:
+    - Be conversational and supportive. Explain your creative choices if they add value.
+    - If a user asks for an essay or a report, write the full content immediately. 
+    - Avoid being "robotic" or too literal with instructions that look like process meta-talk.
+    - Use clean markdown for readability.
+    
+    Respond directly to the user as a helpful collaborator."""
 
-1. **Blog Posts**: Write engaging, well-structured blog articles
-2. **Documentation**: Create clear technical documentation
-3. **Tutorials**: Write step-by-step educational content
-4. **README**: Generate comprehensive project README files
-5. **Professional Writing**: Emails, reports, and business content
-
-Always:
-- Write in clear, accessible language
-- Structure content with proper headings and sections
-- Adapt tone to the target audience
-- Use proper formatting (markdown when appropriate)
-- Include relevant examples
-- Proofread for grammar and clarity"""
-
-    CONTENT_TYPES = ["blog", "documentation", "tutorial", "readme", "email", "social_media", "report"]
+    CONTENT_TYPES = ["blog", "documentation", "tutorial", "readme", "email", "social_media", "report", "essay"]
     TONE_OPTIONS = ["professional", "casual", "technical", "friendly", "formal", "academic"]
 
     def __init__(
@@ -115,26 +115,32 @@ er's request.
             if not content_type:
                 content_type = self._detect_content_type(topic)
             
+            mode = input_data.get("mode", "autonomous")
             self.log_action("creating_content", {
                 "type": content_type,
                 "topic": topic[:100],
-                "tone": tone
+                "tone": tone,
+                "mode": mode
             })
             
-            # Route to appropriate method
-            if content_type == "blog":
-                result = self._write_blog_post(topic, tone)
-            elif content_type == "documentation":
-                result = self._write_documentation(topic, input_data.get("context"))
-            elif content_type == "tutorial":
-                result = self._write_tutorial(topic, input_data.get("skill_level", "beginner"))
-            elif content_type == "readme":
-                result = self._write_readme(topic, input_data)
-            elif content_type == "email":
-                result = self._write_email(topic, tone)
+            # Special handling for chat mode - be more direct and talkative
+            if mode == "chat":
+                result = self._handle_chat_request(topic, tone, content_type)
             else:
-                # Default: generic content
-                result = self._write_generic_content(topic, tone)
+                # Route to appropriate method for autonomous pipeline
+                if content_type == "blog":
+                    result = self._write_blog_post(topic, tone)
+                elif content_type == "documentation":
+                    result = self._write_documentation(topic, input_data.get("context"))
+                elif content_type == "tutorial":
+                    result = self._write_tutorial(topic, input_data.get("skill_level", "beginner"))
+                elif content_type == "readme":
+                    result = self._write_readme(topic, input_data)
+                elif content_type == "email":
+                    result = self._write_email(topic, tone)
+                else:
+                    # Default: generic content
+                    result = self._write_generic_content(topic, tone)
             
             self.end_execution()
             return self.format_output(result)
@@ -369,6 +375,30 @@ Use markdown formatting."""
             "title": self._extract_title(response),
             "word_count": len(response.split()) if response else 0
         }
+
+    def _handle_chat_request(self, topic: str, tone: str, content_type: str) -> Dict[str, Any]:
+        """Handles direct chat requests with a more talkative and flexible approach."""
+        prompt = f"""You are in a direct chat with a user. They want you to write something about: {topic}
+        
+CONTENT TYPE: {content_type}
+TONE: {tone}
+
+INSTRUCTIONS:
+1. Start with a friendly, conversational opening (e.g., "I'd be happy to help you with that essay on teachers!")
+2. Provide the FULL content requested immediately. 
+3. If they ask for an essay, WRITE THE ESSAY. Do not explain how to ask for one.
+4. End with a supportive closing.
+5. Use markdown for structure.
+
+Be talkative, helpful, and flexible."""
+
+        response = self.generate_response(prompt, use_cache=False)
+        
+        return {
+            "content": response,
+            "title": self._extract_title(response),
+            "summary": "Direct chat response generated."
+        }
     
     def _detect_content_type(self, topic: str) -> str:
         """
@@ -386,6 +416,8 @@ Use markdown formatting."""
             return "readme"
         if any(kw in topic_lower for kw in ["email", "mail", "message"]):
             return "email"
+        if any(kw in topic_lower for kw in ["essay", "pape", "thesis", "report"]):
+            return "essay"
         
         return "blog"  # Default
     
