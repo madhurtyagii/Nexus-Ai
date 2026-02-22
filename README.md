@@ -58,12 +58,12 @@ Meet your elite fleet. Each agent is a specialized LLM instance with unique syst
 |:---:|:---:|---|
 | 👑 | **Manager** | Strategic planning, conflict resolution, and multi-agent coordination. |
 | 🔍 | **Researcher** | Real-time web intelligence with automated citation and source validation. |
-| 💻 | **Coder** | Full-stack implementation, refactoring, and complex architectural design. |
+| 💻 | **Coder** | Full-stack implementation, clean-code generation, and architectural design. |
 | ✍️ | **Content** | High-fidelity technical writing, blog generation, and creative branding. |
-| 🧪 | **QA** | Validation of requirements, code testing, and quality assurance gating. |
-| 📊 | **Data** | Deep analysis of CSV/JSON data with automated visualization generation. |
-| 🧠 | **Memory** | Long-term semantic recall powered by Vector Embeddings (RAG). |
-| 🎨 | **Visual** | State-of-the-art vision analysis and aesthetic asset generation. |
+| 🧪 | **QA** | Validation of requirements, logic testing, and quality assurance gating. |
+| 📊 | **Data** | Deep analysis of CSV/JSON data with automated visualization mapping. |
+| 🧠 | **Memory** | Long-term semantic recall and user-preference learning (RAG). |
+| 🎨 | **Visual** | Unified vision analysis, image generation, and conversational art partner. |
 
 ---
 

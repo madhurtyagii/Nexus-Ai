@@ -16,10 +16,13 @@ Create a `.env` file in the `backend/` directory. You can use `.env.example` as 
 - `ALGORITHM`: The JWT algorithm (default: `HS256`).
 - `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time (default: `1440`).
 
-### LLM Orchestration
-- `OPENAI_API_KEY`: Your OpenAI API key. (Required)
-- `DEFAULT_MODEL`: The primary model for agents (default: `gpt-4-turbo-preview`).
-- `FAST_MODEL`: The model for simpler tasks (default: `gpt-3.5-turbo`).
+### LLM & Search Orchestration
+- `GROQ_API_KEY`: Your Groq API key (Recommended for speed).
+- `OPENAI_API_KEY`: Your OpenAI API key (Optional).
+- `TAVILY_API_KEY`: API key for web research (Used by ResearcherAgent).
+- `DEFAULT_MODEL`: The primary model for agents (e.g., `llama-3.3-70b-versatile`).
+- `FAST_MODEL`: The model for simpler tasks (e.g., `llama3-8b-8192`).
+- `VISION_MODEL`: Model used for visual analysis (e.g., `llama-3.2-11b-vision-preview`).
 
 ### Database
 - `DATABASE_URL`: SQLAlchemy database connection string (default: `sqlite:///./nexus.db`).

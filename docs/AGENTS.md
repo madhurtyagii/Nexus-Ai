@@ -2,7 +2,7 @@
 
 Nexus AI features a team of specialized agents that collaborate to achieve your goals. Each agent is powered by a common base class but has unique system prompts, tools, and processing logic.
 
-## 🤖 Available Agents
+## 🤖 Available Agents (Total: 8)
 
 ### 1. ManagerAgent
 The "CEO" of the project workspace.
@@ -20,7 +20,8 @@ The information specialist.
 The senior developer.
 - **Primary Role**: Writes, debugs, and optimizes code across various languages.
 - **Capabilities**: Python/JS/SQL development, code refactoring, bug fixing.
-- **Tools**: Local code executor (sandboxed), Shell analyzer.
+- **Tools**: Local code executor (logic only), Shell analyzer.
+- **Note**: Code blocks provided by CodeAgent are clean and ready for manual execution.
 
 ### 4. ContentAgent
 The creative specialist.
@@ -38,14 +39,29 @@ The quality controller.
 The context keeper.
 - **Primary Role**: Manages the storage and retrieval of long-term semantic context.
 - **Capabilities**: Preference extraction, semantic search, context summarization.
-- **Tools**: Vector DB interface (Chroma/Qdrant).
+- **Tools**: Vector DB interface (ChromaDB).
+
+### 7. VisualAgent
+The unified visual artist.
+- **Primary Role**: Analyzes, generates, and edits images.
+- **Capabilities**: 
+    - **Analyze**: Describe and explain uploaded images/sketches.
+    - **Generate**: Create stunning visuals from text prompts via SDXL.
+    - **Chat**: Engaging, friendly conversation about visual concepts.
+- **Tools**: Subprocess SDXL worker, Multimodal LLM (Vision).
+
+### 8. DataAgent
+The numbers specialist.
+- **Primary Role**: Analyzes datasets and provides statistical insights.
+- **Capabilities**: CSV/JSON analysis, trend detection, data visualization planning.
+- **Tools**: Statistical analysis engine, Data formatter.
 
 ## 🛠️ How Agents Collaborate
 
 When you submit a project:
 1. The **ManagerAgent** creates a plan.
 2. The **ResearcherAgent** gathers necessary background info.
-3. The **CodeAgent** or **ContentAgent** performs the core work.
+3. The **CodeAgent**, **ContentAgent**, or **VisualAgent** performs the core work.
 4. The **QAAgent** verifies the output.
 5. Throughout the process, the **MemoryAgent** saves important context for future use.
 
