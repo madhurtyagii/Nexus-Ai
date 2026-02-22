@@ -87,22 +87,31 @@ The UI is a testament to modern web aesthetics:
 ## 🏗️ Architecture Detail
 
 ```mermaid
-C4Context
-    title Nexus AI Technical Architecture
-    
-    Person(user, "User", "Orchestrates AI Fleet")
-    System_Boundary(c1, "Nexus AI Ecosystem") {
-        System(web, "React PWA", "Premium Interface / WebSockets")
-        System(api, "FastAPI backend", "Agent Orchestration & RAG")
-        SystemDb(db, "SQLite / ChromaDB", "Relational Data & Vector Memory")
-    }
-    
-    System_Ext(groq, "Groq / LLMs", "Sub-second inference core")
-    
-    Rel(user, web, "Interacts with")
-    Rel(web, api, "Provisions goals / Receives stream", "JSON/WS")
-    Rel(api, db, "Persists state & memory")
-    Rel(api, groq, "Executes agent thoughts", "OpenAI Protocol")
+flowchart TD
+    subgraph UserSpace ["User Layer"]
+        User["👤 User<br/>(Orchestrates Fleet)"]
+    end
+
+    subgraph AppSpace ["Nexus AI Ecosystem"]
+        direction TB
+        Frontend["💻 React PWA<br/>(Premium Interface)"]
+        Backend["⚙️ FastAPI Backend<br/>(Agent Orchestration)"]
+        Storage[("🗄️ SQLite / ChromaDB<br/>(Relational & Vector Memory)")]
+    end
+
+    subgraph CloudSpace ["External Services"]
+        Groq["⚡ Groq / LLMs<br/>(Inference Core)"]
+    end
+
+    User -- "Interacts with" --> Frontend
+    Frontend -- "Provisions Goals / WebSocket Stream" --> Backend
+    Backend -- "Persists State & Memory" --> Storage
+    Backend -- "Executes Agent Thoughts<br/>(OpenAI Protocol)" --> Groq
+
+    %% Styling
+    classDef default fill:#111,stroke:#333,stroke-width:1px,color:#fff;
+    classDef highlighted fill:#1e1b4b,stroke:#4338ca,stroke-width:2px,color:#fff;
+    class User,Frontend,Backend,Storage,Groq highlighted;
 ```
 
 ---
