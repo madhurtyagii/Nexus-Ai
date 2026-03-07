@@ -88,7 +88,7 @@ async def list_tasks(
     """
     return await _list_tasks_internal(task_status, limit, offset, db, current_user.id)
 
-@cached(ttl=60, key_prefix="tasks_list")
+@cached(ttl=5, key_prefix="tasks_list")
 async def _list_tasks_internal(task_status, limit, offset, db, user_id):
     query = db.query(Task).filter(Task.user_id == user_id)
     
@@ -143,7 +143,7 @@ async def get_task(
 ):
     return await _get_task_internal(task_id, db, current_user.id)
 
-@cached(ttl=300, key_prefix="task_detail")
+# Cache removed — task status must always be fresh from DB to avoid stuck UI
 async def _get_task_internal(task_id, db, user_id):
     task = db.query(Task).filter(
         Task.id == task_id,

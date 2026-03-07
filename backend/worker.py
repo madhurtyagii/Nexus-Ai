@@ -438,42 +438,79 @@ Be concise but thorough."""
         return content[:5000] if len(content) > 5000 else content
     
     def _check_task_completion(self, db, task_id: int):
-        """Check if all subtasks are complete and update parent task."""
+        """Check if all subtasks are done and update parent task status accordingly."""
         subtasks = db.query(Subtask).filter(Subtask.task_id == task_id).all()
-        
+
         if not subtasks:
             return
-        
-        all_completed = all(s.status == TaskStatus.COMPLETED.value for s in subtasks)
-        any_failed = any(s.status == TaskStatus.FAILED.value for s in subtasks)
-        
+
         task = db.query(Task).filter(Task.id == task_id).first()
         if not task:
             return
-        
-        if all_completed:
-            # Combine outputs from all subtasks
+
+        # Classify subtasks by status
+        completed = [s for s in subtasks if s.status == TaskStatus.COMPLETED.value]
+        failed = [s for s in subtasks if s.status == TaskStatus.FAILED.value]
+        queued = [s for s in subtasks if s.status == TaskStatus.QUEUED.value]
+        in_progress = [s for s in subtasks if s.status == TaskStatus.IN_PROGRESS.value]
+
+        # If there are still genuinely queued items, worker hasn't finished yet
+        if queued:
+            return
+
+        # Detect "stuck" IN_PROGRESS subtasks: running for more than 5 minutes
+        # These are likely silent_retry subtasks that errored and got frozen
+        STUCK_TIMEOUT_SECONDS = 300
+        genuinely_running = []
+        stuck = []
+        now = datetime.utcnow()
+        for s in in_progress:
+            if s.created_at:
+                elapsed = (now - s.created_at).total_seconds()
+                if elapsed > STUCK_TIMEOUT_SECONDS:
+                    stuck.append(s)
+                else:
+                    genuinely_running.append(s)
+            else:
+                stuck.append(s)
+
+        # Mark stuck subtasks as failed so they don't block completion forever
+        for s in stuck:
+            s.status = TaskStatus.FAILED.value
+            s.error_message = s.error_message or "Timed out — stuck in processing"
+            self.logger.warning(f"⏱️ Subtask {s.id} ({s.assigned_agent}) was stuck, marked as failed")
+        if stuck:
+            db.commit()
+            # Refresh failed list
+            failed = [s for s in subtasks if s.status == TaskStatus.FAILED.value] + stuck
+
+        # If there are still genuinely running subtasks, wait
+        if genuinely_running:
+            return
+
+        # === All subtasks are now either completed or failed — resolve the task ===
+        all_ok = all(s.status == TaskStatus.COMPLETED.value for s in subtasks if s not in stuck)
+        any_ok = len(completed) > 0
+
+        if all_ok and not failed and not stuck:
+            # Perfect — everything completed
             combined_output = []
             for s in subtasks:
                 if s.output_data:
                     agent = s.assigned_agent
                     output = s.output_data.get("output", "")
-                    
-                    # Handle nested output structure
+
                     if isinstance(output, dict):
                         formatted = f"## {agent} Results\n\n"
-                        
-                        # Helper: unwrap a value that might be a dict or string
+
                         def unwrap_text(val):
                             if isinstance(val, dict):
                                 return val.get("summary") or val.get("text") or val.get("content") or str(val)
                             return str(val) if val else ""
-                        
-                        # Content-based outputs (blog, documentation, email, etc.)
+
                         if "content" in output:
                             formatted += unwrap_text(output.get("content"))
                         elif "body" in output:
-                            # Email format
                             subject = output.get("subject", "")
                             if subject:
                                 formatted += f"**Subject:** {subject}\n\n"
@@ -485,18 +522,14 @@ Be concise but thorough."""
                         elif "readme" in output:
                             formatted += unwrap_text(output.get("readme"))
                         elif "summary" in output or "key_findings" in output:
-                            # Research format - the most common case for ResearchAgent
                             summary_val = output.get("summary", "")
-                            summary_text = unwrap_text(summary_val)
-                            formatted += summary_text
-                            
+                            formatted += unwrap_text(summary_val)
                             key_findings = output.get("key_findings", [])
                             if key_findings and isinstance(key_findings, list):
                                 formatted += "\n\n### Key Findings:\n"
                                 for finding in key_findings:
                                     finding_text = unwrap_text(finding) if isinstance(finding, dict) else str(finding)
                                     formatted += f"- {finding_text}\n"
-                            
                             sources = output.get("sources", [])
                             if sources and isinstance(sources, list):
                                 formatted += "\n\n### Sources:\n"
@@ -506,7 +539,6 @@ Be concise but thorough."""
                                     else:
                                         formatted += f"- {src}\n"
                         elif "code" in output:
-                            # Code format
                             lang = output.get("language", "")
                             code_text = output.get("code", "")
                             explanation = output.get("explanation") or output.get("description", "")
@@ -514,16 +546,12 @@ Be concise but thorough."""
                                 formatted += f"{unwrap_text(explanation)}\n\n"
                             formatted += f"```{lang}\n{code_text}\n```"
                         else:
-                            # Universal Fallback: format each key-value pair as Markdown
                             for k, v in output.items():
-                                # Skip metadata/internal fields
-                                if k in ["status", "agent_name", "execution_time_seconds", "tokens_used", 
-                                         "timestamp", "word_count", "estimated_read_time", "sections", 
+                                if k in ["status", "agent_name", "execution_time_seconds", "tokens_used",
+                                         "timestamp", "word_count", "estimated_read_time", "sections",
                                          "tags", "researched_at", "confidence_score", "query"]:
                                     continue
-                                
                                 clean_key = k.replace("_", " ").title()
-                                
                                 if isinstance(v, str) and v:
                                     formatted += f"\n\n### {clean_key}\n{v}"
                                 elif isinstance(v, list) and v:
@@ -533,43 +561,58 @@ Be concise but thorough."""
                                         formatted += f"- {item_text}\n"
                                 elif isinstance(v, dict):
                                     formatted += f"\n\n### {clean_key}\n{unwrap_text(v)}"
-                        
                         combined_output.append(formatted)
                     elif output:
                         combined_output.append(f"## {agent} Results\n\n{output}")
-            
+
             task.status = TaskStatus.COMPLETED.value
             task.output = "\n\n---\n\n".join(combined_output)
             task.completed_at = datetime.utcnow()
-            
-            self.logger.info(f"🎉 Task {task_id} completed!")
-            
-            # Emit task completed event
+            self.logger.info(f"🎉 Task {task_id} completed successfully!")
+
             emit_task_event_sync(
                 WebSocketEventType.TASK_COMPLETED,
                 task_id,
-                {
-                    "status": "completed",
-                    "message": "All subtasks completed successfully"
-                }
+                {"status": "completed", "message": "All subtasks completed successfully"}
             )
-            
-        elif any_failed and not any(s.status in [TaskStatus.QUEUED.value, TaskStatus.IN_PROGRESS.value] for s in subtasks):
-            # All done but some failed
+
+        elif any_ok:
+            # Partial success — at least some agents succeeded, compile what we have
+            combined_output = []
+            for s in completed:
+                if s.output_data:
+                    agent = s.assigned_agent
+                    output = s.output_data.get("output", "")
+                    if isinstance(output, dict):
+                        combined_output.append(f"## {agent} Results\n\n{str(output)}")
+                    elif output:
+                        combined_output.append(f"## {agent} Results\n\n{output}")
+
+            task.status = TaskStatus.COMPLETED.value
+            task.output = "\n\n---\n\n".join(combined_output) if combined_output else "Task completed with partial results."
+            task.completed_at = datetime.utcnow()
+            self.logger.warning(f"⚠️ Task {task_id} completed with partial results ({len(completed)}/{len(subtasks)} subtasks succeeded)")
+
+            emit_task_event_sync(
+                WebSocketEventType.TASK_COMPLETED,
+                task_id,
+                {"status": "completed", "message": f"Completed with partial results ({len(completed)}/{len(subtasks)} subtasks)"}
+            )
+
+        else:
+            # Total failure — nothing succeeded
             task.status = TaskStatus.FAILED.value
-            self.logger.warning(f"⚠️ Task {task_id} has failed subtasks")
-            
-            # Emit task failed event
+            task.completed_at = datetime.utcnow()
+            self.logger.error(f"❌ Task {task_id} failed — no subtasks completed")
+
             emit_task_event_sync(
                 WebSocketEventType.TASK_FAILED,
                 task_id,
-                {
-                    "status": "failed",
-                    "message": "Some subtasks failed"
-                }
+                {"status": "failed", "message": "All subtasks failed"}
             )
-        
+
         db.commit()
+
     
     def shutdown(self):
         """Gracefully shutdown the worker."""
