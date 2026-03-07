@@ -151,20 +151,20 @@ Response (Query or 'DONE'):"""
         all_key_findings = []
         all_sources = []
         full_context = ""
-        
+
         for i, h in enumerate(history):
             all_key_findings.extend(h.get("key_findings", []))
             all_sources.extend(h.get("sources", []))
             full_context += f"\n--- Research Phase {i+1} ---\n{h.get('summary', '')}\n"
 
-        prompt = f"""You are a Senior Research Analyst. Synthesize the following multi-phase research into a final, professional Research Paper.
+        prompt = f"""You are a Senior Research Analyst. Synthesize the following multi-phase research into a final professional report.
 
 TOPIC: {original_query}
 
 DATA FROM MULTIPLE PHASES:
 {full_context}
 
-Provide the final result in this JSON format:
+Respond ONLY with valid JSON in this exact format (no markdown fences, no extra text):
 {{
     "title": "A professional title for the research paper",
     "summary": "A deep, multi-paragraph executive summary",
@@ -172,31 +172,44 @@ Provide the final result in this JSON format:
         {{"heading": "Section Heading", "content": "Detailed analysis..."}}
     ],
     "conclusion": "Final wrap-up and insights",
-    "all_key_findings": ["Consolidated finding 1", "Finding 2..."]
+    "all_key_findings": ["Finding 1", "Finding 2"]
 }}"""
 
         response = self.generate_response(prompt, use_cache=False)
+        
         try:
-            # Simple cleanup and parse
-            import re
-            json_str = response.strip()
+            import re as _re
+            json_str = (response or "").strip()
+            
+            # Strip markdown code fences if present
             if "```" in json_str:
-                json_str = re.sub(r"```(json)?\n", "", json_str).split("```")[0].strip()
+                json_str = _re.sub(r"```(?:json)?\s*", "", json_str).replace("```", "").strip()
+            
+            # Extract the outermost JSON object (handles extra text before/after)
+            start = json_str.find("{")
+            end = json_str.rfind("}") + 1
+            if start != -1 and end > start:
+                json_str = json_str[start:end]
             
             final_paper = json.loads(json_str)
-            # Add sources back
             final_paper["sources"] = self._deduplicate_results(all_sources)[:10]
-            final_paper["confidence_score"] = max(h.get("confidence_score", 0) for h in history)
-            # Add a conversational summary flag if needed
-            final_paper["chat_friendly"] = True
+            final_paper["confidence_score"] = max((h.get("confidence_score", 0) for h in history), default=0)
             return final_paper
-        except:
-            # Fallback synthesis
+
+        except Exception:
+            # Robust fallback: build a structured result from what we have
+            summary_parts = []
+            for h in history:
+                s = h.get("summary", "")
+                if s:
+                    summary_parts.append(s)
+
             return {
                 "title": f"Research Report: {original_query}",
-                "summary": history[0].get("summary", "Synthesis failed."),
+                "summary": "\n\n".join(summary_parts) or "Research completed.",
                 "sections": [],
-                "all_key_findings": list(set(all_key_findings)),
+                "all_key_findings": list(dict.fromkeys(all_key_findings))[:15],  # deduplicated
+                "conclusion": "",
                 "sources": self._deduplicate_results(all_sources)[:10],
                 "confidence_score": 0.5
             }

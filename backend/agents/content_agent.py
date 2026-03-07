@@ -237,10 +237,11 @@ Use clear, technical writing style with markdown formatting."""
         sections = self._extract_sections(response)
         
         return {
-            "documentation": response or "Documentation generation failed",
-            "sections": sections,
+            "content": response or "Documentation generation failed",
+            "content_type": "documentation",
             "word_count": len(response.split()) if response else 0
         }
+
     
     def _write_tutorial(
         self, 
@@ -268,12 +269,12 @@ Make it educational and hands-on. Use markdown formatting."""
         steps = self._extract_steps(response)
         
         return {
-            "tutorial": response or "Tutorial generation failed",
-            "prerequisites": self._extract_prerequisites(response),
-            "steps": steps,
+            "content": response or "Tutorial generation failed",
+            "content_type": "tutorial",
             "difficulty": skill_level,
             "word_count": len(response.split()) if response else 0
         }
+
     
     def _write_readme(
         self, 
@@ -308,10 +309,11 @@ Make it professional and well-formatted for GitHub."""
         response = self.generate_response(prompt, use_cache=False)
         
         return {
-            "readme": response or "# " + project_name,
-            "sections": self._extract_sections(response),
+            "content": response or "# " + project_name,
+            "content_type": "readme",
             "word_count": len(response.split()) if response else 0
         }
+
     
     def _write_email(
         self, 
