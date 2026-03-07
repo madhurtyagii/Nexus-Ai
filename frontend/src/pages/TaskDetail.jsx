@@ -22,6 +22,7 @@ import { AgentActivityPanelPolling } from '../components/agents/AgentActivityPan
 import FileUpload from '../components/files/FileUpload';
 import FloatingRefinementBar from '../components/common/FloatingRefinementBar';
 
+
 function TaskDetail() {
     const { taskId } = useParams();
     const navigate = useNavigate();
@@ -365,15 +366,44 @@ function TaskDetail() {
                         {task?.output && (
                             <div className="card p-6 mb-6">
                                 <h2 className="text-base font-bold text-white mb-4 tracking-tight">Output</h2>
-                                <div className="rounded-xl bg-white/[0.02] border border-white/[0.04] p-4 mb-6">
+                                <div className="rounded-xl bg-white/[0.02] border border-white/[0.04] p-4 mb-4">
                                     <ExpandableOutput
                                         content={typeof task.output === 'object' ? JSON.stringify(task.output, null, 2) : task.output}
                                         title="Task Output"
                                         collapsedHeight={300}
                                     />
                                 </div>
+
+                                {/* Inline Follow-up Bar - Centered and Smaller */}
+                                <div className="mt-6 max-w-xl mx-auto border-t border-white/[0.04] pt-6 pb-2">
+                                    <p className="text-xs text-dark-500 font-medium mb-3 text-center">Continue the conversation</p>
+                                    <div className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-primary-500/20 focus-within:border-primary-500/40 transition-all shadow-inner">
+                                        <input
+                                            type="text"
+                                            value={followupInput}
+                                            onChange={(e) => setFollowupInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleFollowup()}
+                                            placeholder="Ask a follow-up... (e.g., 'Summarize results')"
+                                            className="flex-1 bg-transparent text-sm text-dark-200 placeholder-dark-600 outline-none px-3 py-1.5"
+                                        />
+                                        <motion.button
+                                            onClick={handleFollowup}
+                                            disabled={!followupInput.trim() || isSendingFollowup}
+                                            className="flex-shrink-0 px-4 py-2 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 border border-primary-500/20 rounded-lg text-xs font-bold transition-all disabled:opacity-40"
+                                            whileHover={followupInput.trim() ? { scale: 1.03 } : {}}
+                                            whileTap={followupInput.trim() ? { scale: 0.97 } : {}}
+                                        >
+                                            {isSendingFollowup ? (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                                'Send'
+                                            )}
+                                        </motion.button>
+                                    </div>
+                                </div>
                             </div>
                         )}
+
 
                         {/* Actions */}
                         <div className="flex gap-3 mb-10">
@@ -399,20 +429,12 @@ function TaskDetail() {
                             </motion.button>
                         </div>
 
-                        {/* Spacer for Floating Bar */}
-                        <div className="h-32" />
+
                     </motion.div>
                 </main>
             </div>
 
-            {/* Floating Refinement Bar */}
-            <FloatingRefinementBar
-                onRefine={handleFollowup}
-                isLoading={isSendingFollowup}
-                title="Continue the conversation"
-                subtitle="Ask a follow-up or request changes"
-                placeholder="Ask a follow-up... (e.g., 'Now summarize this' or 'Try with more detail')"
-            />
+
 
             <ImageLightbox
                 isOpen={!!lightboxImage}

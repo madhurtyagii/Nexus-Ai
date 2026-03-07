@@ -286,6 +286,7 @@ Respond ONLY with valid JSON in this exact format (no markdown fences, no extra 
     def _generate_search_queries(self, query: str) -> List[str]:
         """
         Generate focused search queries from user query.
+        Uses robust JSON parsing to handle various LLM formatting.
         """
         prompt = f"""Break this research query into 2-3 specific search queries that will help find comprehensive information:
 
@@ -298,20 +299,25 @@ Return ONLY a JSON array of search queries, nothing else. Example:
         
         if response:
             try:
-                # Try to parse JSON
-                # Handle markdown code blocks
-                if "```" in response:
-                    response = response.split("```")[1]
-                    if response.startswith("json"):
-                        response = response[4:]
+                import re as _re
+                json_str = response.strip()
                 
-                queries = json.loads(response.strip())
+                # Cleanup markdown fences
+                if "```" in json_str:
+                    json_str = _re.sub(r"```(json)?\n", "", json_str).split("```")[0].strip()
+                
+                # Extract array using regex if needed
+                match = _re.search(r"(\[.*\])", json_str, _re.DOTALL)
+                if match:
+                    json_str = match.group(1)
+                
+                queries = json.loads(json_str)
                 if isinstance(queries, list) and len(queries) > 0:
-                    return queries[:3]
-            except:
-                pass
+                    return [str(q) for q in queries[:3]]
+            except Exception as e:
+                print(f"⚠️ ResearchAgent: Failed to parse search queries JSON: {e}")
         
-        # Fallback: use original query
+        # Fallback: use segments of the original query or the query itself
         return [query]
     
     def _deduplicate_results(self, results: List[Dict]) -> List[Dict]:
@@ -366,7 +372,8 @@ Return ONLY a JSON array of search queries, nothing else. Example:
         search_results: List[Dict]
     ) -> Dict[str, Any]:
         """
-        Synthesize findings from scraped content.
+        Synthesize findings from scraped content into a structured summary.
+        Asks LLM for plain markdown instead of JSON to avoid parse failures.
         """
         # Build context from scraped content
         context_parts = []
@@ -382,111 +389,75 @@ Return ONLY a JSON array of search queries, nothing else. Example:
                 for r in search_results[:5]
             ])
         
-        prompt = f"""Based on the following information, provide a comprehensive answer to the research query.
+        # Ask for plain text response (no JSON) — far more reliable
+        prompt = f"""You are a research assistant. Based on the sources below, answer the research query clearly and comprehensively.
 
 RESEARCH QUERY: {query}
 
 SOURCES:
 {context}
 
-Provide your response in this exact JSON format:
-{{
-    "summary": "A comprehensive 2-3 paragraph summary answering the query",
-    "key_findings": ["Finding 1", "Finding 2", "Finding 3", "Finding 4", "Finding 5"]
-}}
+Write a clear, detailed response covering:
+1. A comprehensive summary answering the query (2-3 paragraphs)
+2. Key findings (bullet points starting with "- ")
 
-Be accurate and cite information from the sources. If sources are insufficient, acknowledge limitations."""
+Use plain, readable text. Do NOT use JSON. Be direct and informative."""
 
         response = self.generate_response(prompt, use_cache=False)
         
-        if response:
-            try:
-                # Parse JSON response
-                clean_response = response.strip()
-                if "```" in clean_response:
-                    # Extract from markdown code block
-                    parts = clean_response.split("```")
-                    if len(parts) >= 2:
-                        clean_response = parts[1]
-                        if clean_response.startswith("json"):
-                            clean_response = clean_response[4:]
-                
-                clean_response = clean_response.strip()
-                parsed = json.loads(clean_response)
-                return parsed
-            except Exception as e:
-                # If JSON parsing fails, try to extract summary using regex
-                import re
-                
-                # Try to find summary content
-                summary_match = re.search(r'"summary"\s*:\s*"((?:[^"\\]|\\.)*)(?:"|$)', response, re.DOTALL)
-                if summary_match:
-                    summary_text = summary_match.group(1)
-                    # Unescape common JSON escapes
-                    summary_text = summary_text.replace('\\n', ' ').replace('\\"', '"').replace('\\/', '/')
-                    
-                    # Try to find key_findings
-                    findings = []
-                    findings_match = re.findall(r'"([^"]+)"(?=\s*[,\]])', response)
-                    # Filter to get only finding-like strings (longer than 20 chars)
-                    findings = [f for f in findings_match if len(f) > 20 and 'summary' not in f.lower()][:5]
-                    
-                    return {
-                        "summary": summary_text,
-                        "key_findings": findings
-                    }
-                
-                # Final fallback: return raw response cleaned up
-                return {
-                    "summary": response.replace('{', '').replace('}', '').replace('"', '').strip()[:1000],
-                    "key_findings": []
-                }
+        if not response:
+            return {
+                "summary": "Unable to synthesize research findings.",
+                "key_findings": []
+            }
+        
+        # Extract bullet-point findings from the text
+        import re
+        findings = []
+        for line in response.split('\n'):
+            line = line.strip()
+            if line.startswith('- ') and len(line) > 10:
+                findings.append(line[2:])
         
         return {
-            "summary": "Unable to synthesize research findings.",
-            "key_findings": []
+            "summary": response,
+            "key_findings": findings[:10]
         }
-    
+
     def _synthesize_without_sources(self, query: str) -> Dict[str, Any]:
         """
         Fallback when no web sources are available.
+        Asks for plain markdown (no JSON) for maximum reliability.
         """
-        prompt = f"""Answer this research query based on your knowledge:
+        prompt = f"""You are a research assistant. No web sources were found for this query, so please answer based on your general knowledge.
 
-Query: {query}
+RESEARCH QUERY: {query}
 
-Provide your response in this exact JSON format:
-{{
-    "summary": "A comprehensive answer based on general knowledge",
-    "key_findings": ["Finding 1", "Finding 2", "Finding 3"]
-}}
-
-Note: This response is based on training data, not live web search."""
+Write a comprehensive summary and list 3-5 key findings. 
+Be conversational and helpful. Do NOT use JSON."""
 
         response = self.generate_response(prompt, use_cache=False)
         
+        # Structure the result consistently with the rest of the workflow
         result = {
-            "summary": "Research completed using AI knowledge (no web sources found).",
+            "summary": response or "Research completed using AI knowledge (no web sources found).",
             "key_findings": [],
             "sources": [],
-            "confidence_score": 0.3,  # Lower confidence without sources
+            "confidence_score": 0.3, # Lower confidence without sources
             "query": query,
             "researched_at": datetime.utcnow().isoformat(),
             "note": "No web sources found. Response based on AI knowledge."
         }
         
         if response:
-            try:
-                if "```" in response:
-                    response = response.split("```")[1]
-                    if response.startswith("json"):
-                        response = response[4:]
-                
-                parsed = json.loads(response.strip())
-                result["summary"] = parsed.get("summary", result["summary"])
-                result["key_findings"] = parsed.get("key_findings", [])
-            except:
-                result["summary"] = response
+            # Extract bullet-point findings
+            import re
+            findings = []
+            for line in response.split('\n'):
+                line = line.strip()
+                if line.startswith('- ') and len(line) > 10:
+                    findings.append(line[2:])
+            result["key_findings"] = findings[:5]
         
         return result
     
